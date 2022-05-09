@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "mtn_data_plans",
+  "info": {
+    "singularName": "mtn-data-plan",
+    "pluralName": "mtn-data-plans",
+    "displayName": "Mtn Data Plan",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Plan": {
+      "type": "string",
+      "required": true
+    },
+    "Price": {
+      "type": "decimal",
+      "required": true
+    },
+    "expiry_date": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "kind": "collectionType",
+  "collectionName": "data_plans",
+  "info": {
+    "singularName": "data-plan",
+    "pluralName": "data-plans",
+    "displayName": "Glo data Plan",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Plan": {
+      "type": "string",
+      "required": true
+    },
+    "Price": {
+      "type": "decimal"
+    },
+    "expiry_date": {
+      "type": "string"
+    }
+  }
+}

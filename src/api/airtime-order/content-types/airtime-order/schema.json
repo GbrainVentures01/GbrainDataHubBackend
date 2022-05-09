@@ -1,0 +1,44 @@
+{
+  "kind": "collectionType",
+  "collectionName": "airtime_orders",
+  "info": {
+    "singularName": "airtime-order",
+    "pluralName": "airtime-orders",
+    "displayName": "Airtime Order",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "network": {
+      "type": "string",
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true,
+      "min": 50
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "delivered",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "beneficiary": {
+      "type": "string",
+      "required": true
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "airtime_orders"
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "kind": "collectionType",
+  "collectionName": "data_orders",
+  "info": {
+    "singularName": "data-order",
+    "pluralName": "data-orders",
+    "displayName": "DataOrder",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "network": {
+      "type": "string",
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "plan": {
+      "type": "string",
+      "required": true
+    },
+    "beneficiary": {
+      "type": "string",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "delivered",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "data_orders"
+    }
+  }
+}

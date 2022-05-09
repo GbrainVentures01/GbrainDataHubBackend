@@ -1,0 +1,26 @@
+{
+  "kind": "collectionType",
+  "collectionName": "airtel_data_plans",
+  "info": {
+    "singularName": "airtel-data-plan",
+    "pluralName": "airtel-data-plans",
+    "displayName": "Airtel Data Plan"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Plan": {
+      "type": "string",
+      "required": true
+    },
+    "Price": {
+      "type": "decimal",
+      "required": true
+    },
+    "expiry_date": {
+      "type": "string"
+    }
+  }
+}
