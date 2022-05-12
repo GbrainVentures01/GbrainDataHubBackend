@@ -9,7 +9,7 @@ module.exports =  async ({token, userData, amount, ref}) => {
             "paymentReference": ref,
             "paymentDescription": "Trial transaction",
             "currencyCode": "NGN",
-            "contractCode": "6230647961",
+            "contractCode": `${process.env.MONNIFY_CONTRACT_CODE}`,
             "redirectUrl": "http://localhost:3000/confirm-payment",
             "paymentMethods":["CARD","ACCOUNT_TRANSFER"]
     

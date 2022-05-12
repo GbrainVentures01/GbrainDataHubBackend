@@ -1,7 +1,7 @@
 const sha512 = require('js-sha512').sha512;
 
 module.exports = async (requestBody) => {
-const DEFAULT_MERCHANT_CLIENT_SECRET = 'P4W2YR7DCQY7FD95TQADTW8VHXGP9WEZ'
+const DEFAULT_MERCHANT_CLIENT_SECRET = process.env.MONNIFY_MERCHANT_CLIENT_SECRET
 
 const hashData = `${requestBody}`
 const computeHash = (hashData) => {

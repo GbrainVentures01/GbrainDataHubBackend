@@ -2,7 +2,8 @@
 
 const { sanitizeEntity } = require("strapi-utils/lib");
 const converter = require("../../../utils/converter");
-const calculateTransactionHash = require("../../../monnify/calculateTransactionHash")
+const calculateTransactionHash = require("../../../monnify/calculateTransactionHash");
+const { ApplicationError } = require("@strapi/utils/lib/errors");
 
 /**
  *  data-order controller
@@ -97,6 +98,8 @@ try {
     
 } catch (error) {
     console.log(error);
+    throw new ApplicationError("Sorry, Something went wrong")
+    
 }
    
     },

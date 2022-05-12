@@ -6,7 +6,7 @@ module.exports =  async ({token, userData}) => {
             "accountReference": userData.email,
             "accountName": "Test Reserved Account",
             "currencyCode": "NGN",
-            "contractCode": "6230647961",
+            "contractCode": `${process.env.MONNIFY_CONTRACT_CODE}`,
             "customerEmail": userData.email,
             "bvn": "21212121212",
             "customerName": userData.username,

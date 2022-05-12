@@ -21,6 +21,7 @@
     "js-sha512": "^0.8.0",
     "nodejs-base64": "^2.0.0",
     "pg": "8.6.0",
+    "pg-connection-string": "^2.5.0",
     "randomstring": "^1.2.2"
   },
   "author": {
