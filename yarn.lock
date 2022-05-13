@@ -1843,17 +1843,6 @@
     lodash "4.17.21"
     yup "0.32.9"
 
-"@strapi/utils@^4.1.0":
-  version "4.1.10"
-  resolved "https://registry.yarnpkg.com/@strapi/utils/-/utils-4.1.10.tgz#48bfdbe0cff6b0ca3bbc3af26c72beb2fd433116"
-  integrity sha512-qmsUsml92YHasi0lazbHbU8xfgxdES8tC2Mn6r6wNzKF7HdG3LPma0PGnaWvJ+0Kjn/tNC0Tl3SFyxNVaGda9w==
-  dependencies:
-    "@sindresorhus/slugify" "1.1.0"
-    date-fns "2.24.0"
-    http-errors "1.8.0"
-    lodash "4.17.21"
-    yup "0.32.9"
-
 "@szmarczak/http-timer@^4.0.5":
   version "4.0.6"
   resolved "https://registry.yarnpkg.com/@szmarczak/http-timer/-/http-timer-4.0.6.tgz#b4a914bb62e7c272d4e5989fe4440f812ab1d807"
