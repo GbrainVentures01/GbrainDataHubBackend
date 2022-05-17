@@ -25,8 +25,6 @@ module.exports = createCoreController(
     const data = ctx.request.body.eventData
     const headers = ctx.request.headers
     const hash = await calculateTransactionHash(requestBody)
-    console.log(headers)
-    console.log(hash)
    
     if (data.paymentMethod ==="ACCOUNT_TRANSFER") {
     const amountPaid = data.paymentSourceInformation[0].amountPaid
