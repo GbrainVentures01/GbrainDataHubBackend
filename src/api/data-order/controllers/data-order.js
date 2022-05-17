@@ -1,6 +1,6 @@
 "use strict";
 
-const { sanitizeEntity } = require("strapi-utils/lib");
+const { sanitizeEntity } = require("strapi-utils/lib").factories;
 
 /**
  *  data-order controller
