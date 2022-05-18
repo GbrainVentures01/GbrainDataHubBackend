@@ -1,7 +1,5 @@
 "use strict";
 
-const { sanitizeEntity } = require("strapi-utils/lib").factories;
-
 /**
  *  data-order controller
  */
@@ -52,11 +50,13 @@ module.exports = createCoreController(
           .service("api::data-order.data-order")
           .find({ user: user.id });
       }
-      return entities.results.map((entity) =>
-        sanitizeEntity(entity, {
-          model: strapi.getModel("api::data-order.data-order"),
-        })
-      );
+      // return entities.results.map((entity) =>
+      //   sanitizeEntity(entity, {
+      //     model: strapi.getModel("api::data-order.data-order"),
+      //   })
+      // );
+      const sanitizedEntity = await this.sanitizeOutput(entities, ctx);
+      return ctx.send(this.transformResponse(sanitizedEntity));
 
       // return this.transformResponse(sanitizedEntity);
     },
