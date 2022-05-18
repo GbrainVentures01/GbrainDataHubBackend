@@ -356,11 +356,13 @@ module.exports = {
 
     if (user && user.provider === params.provider) {
         ctx.badRequest("Email is already taken")
+        console.log(user)
       throw new ApplicationError('Email is already taken');
     }
 
     if (user && user.provider !== params.provider && settings.unique_email) {
            ctx.badRequest("Email is already taken")
+           console.log(user)
       throw new ApplicationError('Email is already taken');
     }
 
@@ -396,6 +398,7 @@ module.exports = {
         user: sanitizedUser,
       });
     } catch (err) {
+      console.log(err)
       if (_.includes(err.message, 'username')) {
         ctx.notAcceptable("Username already taken")
         throw new ApplicationError('Username already taken');
