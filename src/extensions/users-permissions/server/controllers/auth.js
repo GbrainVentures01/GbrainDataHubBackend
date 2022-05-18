@@ -375,7 +375,6 @@ module.exports = {
      
       const monnifyDetails = await createReservedAccount({token:myAccessToken, userData:params})
       console.log(monnifyDetails)
-
       const user = await strapi.query('plugin::users-permissions.user').create({ data: {...params, BankName:monnifyDetails?.accounts[0]?.bankName, AccountNumber:monnifyDetails?.accounts[0]?.accountNumber} });
     
       const sanitizedUser = await sanitizeUser(user, ctx);
