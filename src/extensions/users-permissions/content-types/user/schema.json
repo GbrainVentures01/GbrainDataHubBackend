@@ -87,8 +87,26 @@
       "type": "string"
     },
     "BankName": {
-      
       "type": "string"
+    },
+    
+    "tv_and_cables_orders": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::tvcables-order.tvcables-order",
+      "mappedBy": "User"
+    },
+    "electricity_bills": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::electricity-order.electricity-order",
+      "mappedBy": "users_permissions_user"
+    },
+    "exam_pins_purchases": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::exam-pin-order.exam-pin-order",
+      "mappedBy": "user"
     }
   }
 }

@@ -1,0 +1,55 @@
+{
+  "kind": "collectionType",
+  "collectionName": "electricity-orders",
+  "info": {
+    "singularName": "electricity-order",
+    "pluralName": "electricity-orders",
+    "displayName": "Electricity Bills ",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "request_id": {
+      "type": "string",
+      "required": true
+    },
+    "serviceID": {
+      "type": "string",
+      "required": true
+    },
+    "billersCode": {
+      "type": "string",
+      "required": true
+    },
+    "amount": {
+      "type": "string",
+      "required": true
+    },
+    "phone": {
+      "type": "string",
+      "required": true
+    },
+    "variation_code": {
+      "type": "string",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "delivered",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "electricity_bills"
+    }
+  }
+}

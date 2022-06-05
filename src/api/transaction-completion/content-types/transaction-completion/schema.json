@@ -4,7 +4,7 @@
   "info": {
     "singularName": "transaction-completion",
     "pluralName": "transaction-completions",
-    "displayName": "Transaction-Completion",
+    "displayName": "Monnify Funding",
     "description": ""
   },
   "options": {

@@ -34,7 +34,7 @@ module.exports = createCoreController(
       ctx.send(data);
       // return this.transformResponse(sanitizedEntity);
     },
-// find all data orders
+    // find all data orders
     async find(ctx) {
       const { user } = ctx.state;
       const { query } = ctx;
@@ -61,7 +61,7 @@ module.exports = createCoreController(
       // return this.transformResponse(sanitizedEntity);
     },
 
-//find a data order
+    //find a data order
     async findOne(ctx) {
       const { id } = ctx.params;
       const { user } = ctx.state;
@@ -78,35 +78,32 @@ module.exports = createCoreController(
       const order = ctx.request.body;
       const { id } = ctx.state.user;
       const user = await strapi
-      .query('plugin::users-permissions.user')
-      .findOne({ where: { id: id}
-      });
-      
-        if (user.AccountBalance < Number(order.data.amount)) {
-        
-          return ctx.badRequest("Low Wallet Balance, please fund your wallet")
-        }
-        try {
-      const newOrder = { data: { ...order.data, user: id } };
-      const Order = await strapi
-        .service("api::data-order.data-order")
-        .create(newOrder);
-        ctx.response.status = 201
+        .query("plugin::users-permissions.user")
+        .findOne({ where: { id: id } });
 
-      await strapi.query('plugin::users-permissions.user').update({where:{id:user.id}, data:{
-          AccountBalance:user.AccountBalance - Number(order.data.amount)
-      }})
+      if (
+        user.AccountBalance <
+        Number(order.data.amount || user.AccountBalance === 0)
+      ) {
+        return ctx.badRequest("Low Wallet Balance, please fund your wallet");
+      }
+      try {
+        const newOrder = { data: { ...order.data, user: id } };
+        const Order = await strapi
+          .service("api::data-order.data-order")
+          .create(newOrder);
 
-      return ctx.send({data: {message:"data order successfully created", Order}})
-          
-        } catch (error) {
-           throw new ApplicationError(error.message)
-        }
+        await strapi.query("plugin::users-permissions.user").update({
+          where: { id: user.id },
+          data: {
+            AccountBalance: user.AccountBalance - Number(order.data.amount),
+          },
+        });
 
-     
-
-   
-      
+        return ctx.created("Successful");
+      } catch (error) {
+        throw new ApplicationError(error.message);
+      }
     },
   })
 );

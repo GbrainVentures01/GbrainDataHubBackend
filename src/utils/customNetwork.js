@@ -1,7 +1,6 @@
 const axios = require("axios");
-// import Cookies from 'js-cookie';
-const testUrl = "https://sandbox.monnify.com/";
-const liveUrl = "";
+const monnify = "https://sandbox.monnify.com/";
+const vtpassUrl = "https://sandbox.vtpass.com/api/";
 
 // const baseUrl = `${testUrl}/api`;
 
@@ -18,11 +17,14 @@ const liveUrl = "";
  *
  */
 
-module.exports = async ({ method,
+module.exports = async ({
+  method,
   path,
   requestBody,
+  target,
   params,
-  headers})=>{
+  headers,
+}) => {
   if (!method || !path) {
     throw new Error(
       "A required parameter is missing. Please provide method or path"
@@ -31,7 +33,7 @@ module.exports = async ({ method,
 
   const config = {
     method,
-    url: `${testUrl}${path}`,
+    url: `${target === "vtpass" ? vtpassUrl : monnify}${path}`,
     params: params,
     headers: headers,
     data: requestBody,
