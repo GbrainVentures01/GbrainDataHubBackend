@@ -25,7 +25,7 @@ module.exports = createCoreController(
 
     async create(ctx) {
       const { data } = ctx.request.body;
-      console.log(data);
+
       const { id } = ctx.state.user;
       const user = await strapi
         .query("plugin::users-permissions.user")
