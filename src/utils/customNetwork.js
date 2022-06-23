@@ -1,6 +1,7 @@
 const axios = require("axios");
 const monnify = "https://sandbox.monnify.com/";
 const vtpassUrl = "https://sandbox.vtpass.com/api/";
+const ogdamsUrl = "https://simhosting.ogdams.ng/api/v1/";
 
 // const baseUrl = `${testUrl}/api`;
 
@@ -30,10 +31,21 @@ module.exports = async ({
       "A required parameter is missing. Please provide method or path"
     );
   }
+  const returnBaseUrl = (target) => {
+    switch (target) {
+      case "vtpass":
+        return vtpassUrl;
+      case "ogdams":
+        return ogdamsUrl;
+
+      default:
+        monnify;
+    }
+  };
 
   const config = {
     method,
-    url: `${target === "vtpass" ? vtpassUrl : monnify}${path}`,
+    url: `${returnBaseUrl(target)}${path}`,
     params: params,
     headers: headers,
     data: requestBody,

@@ -39,6 +39,13 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
       "inversedBy": "airtime_orders"
+    },
+    "request_id": {
+      "type": "string",
+      "required": true
+    },
+    "serviceID": {
+      "type": "string"
     }
   }
 }

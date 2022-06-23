@@ -26,6 +26,21 @@
       "configurable": false,
       "required": true
     },
+    "first_name": {
+      "type": "string",
+      "required": true,
+      "configurable": false
+    },
+    "last_name": {
+      "type": "string",
+      "required": true,
+      "configurable": false
+    },
+    "phone_number": {
+      "type": "string",
+      "required": true,
+      "configurable": false
+    },
     "provider": {
       "type": "string",
       "configurable": false
@@ -63,12 +78,6 @@
       "inversedBy": "users",
       "configurable": false
     },
-    "data_orders": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::data-order.data-order",
-      "mappedBy": "user"
-    },
     "airtime_orders": {
       "type": "relation",
       "relation": "oneToMany",
@@ -76,36 +85,50 @@
       "mappedBy": "user"
     },
     "AccountNumber": {
-      "type": "biginteger",
+      "type": "string",
       "unique": true
     },
     "AccountBalance": {
       "default": 0,
       "type": "decimal"
     },
-    "AccountName": {
-      "type": "string"
-    },
     "BankName": {
       "type": "string"
-    },
-    
-    "tv_and_cables_orders": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::tvcables-order.tvcables-order",
-      "mappedBy": "User"
-    },
-    "electricity_bills": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::electricity-order.electricity-order",
-      "mappedBy": "users_permissions_user"
     },
     "exam_pins_purchases": {
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::exam-pin-order.exam-pin-order",
+      "mappedBy": "user"
+    },
+    "electricity_bills": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::electricity-order.electricity-order",
+      "mappedBy": "user"
+    },
+    "data_gifting_orders": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::data-gifting-order.data-gifting-order",
+      "mappedBy": "user"
+    },
+    "sme_data_orders": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::sme-data-order.sme-data-order",
+      "mappedBy": "user"
+    },
+    "tv_and_cables_orders": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::tvcables-order.tvcables-order",
+      "mappedBy": "user"
+    },
+    "sell_airtimes": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::sell-airtime.sell-airtime",
       "mappedBy": "user"
     }
   }

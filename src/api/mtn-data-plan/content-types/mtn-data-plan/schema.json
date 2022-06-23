@@ -22,6 +22,10 @@
     },
     "expiry_date": {
       "type": "string"
+    },
+    "plan_id": {
+      "type": "integer",
+      "required": true
     }
   }
 }

@@ -1,10 +1,10 @@
 {
   "kind": "collectionType",
-  "collectionName": "electricity-orders",
+  "collectionName": "sme_data_orders",
   "info": {
-    "singularName": "electricity-order",
-    "pluralName": "electricity-orders",
-    "displayName": "Electricity Bills ",
+    "singularName": "sme-data-order",
+    "pluralName": "sme-data-orders",
+    "displayName": "SME Data Order",
     "description": ""
   },
   "options": {
@@ -12,44 +12,40 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "request_id": {
+    "network": {
       "type": "string",
       "required": true
     },
-    "serviceID": {
-      "type": "string",
-      "required": true
-    },
-    "billersCode": {
+    "ref": {
       "type": "string",
       "required": true
     },
     "amount": {
+      "type": "integer",
+      "required": true
+    },
+    "plan": {
       "type": "string",
       "required": true
     },
-    "phone": {
-      "type": "string",
-      "required": true
-    },
-    "variation_code": {
+    "beneficiary": {
       "type": "string",
       "required": true
     },
     "status": {
       "type": "enumeration",
       "enum": [
-        "pending",
-        "delivered",
-        "failed"
-      ],
-      "default": "pending"
+        "Pending",
+        "Successful",
+        "Failed",
+        "Qeued"
+      ]
     },
     "user": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
-      "inversedBy": "electricity_bills"
+      "inversedBy": "sme_data_orders"
     }
   }
 }

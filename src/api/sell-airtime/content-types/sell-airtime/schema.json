@@ -1,10 +1,10 @@
 {
   "kind": "collectionType",
-  "collectionName": "electricity-orders",
+  "collectionName": "sell_airtimes",
   "info": {
-    "singularName": "electricity-order",
-    "pluralName": "electricity-orders",
-    "displayName": "Electricity Bills ",
+    "singularName": "sell-airtime",
+    "pluralName": "sell-airtimes",
+    "displayName": "Sell Airtime ",
     "description": ""
   },
   "options": {
@@ -12,44 +12,46 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "request_id": {
-      "type": "string",
-      "required": true
-    },
-    "serviceID": {
-      "type": "string",
-      "required": true
-    },
-    "billersCode": {
+    "network": {
       "type": "string",
       "required": true
     },
     "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "account_number": {
       "type": "string",
       "required": true
     },
-    "phone": {
+    "account_name": {
       "type": "string",
       "required": true
     },
-    "variation_code": {
+    "phone_number": {
       "type": "string",
       "required": true
     },
-    "status": {
-      "type": "enumeration",
-      "enum": [
-        "pending",
-        "delivered",
-        "failed"
-      ],
-      "default": "pending"
+    "request_id": {
+      "type": "string",
+      "required": true,
+      "unique": true
     },
     "user": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
-      "inversedBy": "electricity_bills"
+      "inversedBy": "sell_airtimes"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "Pending",
+        "Success",
+        "Failed"
+      ],
+      "default": "Pending",
+      "required": true
     }
   }
 }

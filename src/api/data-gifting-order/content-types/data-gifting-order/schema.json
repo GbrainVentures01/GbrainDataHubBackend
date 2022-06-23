@@ -1,10 +1,10 @@
 {
   "kind": "collectionType",
-  "collectionName": "data_orders",
+  "collectionName": "data_gifting_orders",
   "info": {
-    "singularName": "data-order",
-    "pluralName": "data-orders",
-    "displayName": "DataOrder",
+    "singularName": "data-gifting-order",
+    "pluralName": "data-gifting-orders",
+    "displayName": "Data Gifting Order",
     "description": ""
   },
   "options": {
@@ -12,7 +12,7 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "network": {
+    "beneficiary": {
       "type": "string",
       "required": true
     },
@@ -24,24 +24,24 @@
       "type": "string",
       "required": true
     },
-    "beneficiary": {
+    "network": {
       "type": "string",
       "required": true
     },
     "status": {
       "type": "enumeration",
       "enum": [
-        "pending",
-        "delivered",
-        "failed"
+        "Pending",
+        "Successful",
+        "Failed"
       ],
-      "default": "pending"
+      "default": "Pending"
     },
     "user": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
-      "inversedBy": "data_orders"
+      "inversedBy": "data_gifting_orders"
     }
   }
 }

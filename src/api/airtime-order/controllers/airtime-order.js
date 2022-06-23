@@ -1,10 +1,14 @@
 "use strict";
 
-const { ApplicationError } = require("@strapi/utils/lib/errors");
-const { HttpError } = require("koa");
+const { sanitizeEntity } = require("strapi-utils/lib");
+const converter = require("../../../utils/converter");
+const calculateTransactionHash = require("../../../utils/monnify/calculateTransactionHash");
+const customNetwork = require("../../../utils/customNetwork");
+const { base64encode } = require("nodejs-base64");
+const requeryTransaction = require("../../../utils/vtpass/requeryTransaction");
 
 /**
- *  airtime-order controller
+ *  data-order controller
  */
 
 const { createCoreController } = require("@strapi/strapi").factories;
@@ -13,76 +17,121 @@ module.exports = createCoreController(
   "api::airtime-order.airtime-order",
   ({ strapi }) => ({
     /**
-     * return create airtime order and associating with current logged in user
+     * return all orders as long as they belong to the current logged in user
      * @param {Object} ctx
      * @returns
      */
-      async create(ctx) {
-      const order = ctx.request.body;
+
+    async create(ctx) {
+      const { data } = ctx.request.body;
+
       const { id } = ctx.state.user;
       const user = await strapi
-      .query('plugin::users-permissions.user')
-      .findOne({ where: { id: id}
-      });
-    
-        if (user.AccountBalance < Number(order.data.amount)) {
-          return ctx.badRequest("Low Wallet Balance, Please fund wallet") 
-        }
-try {
-       const newOrder = { data: { ...order.data, user: id } };
-      const Order = await strapi
-        .service("api::airtime-order.airtime-order")
-        .create(newOrder);
-        ctx.response.status = 201
+        .query("plugin::users-permissions.user")
+        .findOne({ where: { id: id } });
 
-      await strapi.query('plugin::users-permissions.user').update({where:{id:user.id}, data:{
-          AccountBalance:user.AccountBalance - Number(order.data.amount)
-      }})
-
-      return ctx.send({data: {message:"airtime order successfully created", Order}})
-  
-} catch (error) {
-  throw new ApplicationError(error.message)
-}
- 
-      
-    },
-//find a airtime order
-  async findOne(ctx) {
-      const { id } = ctx.params;
-      const { user } = ctx.state;
-      const { query } = ctx;
-
-      const entity = await strapi
-        .service("api::airtime-order.airtime-order")
-        .findOne(id);
-      const sanitizedEntity = await this.sanitizeOutput(entity, ctx);
-      return this.transformResponse(sanitizedEntity);
-    },
-
-    //find all airtimes orders
-      async find(ctx) {
-      const { user } = ctx.state;
-      const { query } = ctx;
-
-      let entities;
-
-      if (ctx.query._q) {
-        entities = await strapi
-          .service("api::airtime-order.airtime-order")
-          .search({ ...ctx.query, user: user.id });
-      } else {
-        entities = await strapi
-          .service("api::airtime-order.airtime-order")
-          .find({ user: user.id });
+      if (
+        user.AccountBalance < Number(data.amount || user.AccountBalance === 0)
+      ) {
+        return ctx.badRequest("Low Wallet Balance, please fund your wallet");
       }
-      return entities.results.map((entity) =>
-        sanitizeEntity(entity, {
-          model: strapi.getModel("api::airtime-order.airtime-order"),
-        })
-      );
 
-      // return this.transformResponse(sanitizedEntity);
+      // update latest user's details (debit user's account)
+      await strapi.query("plugin::users-permissions.user").update({
+        where: { id: user.id },
+        data: {
+          AccountBalance: user.AccountBalance - Number(data.amount),
+        },
+      });
+      const newOrder = { data: { ...data, user: id } };
+      await strapi.service("api::airtime-order.airtime-order").create(newOrder);
+
+      const payload = {
+        request_id: data.request_id,
+        serviceID: data.serviceID,
+        phone: Number(data.beneficiary),
+        amount: Number(data.amount),
+      };
+
+      const buyAirtime = await customNetwork({
+        method: "POST",
+        path: "pay",
+        requestBody: payload,
+        target: "vtpass",
+        headers: {
+          Authorization: `Basic ${base64encode(
+            `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
+          )}`,
+        },
+      });
+
+      if (buyAirtime.data.code === "000") {
+        await strapi.query("api::airtime-order.airtime-order").update({
+          where: { request_id: data.request_id },
+          data: {
+            status: "Successful",
+          },
+        });
+        return ctx.created({ message: "Successful" });
+      } else if (buyAirtime.data.code === "099") {
+        const status = requeryTransaction({
+          requeryParams: data.request_id,
+        });
+        if (status.code === "000") {
+          await strapi.query("api::airtime-order.airtime-order").update({
+            where: { request_id: data.request_id },
+            data: {
+              status: "Successful",
+            },
+          });
+          return ctx.created({ message: "Successful" });
+        } else {
+          // get latest user's details snapshot from database
+          const user = await strapi
+            .query("plugin::users-permissions.user")
+            .findOne({
+              where: { id: id },
+            });
+          // update latest user's details (refund user exact amount debited before)
+
+          await strapi.query("plugin::users-permissions.user").update({
+            where: { id: user.id },
+            data: {
+              AccountBalance: user.AccountBalance + Number(data.amount),
+            },
+          });
+          await strapi.query("api::airtime-order.airtime-order").update({
+            where: { request_id: data.request_id },
+            data: {
+              status: "Failed",
+            },
+          });
+          return ctx.serviceUnavailable("Sorry something came up from network");
+        }
+      } else {
+        // get latest user's details snapshot from database
+        const user = await strapi
+          .query("plugin::users-permissions.user")
+          .findOne({
+            where: { id: id },
+          });
+        await strapi.query("plugin::users-permissions.user").update({
+          where: { id: user.id },
+          data: {
+            AccountBalance: user.AccountBalance + Number(data.amount),
+          },
+        });
+
+        await strapi.query("api::airtime-order.airtime-order").update({
+          where: { request_id: data.request_id },
+          data: {
+            status: "Failed",
+          },
+        });
+        console.log(buyAirtime);
+
+        return ctx.throw(400, buyAirtime?.data?.response_description);
+      }
     },
   })
 );
