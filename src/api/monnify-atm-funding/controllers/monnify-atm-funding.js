@@ -31,6 +31,7 @@ module.exports = createCoreController(
         amount: Number(amount),
         ref: `${randomString.generate(4) + amount}`,
       });
+      console.log(fundMonnifyWallet);
       const checkoutUrl = fundMonnifyWallet.checkoutUrl;
       const redirectUrl = fundMonnifyWallet.redirectUrl;
       return ctx.send({
