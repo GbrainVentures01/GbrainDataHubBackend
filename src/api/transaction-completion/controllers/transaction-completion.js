@@ -86,14 +86,12 @@ module.exports = createCoreController(
         const user = await strapi
           .query("plugin::users-permissions.user")
           .findOne({ where: { email: data.customer.email.toLowerCase() } });
-        const updateUserBalance = await strapi
-          .query("plugin::users-permissions.user")
-          .update({
-            where: { id: user.id },
-            data: {
-              AccountBalance: user.AccountBalance + Number(data?.amountPaid),
-            },
-          });
+        await strapi.query("plugin::users-permissions.user").update({
+          where: { id: user.id },
+          data: {
+            AccountBalance: user.AccountBalance + Number(data?.amountPaid),
+          },
+        });
 
         return ctx.send({ data: { message: "successful " } });
       } catch (error) {
