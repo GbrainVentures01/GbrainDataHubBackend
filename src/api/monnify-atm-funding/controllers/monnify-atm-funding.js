@@ -2,6 +2,7 @@
 const randomString = require("randomstring");
 const fundWallet = require("../../../utils/monnify/fundWallet");
 const getToken = require("../../../utils/monnify/getToken");
+const { ApplicationError } = require("@strapi/utils/lib/errors");
 
 /**
  *  monnify-atm-funding controller
@@ -15,6 +16,7 @@ module.exports = createCoreController(
   ({ strapi }) => ({
     async create(ctx) {
       myAccessToken = await getToken();
+      console.log(myAccessToken);
       const amount = ctx.request.body.data.amount;
       const { id } = ctx.state.user;
       const user = await strapi
@@ -32,6 +34,10 @@ module.exports = createCoreController(
         ref: `${randomString.generate(4) + amount}`,
       });
       console.log(fundMonnifyWallet);
+      if (fundMonnifyWallet.data.error) {
+        ctx.throw(500, "cannot fund wallet now, please try again later");
+        throw new ApplicationError(fundMonnifyWallet.data.error);
+      }
       const checkoutUrl = fundMonnifyWallet.checkoutUrl;
       const redirectUrl = fundMonnifyWallet.redirectUrl;
       return ctx.send({
