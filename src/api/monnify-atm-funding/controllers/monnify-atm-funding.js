@@ -34,16 +34,15 @@ module.exports = createCoreController(
         ref: `${randomString.generate(4) + amount}`,
       });
       console.log(fundMonnifyWallet);
-      if (fundMonnifyWallet.data.error) {
-        ctx.throw(500, "cannot fund wallet now, please try again later");
-        throw new ApplicationError(fundMonnifyWallet.data.error);
+      if (fundMonnifyWallet) {
+        const checkoutUrl = fundMonnifyWallet.checkoutUrl;
+        const redirectUrl = fundMonnifyWallet.redirectUrl;
+        return ctx.send({
+          checkoutUrl,
+          redirectUrl,
+        });
       }
-      const checkoutUrl = fundMonnifyWallet.checkoutUrl;
-      const redirectUrl = fundMonnifyWallet.redirectUrl;
-      return ctx.send({
-        checkoutUrl,
-        redirectUrl,
-      });
+      return ctx.throw(500, "cannot fund wallet now, please try again later");
     },
   })
 );
