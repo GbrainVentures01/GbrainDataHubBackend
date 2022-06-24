@@ -8,7 +8,7 @@ module.exports = async () => {
       path: "api/v1/auth/login",
       headers: {
         Authorization: `Basic ${base64encode(
-          `MK_TEST_Q061E5LZVB:${process.env.MONNIFY_MERCHANT_CLIENT_SECRET}`
+          `${process.env.MONNIFY_API_KEY}:${process.env.MONNIFY_MERCHANT_CLIENT_SECRET}`
         )}`,
       },
     });

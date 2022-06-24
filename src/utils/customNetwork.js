@@ -39,7 +39,7 @@ module.exports = async ({
         return ogdamsUrl;
 
       default:
-        monnify;
+        return monnify;
     }
   };
 
