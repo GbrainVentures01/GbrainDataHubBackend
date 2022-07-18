@@ -22,9 +22,12 @@ module.exports = createCoreController(
 
     async handleCompletion(ctx) {
       const requestBody = ctx.request.body;
-      const data = ctx.request.body.eventData;
       const headers = ctx.request.headers;
+      console.log(headers);
+      console.log(requestBody);
+      const data = ctx.request.body.eventData;
       const hash = await calculateTransactionHash(requestBody);
+      console.log(hash);
 
       if (data.paymentMethod === "ACCOUNT_TRANSFER") {
         const amountPaid = data.paymentSourceInformation[0].amountPaid;

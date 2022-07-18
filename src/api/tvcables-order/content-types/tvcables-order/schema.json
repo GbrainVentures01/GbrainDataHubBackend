@@ -36,6 +36,10 @@
       "type": "string",
       "required": true
     },
+     "TRX_Name": {
+      "type": "string",
+      "default": "Cable Tv"
+    },
     "status": {
       "type": "enumeration",
       "enum": [

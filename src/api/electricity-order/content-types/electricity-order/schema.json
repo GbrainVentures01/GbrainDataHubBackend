@@ -50,6 +50,10 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
       "inversedBy": "electricity_bills"
+    },
+    "TRX_Name": {
+      "type": "string",
+      "default": "Electricity"
     }
   }
 }

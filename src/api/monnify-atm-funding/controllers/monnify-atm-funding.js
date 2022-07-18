@@ -16,7 +16,6 @@ module.exports = createCoreController(
   ({ strapi }) => ({
     async create(ctx) {
       myAccessToken = await getToken();
-      console.log(myAccessToken);
       const amount = ctx.request.body.data.amount;
       const { id } = ctx.state.user;
       const user = await strapi
@@ -33,7 +32,7 @@ module.exports = createCoreController(
         amount: Number(amount),
         ref: `${randomString.generate(4) + amount}`,
       });
-      console.log(fundMonnifyWallet);
+
       if (fundMonnifyWallet) {
         const checkoutUrl = fundMonnifyWallet.checkoutUrl;
         const redirectUrl = fundMonnifyWallet.redirectUrl;

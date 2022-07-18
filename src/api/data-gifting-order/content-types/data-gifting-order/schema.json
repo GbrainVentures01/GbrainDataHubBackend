@@ -42,6 +42,14 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
       "inversedBy": "data_gifting_orders"
+    },
+    "TRX_Name": {
+      "type": "string",
+      "default": "Data (Gifting)"
+    },
+    "request_id": {
+      "type": "string",
+      "required": true
     }
   }
 }

@@ -224,7 +224,6 @@ module.exports = {
 
   async forgotPassword(ctx) {
     let { email } = ctx.request.body;
-    console.log(email);
 
     // Check if the provided email is valid or not.
     const isEmail = emailRegExp.test(email);
@@ -295,7 +294,7 @@ module.exports = {
 
     try {
       // Send an email to the user.
-      await strapi
+      const EmailSent = await strapi
         .plugin("email")
         .service("email")
         .send({
@@ -309,8 +308,13 @@ module.exports = {
           text: settings.message,
           html: settings.message,
         });
+      console.log(EmailSent);
     } catch (err) {
-      throw new ApplicationError(err.message);
+      if (err.statusCode === 400) {
+        throw new ApplicationError(err.message);
+      } else {
+        throw new Error(`Couldn't send test email: ${err.message}.`);
+      }
     }
 
     // Update the user.

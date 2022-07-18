@@ -4,7 +4,7 @@
   "info": {
     "singularName": "sell-airtime",
     "pluralName": "sell-airtimes",
-    "displayName": "Sell Airtime ",
+    "displayName": "Sell Airtime Order",
     "description": ""
   },
   "options": {
@@ -42,6 +42,10 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
       "inversedBy": "sell_airtimes"
+    },
+    "TRX_Name": {
+      "type": "string",
+      "default": "Sell Airtime"
     },
     "status": {
       "type": "enumeration",

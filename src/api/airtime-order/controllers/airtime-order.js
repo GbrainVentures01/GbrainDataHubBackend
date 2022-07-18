@@ -49,9 +49,12 @@ module.exports = createCoreController(
       const payload = {
         request_id: data.request_id,
         serviceID: data.serviceID,
-        phone: Number(data.beneficiary),
+        phone: data.beneficiary,
         amount: Number(data.amount),
       };
+
+      console.log("payload");
+      console.log(payload);
 
       const buyAirtime = await customNetwork({
         method: "POST",

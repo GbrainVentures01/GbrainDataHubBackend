@@ -32,6 +32,10 @@
       "type": "string",
       "required": true
     },
+     "TRX_Name": {
+      "type": "string",
+      "default": "Data (SME)"
+    },
     "status": {
       "type": "enumeration",
       "enum": [

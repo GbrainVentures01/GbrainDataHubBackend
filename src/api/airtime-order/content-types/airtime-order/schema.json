@@ -46,6 +46,10 @@
     },
     "serviceID": {
       "type": "string"
+    },
+    "TRX_Name": {
+      "type": "string",
+      "default": "Airtime"
     }
   }
 }

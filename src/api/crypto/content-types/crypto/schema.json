@@ -1,0 +1,23 @@
+{
+  "kind": "collectionType",
+  "collectionName": "cryptos",
+  "info": {
+    "singularName": "crypto",
+    "pluralName": "cryptos",
+    "displayName": "Crypto"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "current_market_price": {
+      "type": "decimal",
+      "required": true
+    }
+  }
+}

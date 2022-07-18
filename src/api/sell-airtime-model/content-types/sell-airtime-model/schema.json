@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "sell_airtime_models",
+  "info": {
+    "singularName": "sell-airtime-model",
+    "pluralName": "sell-airtime-models",
+    "displayName": "Sell Airtime Model",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "network": {
+      "type": "string",
+      "required": true
+    },
+    "charges_in_percentage": {
+      "type": "decimal",
+      "default": 0,
+      "required": true
+    },
+    "phone_number": {
+      "type": "string",
+      "required": true
+    },
+    "image": {
+      "allowedTypes": [
+        "images"
+      ],
+      "type": "media",
+      "multiple": false
+    }
+  }
+}
