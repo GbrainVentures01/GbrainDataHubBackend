@@ -135,6 +135,14 @@ module.exports = createCoreController(
             },
           });
           return ctx.send({ data: { message: `${res.data.data.msg}` } });
+        } else if (res.data.code === 201) {
+          await strapi.query("api::sme-data-order.sme-data-order").update({
+            where: { ref: ref },
+            data: {
+              status: "Processing ",
+            },
+          });
+          return ctx.send({ data: { message: `${res.data.data.msg}` } });
         } else if (res.data.code === 424) {
           await strapi.query("api::sme-data-order.sme-data-order").update({
             where: { ref: ref },

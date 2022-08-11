@@ -100,7 +100,7 @@ module.exports = {
       );
 
       if (!validPassword) {
-        return ctx.unauthorized("Invalid identifier or password");
+        ctx.unauthorized("Invalid identifier or password");
         throw new ValidationError("Invalid identifier or password");
       } else {
         ctx.send({
@@ -355,9 +355,9 @@ module.exports = {
     // Throw an error if the password selected by the user
     // contains more than three times the symbol '$'.
     if (getService("user").isHashed(params.password)) {
-      ctx.badRequest(
-        " 'Your password cannot contain more than three times the symbol `$`'"
-      );
+      //  ctx.badRequest(
+      //   " 'Your password cannot contain more than three times the symbol `$`'"
+      // );
       throw new ValidationError(
         "Your password cannot contain more than three times the symbol `$`"
       );
@@ -377,7 +377,7 @@ module.exports = {
     if (isEmail) {
       params.email = params.email.toLowerCase();
     } else {
-      ctx.badRequest("Please provide a valid email address");
+      // ctx.badRequest("Please provide a valid email address");
       throw new ValidationError("Please provide a valid email address");
     }
 
@@ -389,14 +389,12 @@ module.exports = {
     });
 
     if (user && user.provider === params.provider) {
-      ctx.badRequest("Email is already taken");
-
+      // ctx.badRequest("Email is already taken");
       throw new ApplicationError("Email is already taken");
     }
 
     if (user && user.provider !== params.provider && settings.unique_email) {
-      ctx.badRequest("Email is already taken");
-
+      // ctx.badRequest("Email is already taken");
       throw new ApplicationError("Email is already taken");
     }
 
@@ -440,11 +438,9 @@ module.exports = {
     } catch (err) {
       console.log(err);
       if (_.includes(err.message, "username")) {
-        ctx.notAcceptable("Username already taken");
         throw new ApplicationError("Username already taken");
       } else {
-        ctx.notAcceptable("Email is already taken");
-        throw new ApplicationError("Email already taken");
+        throw new ApplicationError("Sorry, something went wrong, try again.");
       }
     }
   },
