@@ -14,7 +14,7 @@ module.exports = async ({ token, userData, amount, ref }) => {
         paymentDescription: "Trial transaction",
         currencyCode: "NGN",
         contractCode: `${process.env.MONNIFY_CONTRACT_CODE}`,
-        redirectUrl: "https://gbrainventures.netlify.app/confirm-payment",
+        redirectUrl: "https://www.gbrainventures.com/confirm-payment",
         paymentMethods: ["CARD", "ACCOUNT_TRANSFER"],
       },
     });
