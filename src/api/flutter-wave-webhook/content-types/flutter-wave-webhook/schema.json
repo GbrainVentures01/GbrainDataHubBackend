@@ -1,0 +1,53 @@
+{
+  "kind": "collectionType",
+  "collectionName": "flutter_wave_webhooks",
+  "info": {
+    "singularName": "flutter-wave-webhook",
+    "pluralName": "flutter-wave-webhooks",
+    "displayName": "Flutter Wave Webhook",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "trx_id": {
+      "type": "decimal",
+      "required": true
+    },
+    "tx_ref": {
+      "type": "string",
+      "required": true
+    },
+    "flw_ref": {
+      "type": "string",
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "currency": {
+      "type": "string"
+    },
+    "charged_amount": {
+      "type": "decimal"
+    },
+    "status": {
+      "type": "string",
+      "required": true
+    },
+    "app_fee": {
+      "type": "decimal"
+    },
+    "date_time": {
+      "required": true,
+      "type": "datetime"
+    },
+    "payer_email": {
+      "type": "email",
+      "required": true
+    }
+  }
+}

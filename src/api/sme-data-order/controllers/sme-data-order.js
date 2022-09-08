@@ -164,7 +164,8 @@ module.exports = createCoreController(
           ctx.throw(500, "Something went wrong");
         }
       } catch (error) {
-        throw new ApplicationError(error.message);
+        console.log(error);
+        throw new ApplicationError("something went wrong, try again");
       }
     },
   })

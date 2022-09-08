@@ -110,7 +110,7 @@ module.exports = {
           user: await sanitizeUser(user, ctx),
         });
         // get monnify access token
-        myAccessToken = getToken();
+        // myAccessToken = getToken();
       }
     } else {
       if (!_.get(await store.get({ key: "grant" }), [provider, "enabled"])) {
@@ -294,20 +294,18 @@ module.exports = {
 
     try {
       // Send an email to the user.
-      const EmailSent = await strapi
-        .plugin("email")
-        .service("email")
-        .send({
-          to: user.email,
-          from:
-            settings.from.email || settings.from.name
-              ? `${settings.from.name} <${settings.from.email}>`
-              : undefined,
-          replyTo: settings.response_email,
-          subject: settings.object,
-          text: settings.message,
-          html: settings.message,
-        });
+      const EmailSent = await strapi.plugin("email").service("email").send({
+        to: user.email,
+        // from:
+        //   settings.from.email || settings.from.name
+        //     ? `${settings.from.name} <${settings.from.email}>`
+        //     : undefined,
+        replyTo: settings.response_email,
+        subject: settings.object,
+        text: settings.message,
+        html: settings.message,
+      });
+      console.log("sending email to client ");
       console.log(EmailSent);
     } catch (err) {
       if (err.statusCode === 400) {
@@ -322,7 +320,9 @@ module.exports = {
       .query("plugin::users-permissions.user")
       .update({ where: { id: user.id }, data: { resetPasswordToken } });
 
-    ctx.send({ ok: true });
+    ctx.send({
+      message: "password reset link has been sent to the provided email.",
+    });
   },
 
   async register(ctx) {
@@ -339,7 +339,7 @@ module.exports = {
       throw new ApplicationError("Register action is currently disabled");
     }
     // get monnify access token
-    myAccessToken = await getToken();
+    // myAccessToken = await getToken();
 
     const params = {
       ..._.omit(ctx.request.body, [
@@ -403,16 +403,14 @@ module.exports = {
         params.confirmed = true;
       }
 
-      const monnifyDetails = await createReservedAccount({
-        token: myAccessToken,
-        userData: params,
-      });
+      // const monnifyDetails = await createReservedAccount({
+      //   token: myAccessToken,
+      //   userData: params,
+      // });
 
       const user = await strapi.query("plugin::users-permissions.user").create({
         data: {
           ...params,
-          BankName: monnifyDetails?.accounts[0]?.bankName,
-          AccountNumber: `${monnifyDetails?.accounts[0]?.accountNumber}`,
         },
       });
 

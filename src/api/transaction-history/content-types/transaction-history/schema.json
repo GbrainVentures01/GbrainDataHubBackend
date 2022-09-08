@@ -1,68 +1,18 @@
 {
   "kind": "collectionType",
-  "collectionName": "transaction-histories",
+  "collectionName": "transaction_histories",
   "info": {
     "singularName": "transaction-history",
     "pluralName": "transaction-histories",
-    "displayName": "Transaction History",
-    "description": ""
+    "displayName": "transactionHistory"
   },
   "options": {
     "draftAndPublish": true
   },
   "pluginOptions": {},
   "attributes": {
-    "TransactionReference": {
-      "type": "string",
-      "required": true
-    },
-    "PaymentReference": {
-      "type": "string",
-      "required": true
-    },
-    "AmountPaid": {
-      "type": "string",
-      "required": true
-    },
-    "SettlementAmount": {
-      "type": "string",
-      "required": true
-    },
-    "PaidOn": {
-      "type": "string",
-      "required": true
-    },
-    "PaymentStatus": {
-      "type": "string",
-      "required": true
-    },
-    "PaymentDescription": {
-      "type": "string",
-      "required": true
-    },
-    "PaymentMethod": {
-      "type": "string",
-      "required": true
-    },
-    "SourceAccountNumber": {
-      "type": "string",
-      "required": false
-    },
-    "SourceAccountName": {
-      "type": "string",
-      "required": false
-    },
-    "CustomerName": {
-      "type": "string",
-      "required": true
-    },
-    "CustomerEmail": {
-      "type": "string",
-      "required": true
-    },
-    "cardLast4Num": {
-      "type": "string",
-      "required": false
+    "type": {
+      "type": "string"
     }
   }
 }

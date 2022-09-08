@@ -1,14 +1,16 @@
 module.exports = ({ env }) => ({
-  // ...
   email: {
     config: {
-      enabled: true,
-      provider: "sendmail",
+      provider: "strapi-provider-email-mailjet",
+      providerOptions: {
+        publicApiKey: env("MAILJET_PUBLIC_KEY"),
+        secretApiKey: env("MAILJET_SECRET_KEY"),
+      },
       settings: {
-        defaultFrom: "admin@strapimail.com",
-        defaultReplyTo: "admin@strapimail.com",
+        defaultFrom: "gbrainventures@gmail.com",
+        defaultFromName: "Gbrain Corporate Ventures",
       },
     },
+    // ...
   },
-  // ...
 });

@@ -1,26 +1,30 @@
 const customNetwork = require("../customNetwork");
 
-module.exports = async ({ token, userData, amount, ref }) => {
+module.exports = async ({ userData, amount, ref }) => {
   try {
+    console.log("funding");
     const { data } = await customNetwork({
       method: "POST",
-      path: "api/v1/merchant/transactions/init-transaction",
-      headers: { Authorization: `Bearer ${token}` },
+      path: "v3/payments",
+      headers: {
+        Authorization: `Bearer ${process.env.FLUTTER_WAVE_TEST_SECRET_KEY}`,
+      },
       requestBody: {
         amount: amount,
-        customerName: userData.username,
-        customerEmail: userData.email,
-        paymentReference: ref,
-        paymentDescription: "Trial transaction",
-        currencyCode: "NGN",
-        contractCode: `${process.env.MONNIFY_CONTRACT_CODE}`,
-        redirectUrl: "https://www.gbrainventures.com/confirm-payment",
-        paymentMethods: ["CARD", "ACCOUNT_TRANSFER"],
+        customer: {
+          email: userData.email,
+          phonenumber: userData.phone_number,
+        },
+        tx_ref: ref,
+        currency: "NGN",
+        redirect_url: "https://www.gbrainventures.com/confirm-payment",
       },
     });
 
-    return data?.responseBody;
+    // console.log(data);
+    return data;
   } catch (error) {
+    console.log(error);
     return error;
   }
 };

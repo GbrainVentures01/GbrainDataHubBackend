@@ -16,6 +16,6 @@ module.exports = async ({ requeryParams }) => {
     });
     return status;
   } catch (error) {
-    cosnsole.log(error.message);
+    console.log(error);
   }
 };

@@ -130,6 +130,12 @@
       "relation": "oneToMany",
       "target": "api::sell-airtime.sell-airtime",
       "mappedBy": "user"
+    },
+    "account_fundings": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::account-funding.account-funding",
+      "mappedBy": "user"
     }
   }
 }

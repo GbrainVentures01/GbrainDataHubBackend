@@ -6,6 +6,7 @@ const calculateTransactionHash = require("../../../utils/monnify/calculateTransa
 const customNetwork = require("../../../utils/customNetwork");
 const { base64encode } = require("nodejs-base64");
 const requeryTransaction = require("../../../utils/vtpass/requeryTransaction");
+const { ApplicationError } = require("@strapi/utils/lib/errors");
 
 /**
  *  data-order controller
@@ -43,51 +44,94 @@ module.exports = createCoreController(
           AccountBalance: user.AccountBalance - Number(data.amount),
         },
       });
-      const newOrder = { data: { ...data, user: id } };
-      await strapi.service("api::airtime-order.airtime-order").create(newOrder);
+      try {
+        const newOrder = { data: { ...data, user: id } };
+        await strapi
+          .service("api::airtime-order.airtime-order")
+          .create(newOrder);
 
-      const payload = {
-        request_id: data.request_id,
-        serviceID: data.serviceID,
-        phone: data.beneficiary,
-        amount: Number(data.amount),
-      };
+        const payload = {
+          request_id: data.request_id,
+          serviceID: data.serviceID,
+          phone: data.beneficiary,
+          amount: Number(data.amount),
+        };
 
-      console.log("payload");
-      console.log(payload);
-
-      const buyAirtime = await customNetwork({
-        method: "POST",
-        path: "pay",
-        requestBody: payload,
-        target: "vtpass",
-        headers: {
-          Authorization: `Basic ${base64encode(
-            `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
-          )}`,
-        },
-      });
-
-      if (buyAirtime.data.code === "000") {
-        await strapi.query("api::airtime-order.airtime-order").update({
-          where: { request_id: data.request_id },
-          data: {
-            status: "Successful",
+        const buyAirtime = await customNetwork({
+          method: "POST",
+          path: "pay",
+          requestBody: payload,
+          target: "vtpass",
+          headers: {
+            Authorization: `Basic ${base64encode(
+              `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
+            )}`,
           },
         });
-        return ctx.created({ message: "Successful" });
-      } else if (buyAirtime.data.code === "099") {
-        const status = requeryTransaction({
-          requeryParams: data.request_id,
-        });
-        if (status.code === "000") {
+        console.log(buyAirtime.data.content.transactions);
+        if (
+          buyAirtime.data.code === "000" &&
+          buyAirtime.data.content.transactions === "delivered"
+        ) {
           await strapi.query("api::airtime-order.airtime-order").update({
             where: { request_id: data.request_id },
             data: {
-              status: "Successful",
+              status: "delivered",
             },
           });
           return ctx.created({ message: "Successful" });
+        } else if (
+          buyAirtime.data.code === "000" &&
+          buyAirtime.data.content.transactions !== "delivered"
+        ) {
+          await strapi.query("api::airtime-order.airtime-order").update({
+            where: { request_id: data.request_id },
+            data: {
+              status: "processing",
+            },
+          });
+          return ctx.created({ message: "Successful" });
+          // const status = requeryTransaction({
+          //   requeryParams: data.request_id,
+          // });
+        } else if (buyAirtime.data.code === "099") {
+          const status = requeryTransaction({
+            requeryParams: data.request_id,
+          });
+          console.log(status);
+          if (status.code === "000") {
+            await strapi.query("api::airtime-order.airtime-order").update({
+              where: { request_id: data.request_id },
+              data: {
+                status: "Successful",
+              },
+            });
+            return ctx.created({ message: "Successful" });
+          } else {
+            // get latest user's details snapshot from database
+            const user = await strapi
+              .query("plugin::users-permissions.user")
+              .findOne({
+                where: { id: id },
+              });
+            // update latest user's details (refund user exact amount debited before)
+
+            await strapi.query("plugin::users-permissions.user").update({
+              where: { id: user.id },
+              data: {
+                AccountBalance: user.AccountBalance + Number(data.amount),
+              },
+            });
+            await strapi.query("api::airtime-order.airtime-order").update({
+              where: { request_id: data.request_id },
+              data: {
+                status: "Failed",
+              },
+            });
+            return ctx.serviceUnavailable(
+              "Sorry something came up from network"
+            );
+          }
         } else {
           // get latest user's details snapshot from database
           const user = await strapi
@@ -95,45 +139,32 @@ module.exports = createCoreController(
             .findOne({
               where: { id: id },
             });
-          // update latest user's details (refund user exact amount debited before)
-
           await strapi.query("plugin::users-permissions.user").update({
             where: { id: user.id },
             data: {
               AccountBalance: user.AccountBalance + Number(data.amount),
             },
           });
+
           await strapi.query("api::airtime-order.airtime-order").update({
             where: { request_id: data.request_id },
             data: {
               status: "Failed",
             },
           });
-          return ctx.serviceUnavailable("Sorry something came up from network");
-        }
-      } else {
-        // get latest user's details snapshot from database
-        const user = await strapi
-          .query("plugin::users-permissions.user")
-          .findOne({
-            where: { id: id },
-          });
-        await strapi.query("plugin::users-permissions.user").update({
-          where: { id: user.id },
-          data: {
-            AccountBalance: user.AccountBalance + Number(data.amount),
-          },
-        });
+          console.log(buyAirtime);
 
+          return ctx.throw(400, buyAirtime?.data?.response_description);
+        }
+      } catch (error) {
         await strapi.query("api::airtime-order.airtime-order").update({
           where: { request_id: data.request_id },
           data: {
             status: "Failed",
           },
         });
-        console.log(buyAirtime);
-
-        return ctx.throw(400, buyAirtime?.data?.response_description);
+        console.log(error);
+        throw new ApplicationError("something went wrong, try again");
       }
     },
   })

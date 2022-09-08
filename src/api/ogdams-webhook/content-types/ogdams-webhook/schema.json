@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "ogdams_webhooks",
+  "info": {
+    "singularName": "ogdams-webhook",
+    "pluralName": "ogdams-webhooks",
+    "displayName": "Ogdams webhook"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "msg": {
+      "type": "text",
+      "required": true
+    },
+    "ref": {
+      "type": "string",
+      "required": true
+    },
+    "network_id": {
+      "type": "integer",
+      "required": true
+    }
+  }
+}

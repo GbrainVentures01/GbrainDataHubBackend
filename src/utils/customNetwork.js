@@ -1,5 +1,5 @@
 const axios = require("axios");
-const monnify = "https://sandbox.monnify.com/";
+const fwave = "https://api.flutterwave.com/";
 const vtpassUrl = "https://sandbox.vtpass.com/api/";
 const ogdamsUrl = "https://simhosting.ogdams.ng/api/v1/";
 
@@ -39,7 +39,7 @@ module.exports = async ({
         return ogdamsUrl;
 
       default:
-        return monnify;
+        return fwave;
     }
   };
 
