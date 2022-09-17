@@ -32,18 +32,13 @@
       "type": "string",
       "required": true
     },
-     "TRX_Name": {
+    "TRX_Name": {
       "type": "string",
       "default": "Data (SME)"
     },
     "status": {
       "type": "enumeration",
-      "enum": [
-        "Pending",
-        "Successful",
-        "Failed",
-        "Qeued"
-      ]
+      "enum": ["pending", "delivered", "failed", "qeued"]
     },
     "user": {
       "type": "relation",

@@ -131,7 +131,7 @@ module.exports = createCoreController(
           await strapi.query("api::sme-data-order.sme-data-order").update({
             where: { ref: ref },
             data: {
-              status: "Processing",
+              status: "processing",
             },
           });
           return ctx.send({ data: { message: `${res.data.data.msg}` } });
@@ -139,7 +139,7 @@ module.exports = createCoreController(
           await strapi.query("api::sme-data-order.sme-data-order").update({
             where: { ref: ref },
             data: {
-              status: "Processing ",
+              status: "processing ",
             },
           });
           return ctx.send({ data: { message: `${res.data.data.msg}` } });
@@ -147,7 +147,7 @@ module.exports = createCoreController(
           await strapi.query("api::sme-data-order.sme-data-order").update({
             where: { ref: ref },
             data: {
-              status: "Failed",
+              status: "failed",
             },
           });
           const user = await strapi

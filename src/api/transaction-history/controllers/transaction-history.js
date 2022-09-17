@@ -36,6 +36,7 @@ module.exports = createCoreController(
               data_gifting_orders: true,
               tv_and_cables_orders: true,
               sell_airtimes: true,
+              account_fundings: true,
             },
           });
         const history = {
@@ -47,6 +48,7 @@ module.exports = createCoreController(
             ...user.electricity_bills,
             ...user.tv_and_cables_orders,
             ...user.sell_airtimes,
+            ...user.account_fundings,
           ],
         };
         //  if (history.length === 0){
