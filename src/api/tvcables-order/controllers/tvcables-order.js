@@ -89,6 +89,7 @@ module.exports = createCoreController(
               status: "Successful",
             },
           });
+          console.log(makeCablePurchase.data.code);
           return ctx.created({ message: "Successful" });
         } else if (makeCablePurchase.data.code === "099") {
           const status = requeryTransaction({
