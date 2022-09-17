@@ -29,6 +29,7 @@ module.exports = createCoreController(
           tx_ref: ref,
           amount: Number(amount),
           customer: user.email,
+          TRX_Name: "Wallet Funding",
         },
       };
       try {
