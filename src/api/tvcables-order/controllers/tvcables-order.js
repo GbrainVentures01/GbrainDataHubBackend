@@ -41,69 +41,89 @@ module.exports = createCoreController(
       ) {
         return ctx.badRequest("Low Wallet Balance, please fund your wallet");
       }
-
-      const verifiedDetails = await customNetwork({
-        method: "POST",
-        target: "vtpass",
-        path: "merchant-verify",
-        requestBody: verifyParams,
-        headers: {
-          Authorization: `Basic ${base64encode(
-            `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
-          )}`,
-        },
-      });
-      console.log(verifiedDetails);
-
-      if (!verifiedDetails.data.content.error) {
-        const newOrder = { data: { ...data, user: id } };
-        const Order = await strapi
-          .service("api::tvcables-order.tvcables-order")
-          .create(newOrder);
-        const user = await strapi
-          .query("plugin::users-permissions.user")
-          .findOne({ where: { id: id } });
-
-        await strapi.query("plugin::users-permissions.user").update({
-          where: { id: user.id },
-          data: {
-            AccountBalance: user.AccountBalance - Number(data.amount),
-          },
-        });
-        const makeCablePurchase = await customNetwork({
+      try {
+        const verifiedDetails = await customNetwork({
           method: "POST",
-          path: "pay",
-          requestBody: data,
           target: "vtpass",
+          path: "merchant-verify",
+          requestBody: verifyParams,
           headers: {
             Authorization: `Basic ${base64encode(
               `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
             )}`,
           },
         });
+        console.log(verifiedDetails);
 
-        if (makeCablePurchase.data.code === "000") {
-          await strapi.query("api::tvcables-order.tvcables-order").update({
-            where: { request_id: data.request_id },
+        if (!verifiedDetails.data.content.error) {
+          const newOrder = { data: { ...data, user: id } };
+          const Order = await strapi
+            .service("api::tvcables-order.tvcables-order")
+            .create(newOrder);
+          const user = await strapi
+            .query("plugin::users-permissions.user")
+            .findOne({ where: { id: id } });
+
+          await strapi.query("plugin::users-permissions.user").update({
+            where: { id: user.id },
             data: {
-              status: "Successful",
+              AccountBalance: user.AccountBalance - Number(data.amount),
             },
           });
-          console.log(makeCablePurchase.data.code);
-          return ctx.created({ message: "Successful" });
-        } else if (makeCablePurchase.data.code === "099") {
-          const status = requeryTransaction({
-            requeryParams: data.request_id,
+          const makeCablePurchase = await customNetwork({
+            method: "POST",
+            path: "pay",
+            requestBody: data,
+            target: "vtpass",
+            headers: {
+              Authorization: `Basic ${base64encode(
+                `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
+              )}`,
+            },
           });
-          if (status.code === "000") {
+
+          if (makeCablePurchase.data.code === "000") {
             await strapi.query("api::tvcables-order.tvcables-order").update({
               where: { request_id: data.request_id },
               data: {
                 status: "Successful",
               },
             });
+
             return ctx.created({ message: "Successful" });
+          } else if (makeCablePurchase.data.code === "099") {
+            const status = requeryTransaction({
+              requeryParams: data.request_id,
+            });
+            if (status.code === "000") {
+              await strapi.query("api::tvcables-order.tvcables-order").update({
+                where: { request_id: data.request_id },
+                data: {
+                  status: "Successful",
+                },
+              });
+              return ctx.created({ message: "Successful" });
+            } else {
+              const user = await strapi
+                .query("plugin::users-permissions.user")
+                .findOne({ where: { id: id } });
+
+              await strapi.query("plugin::users-permissions.user").update({
+                where: { id: user.id },
+                data: {
+                  AccountBalance: user.AccountBalance + Number(data.amount),
+                },
+              });
+              await strapi.query("api::tvcables-order.tvcables-order").update({
+                where: { request_id: data.request_id },
+                data: {
+                  status: "Failed",
+                },
+              });
+              return ctx.serviceUnavailable("Sorry something came up");
+            }
           } else {
+            console.log(makeCablePurchase.data.code);
             const user = await strapi
               .query("plugin::users-permissions.user")
               .findOne({ where: { id: id } });
@@ -120,29 +140,16 @@ module.exports = createCoreController(
                 status: "Failed",
               },
             });
-            return ctx.serviceUnavailable("Sorry something came up");
+            return ctx.throw(
+              500,
+              makeCablePurchase?.data?.response_description
+            );
           }
         } else {
-          const user = await strapi
-            .query("plugin::users-permissions.user")
-            .findOne({ where: { id: id } });
-
-          await strapi.query("plugin::users-permissions.user").update({
-            where: { id: user.id },
-            data: {
-              AccountBalance: user.AccountBalance + Number(data.amount),
-            },
-          });
-          await strapi.query("api::tvcables-order.tvcables-order").update({
-            where: { request_id: data.request_id },
-            data: {
-              status: "Failed",
-            },
-          });
-          return ctx.throw(400, makeCablePurchase?.data?.response_description);
+          return ctx.badRequest(verifiedDetails.data?.content?.error);
         }
-      } else {
-        return ctx.badRequest(verifiedDetails.data?.content?.error);
+      } catch (error) {
+        console.log(error);
       }
     },
   })
