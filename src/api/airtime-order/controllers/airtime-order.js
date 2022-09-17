@@ -71,7 +71,7 @@ module.exports = createCoreController(
         console.log(buyAirtime.data.content.transactions);
         if (
           buyAirtime.data.code === "000" &&
-          buyAirtime.data.content.transactions === "delivered"
+          buyAirtime.data.content.transactions.status === "delivered"
         ) {
           await strapi.query("api::airtime-order.airtime-order").update({
             where: { request_id: data.request_id },
@@ -82,7 +82,7 @@ module.exports = createCoreController(
           return ctx.created({ message: "Successful" });
         } else if (
           buyAirtime.data.code === "000" &&
-          buyAirtime.data.content.transactions !== "delivered"
+          buyAirtime.data.content.transactions.status !== "delivered"
         ) {
           await strapi.query("api::airtime-order.airtime-order").update({
             where: { request_id: data.request_id },
