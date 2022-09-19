@@ -10,7 +10,7 @@
 const crypto = require("crypto");
 const _ = require("lodash");
 const utils = require("@strapi/utils");
-const { getService } = require("@strapi/plugin-users-permissions/server/utils");
+const { getService } = require("../utils/index");
 const {
   validateCallbackBody,
   validateRegisterBody,
@@ -383,6 +383,7 @@ module.exports = {
 
     params.role = role.id;
     params.password = await getService("user").hashPassword(params);
+    params.pin = await getService("user").hashPin(params);
 
     const user = await strapi.query("plugin::users-permissions.user").findOne({
       where: { email: params.email },

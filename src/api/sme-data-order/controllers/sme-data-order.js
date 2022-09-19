@@ -7,6 +7,9 @@ const randomString = require("randomstring");
 const customNetwork = require("../../../utils/customNetwork");
 const { createCoreController } = require("@strapi/strapi").factories;
 const { ApplicationError } = require("@strapi/utils/lib/errors");
+const {
+  getService,
+} = require("../../../extensions/users-permissions/server/utils");
 
 module.exports = createCoreController(
   "api::sme-data-order.sme-data-order",
@@ -75,6 +78,13 @@ module.exports = createCoreController(
 
       if (user.AccountBalance < Number(data.amount)) {
         return ctx.badRequest("Low Wallet Balance, please fund your wallet");
+      }
+      const validPin = await getService("user").validatePassword(
+        data.pin,
+        user.pin
+      );
+      if (!validPin) {
+        return ctx.badRequest("Incorrect Pin");
       }
       const ref = `OGD|88|${randomString.generate(8)}`;
       const dataBasePayload = {

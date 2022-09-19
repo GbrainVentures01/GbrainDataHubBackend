@@ -36,6 +36,12 @@ module.exports = {
       configurable: false,
       private: true,
     },
+    pin: {
+      type: "decimal",
+      maxLength: 4,
+      configurable: false,
+      private: true,
+    },
     resetPasswordToken: {
       type: "string",
       configurable: false,

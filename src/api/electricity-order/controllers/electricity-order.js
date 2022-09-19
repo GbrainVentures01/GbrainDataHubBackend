@@ -7,6 +7,9 @@ const { ApplicationError } = require("@strapi/utils/lib/errors");
 const customNetwork = require("../../../utils/customNetwork");
 const { base64encode } = require("nodejs-base64");
 const requeryTransaction = require("../../../utils/vtpass/requeryTransaction");
+const {
+  getService,
+} = require("../../../extensions/users-permissions/server/utils");
 
 /**
  *  data-order controller
@@ -42,6 +45,13 @@ module.exports = createCoreController(
       ) {
         return ctx.badRequest("Low Wallet Balance, please fund your wallet");
       }
+      const validPin = await getService("user").validatePassword(
+        data.pin,
+        user.pin
+      );
+      if (!validPin) {
+        return ctx.badRequest("Incorrect Pin");
+      }
 
       const verifiedDetails = await customNetwork({
         method: "POST",
@@ -69,7 +79,7 @@ module.exports = createCoreController(
             AccountBalance: user.AccountBalance - Number(data.amount),
           },
         });
-        const newOrder = { data: { ...data, user: id } };
+        const newOrder = { data: { pin, ...data, user: id } };
         await strapi
           .service("api::electricity-order.electricity-order")
           .create(newOrder);

@@ -8,7 +8,7 @@
 
 const _ = require("lodash");
 const utils = require("@strapi/utils");
-const { getService } = require("@strapi/plugin-users-permissions/server/utils");
+const { getService } = require("../utils/index");
 const {
   validateCreateUserBody,
   validateUpdateUserBody,
@@ -91,7 +91,7 @@ module.exports = {
       .get();
 
     const { id } = ctx.params;
-    const { email, username, password } = ctx.request.body;
+    const { email, username, password, pin } = ctx.request.body;
 
     const user = await getService("user").fetch({ id });
     const validateData = {
@@ -107,6 +107,16 @@ module.exports = {
       !password
     ) {
       throw new ValidationError("password.notNull");
+    }
+
+    if (_.has(ctx.request.body, "prev_pin")) {
+      const validPin = await getService("user").validatePassword(
+        prev_pin,
+        user.pin
+      );
+      if (!validPin || !pin) {
+        throw new ApplicationError("invalid pin");
+      }
     }
 
     if (_.has(ctx.request.body, "username")) {

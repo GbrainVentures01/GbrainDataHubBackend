@@ -2,6 +2,9 @@
 
 const { ApplicationError } = require("@strapi/utils/lib/errors");
 const { HttpError } = require("koa");
+const {
+  getService,
+} = require("../../../extensions/users-permissions/server/utils");
 
 /**
  *  data-gifting-order controller
@@ -27,8 +30,15 @@ module.exports = createCoreController(
       if (user.AccountBalance < Number(data.amount)) {
         return ctx.badRequest("Low Wallet Balance, Please fund wallet");
       }
+      const validPin = await getService("user").validatePassword(
+        data.pin,
+        user.pin
+      );
+      if (!validPin) {
+        return ctx.badRequest("Incorrect Pin");
+      }
       try {
-        const newOrder = { data: { ...data, user: id } };
+        const newOrder = { data: { pin, ...data, user: id } };
         const Order = await strapi
           .service("api::data-gifting-order.data-gifting-order")
           .create(newOrder);
