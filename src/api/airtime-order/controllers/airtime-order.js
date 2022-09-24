@@ -54,7 +54,8 @@ module.exports = createCoreController(
         },
       });
       try {
-        const newOrder = { data: { pin, ...data, user: id } };
+        const { pin, ...restofdata } = data;
+        const newOrder = { data: { ...restofdata, user: id } };
         await strapi
           .service("api::airtime-order.airtime-order")
           .create(newOrder);
@@ -108,7 +109,7 @@ module.exports = createCoreController(
             requeryParams: data.request_id,
           });
           console.log(status);
-          if (status.code === "000") {
+          if (status.code === "000" || status.code === "099") {
             await strapi.query("api::airtime-order.airtime-order").update({
               where: { request_id: data.request_id },
               data: {

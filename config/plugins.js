@@ -7,7 +7,7 @@ module.exports = ({ env }) => ({
         secretApiKey: env("MAILJET_SECRET_KEY"),
       },
       settings: {
-        defaultFrom: "gbrainventures@gmail.com",
+        defaultFrom: "admin@gbrainventures.com",
         defaultFromName: "Gbrain Corporate Ventures",
       },
     },

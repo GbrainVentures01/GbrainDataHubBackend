@@ -37,7 +37,7 @@ module.exports = {
       private: true,
     },
     pin: {
-      type: "decimal",
+      type: "password",
       maxLength: 4,
       configurable: false,
       private: true,

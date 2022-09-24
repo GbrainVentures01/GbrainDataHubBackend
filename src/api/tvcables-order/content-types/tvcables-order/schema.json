@@ -28,6 +28,10 @@
       "type": "string",
       "required": true
     },
+    "variation_code": {
+      "type": "string",
+      "required": true
+    },
     "phone": {
       "type": "string",
       "required": true
@@ -36,17 +40,13 @@
       "type": "string",
       "required": true
     },
-     "TRX_Name": {
+    "TRX_Name": {
       "type": "string",
       "default": "Cable Tv"
     },
     "status": {
       "type": "enumeration",
-      "enum": [
-        "pending",
-        "delivered",
-        "failed"
-      ],
+      "enum": ["pending", "delivered", "failed"],
       "default": "pending"
     },
     "user": {

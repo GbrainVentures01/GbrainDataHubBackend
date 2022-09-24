@@ -47,44 +47,34 @@ module.exports = createCoreController(
         return ctx.badRequest("Incorrect Pin");
       }
 
-      if (data) {
-        const newOrder = { data: { pin, ...data, user: id } };
-        await strapi
-          .service("api::exam-pin-order.exam-pin-order")
-          .create(newOrder);
+      try {
+        if (data) {
+          const { pin, ...restofdata } = data;
+          const newOrder = { data: { ...restofdata, user: id } };
+          await strapi
+            .service("api::exam-pin-order.exam-pin-order")
+            .create(newOrder);
 
-        await strapi.query("plugin::users-permissions.user").update({
-          where: { id: user.id },
-          data: {
-            AccountBalance: user.AccountBalance - Number(data.amount),
-          },
-        });
-
-        const purchaseExamPin = await customNetwork({
-          method: "POST",
-          path: "pay",
-          requestBody: data,
-          target: "vtpass",
-          headers: {
-            Authorization: `Basic ${base64encode(
-              `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
-            )}`,
-          },
-        });
-
-        if (purchaseExamPin.data.code === "000") {
-          await strapi.query("api::exam-pin-order.exam-pin-order").update({
-            where: { request_id: data.request_id },
+          await strapi.query("plugin::users-permissions.user").update({
+            where: { id: user.id },
             data: {
-              status: "Successful",
+              AccountBalance: user.AccountBalance - Number(data.amount),
             },
           });
-          return ctx.created({ message: "Successful" });
-        } else if (purchaseExamPin.data.code === "099") {
-          const status = requeryTransaction({
-            requeryParams: data.request_id,
+
+          const purchaseExamPin = await customNetwork({
+            method: "POST",
+            path: "pay",
+            requestBody: data,
+            target: "vtpass",
+            headers: {
+              Authorization: `Basic ${base64encode(
+                `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
+              )}`,
+            },
           });
-          if (status.code === "000") {
+
+          if (purchaseExamPin.data.code === "000") {
             await strapi.query("api::exam-pin-order.exam-pin-order").update({
               where: { request_id: data.request_id },
               data: {
@@ -92,6 +82,36 @@ module.exports = createCoreController(
               },
             });
             return ctx.created({ message: "Successful" });
+          } else if (purchaseExamPin.data.code === "099") {
+            const status = requeryTransaction({
+              requeryParams: data.request_id,
+            });
+            if (status.code === "000" || status.code === "099") {
+              await strapi.query("api::exam-pin-order.exam-pin-order").update({
+                where: { request_id: data.request_id },
+                data: {
+                  status: "Successful",
+                },
+              });
+              return ctx.created({ message: "Successful" });
+            } else {
+              const user = await strapi
+                .query("plugin::users-permissions.user")
+                .findOne({ where: { id: id } });
+              await strapi.query("plugin::users-permissions.user").update({
+                where: { id: user.id },
+                data: {
+                  AccountBalance: user.AccountBalance + Number(data.amount),
+                },
+              });
+              await strapi.query("api::exam-pin-order.exam-pin-order").update({
+                where: { request_id: data.request_id },
+                data: {
+                  status: "Failed",
+                },
+              });
+              return ctx.serviceUnavailable("Sorry something came up");
+            }
           } else {
             const user = await strapi
               .query("plugin::users-permissions.user")
@@ -108,28 +128,14 @@ module.exports = createCoreController(
                 status: "Failed",
               },
             });
-            return ctx.serviceUnavailable("Sorry something came up");
+            return ctx.throw(400, purchaseExamPin?.data?.response_description);
           }
         } else {
-          const user = await strapi
-            .query("plugin::users-permissions.user")
-            .findOne({ where: { id: id } });
-          await strapi.query("plugin::users-permissions.user").update({
-            where: { id: user.id },
-            data: {
-              AccountBalance: user.AccountBalance + Number(data.amount),
-            },
-          });
-          await strapi.query("api::exam-pin-order.exam-pin-order").update({
-            where: { request_id: data.request_id },
-            data: {
-              status: "Failed",
-            },
-          });
-          return ctx.throw(400, purchaseExamPin?.data?.response_description);
+          return ctx.badRequest(purchaseExamPin.data.content.error);
         }
-      } else {
-        return ctx.badRequest(purchaseExamPin.data.content.error);
+      } catch (error) {
+        console.log(error);
+        throw new ApplicationError("something went wrong, try again");
       }
     },
   })

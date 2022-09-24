@@ -66,7 +66,8 @@ module.exports = createCoreController(
         console.log(verifiedDetails);
 
         if (!verifiedDetails.data.content.error) {
-          const newOrder = { data: { pin, ...data, user: id } };
+          const { pin, ...restofdata } = data;
+          const newOrder = { data: { ...restofdata, user: id } };
           const Order = await strapi
             .service("api::tvcables-order.tvcables-order")
             .create(newOrder);
@@ -80,7 +81,7 @@ module.exports = createCoreController(
               AccountBalance: user.AccountBalance - Number(data.amount),
             },
           });
-          const makepurchasepayload = { pin, ...data };
+          const makepurchasepayload = { ...restofdata };
           const makeCablePurchase = await customNetwork({
             method: "POST",
             path: "pay",
@@ -106,7 +107,7 @@ module.exports = createCoreController(
             const status = requeryTransaction({
               requeryParams: data.request_id,
             });
-            if (status.code === "000") {
+            if (status.code === "000" || status.code === "099") {
               await strapi.query("api::tvcables-order.tvcables-order").update({
                 where: { request_id: data.request_id },
                 data: {
@@ -161,6 +162,7 @@ module.exports = createCoreController(
         }
       } catch (error) {
         console.log(error);
+        throw new ApplicationError("Sorry, Something went wrong");
       }
     },
   })

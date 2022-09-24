@@ -53,42 +53,12 @@ module.exports = createCoreController(
         return ctx.badRequest("Incorrect Pin");
       }
 
-      const verifiedDetails = await customNetwork({
-        method: "POST",
-        target: "vtpass",
-        path: "merchant-verify",
-        requestBody: verifyParams,
-        headers: {
-          Authorization: `Basic ${base64encode(
-            `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
-          )}`,
-        },
-      });
-
-      if (!verifiedDetails.data.content.error) {
-        // fetch latest user detais from database
-        const user = await strapi
-          .query("plugin::users-permissions.user")
-          .findOne({
-            where: { id: id },
-          });
-        // update latest user's details (debit user's account)
-        await strapi.query("plugin::users-permissions.user").update({
-          where: { id: user.id },
-          data: {
-            AccountBalance: user.AccountBalance - Number(data.amount),
-          },
-        });
-        const newOrder = { data: { pin, ...data, user: id } };
-        await strapi
-          .service("api::electricity-order.electricity-order")
-          .create(newOrder);
-
-        const makeElectricityPurchase = await customNetwork({
+      try {
+        const verifiedDetails = await customNetwork({
           method: "POST",
-          path: "pay",
-          requestBody: data,
           target: "vtpass",
+          path: "merchant-verify",
+          requestBody: verifyParams,
           headers: {
             Authorization: `Basic ${base64encode(
               `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
@@ -96,21 +66,39 @@ module.exports = createCoreController(
           },
         });
 
-        if (makeElectricityPurchase.data.code === "000") {
-          await strapi
-            .query("api::electricity-order.electricity-order")
-            .update({
-              where: { request_id: data.request_id },
-              data: {
-                status: "Successful",
-              },
+        if (!verifiedDetails.data.content.error) {
+          // fetch latest user detais from database
+          const user = await strapi
+            .query("plugin::users-permissions.user")
+            .findOne({
+              where: { id: id },
             });
-          return ctx.created({ message: "Successful" });
-        } else if (makeElectricityPurchase.data.code === "099") {
-          const status = requeryTransaction({
-            requeryParams: data.request_id,
+          // update latest user's details (debit user's account)
+          await strapi.query("plugin::users-permissions.user").update({
+            where: { id: user.id },
+            data: {
+              AccountBalance: user.AccountBalance - Number(data.amount),
+            },
           });
-          if (status.code === "000") {
+          const { pin, ...restofdata } = data;
+          const newOrder = { data: { ...restofdata, user: id } };
+          await strapi
+            .service("api::electricity-order.electricity-order")
+            .create(newOrder);
+
+          const makeElectricityPurchase = await customNetwork({
+            method: "POST",
+            path: "pay",
+            requestBody: data,
+            target: "vtpass",
+            headers: {
+              Authorization: `Basic ${base64encode(
+                `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
+              )}`,
+            },
+          });
+
+          if (makeElectricityPurchase.data.code === "000") {
             await strapi
               .query("api::electricity-order.electricity-order")
               .update({
@@ -120,6 +108,47 @@ module.exports = createCoreController(
                 },
               });
             return ctx.created({ message: "Successful" });
+          } else if (makeElectricityPurchase.data.code === "099") {
+            const status = requeryTransaction({
+              requeryParams: data.request_id,
+            });
+            if (status.code === "000" || status.code === "099") {
+              await strapi
+                .query("api::electricity-order.electricity-order")
+                .update({
+                  where: { request_id: data.request_id },
+                  data: {
+                    status: "Successful",
+                  },
+                });
+              return ctx.created({ message: "Successful" });
+            } else {
+              // get latest user's details snapshot from database
+              const user = await strapi
+                .query("plugin::users-permissions.user")
+                .findOne({
+                  where: { id: id },
+                });
+              // update latest user's details (refund user exact amount debited before)
+
+              await strapi.query("plugin::users-permissions.user").update({
+                where: { id: user.id },
+                data: {
+                  AccountBalance: user.AccountBalance + Number(data.amount),
+                },
+              });
+              await strapi
+                .query("api::electricity-order.electricity-order")
+                .update({
+                  where: { request_id: data.request_id },
+                  data: {
+                    status: "Failed",
+                  },
+                });
+              return ctx.serviceUnavailable(
+                "Sorry something came up from network"
+              );
+            }
           } else {
             // get latest user's details snapshot from database
             const user = await strapi
@@ -127,14 +156,13 @@ module.exports = createCoreController(
               .findOne({
                 where: { id: id },
               });
-            // update latest user's details (refund user exact amount debited before)
-
             await strapi.query("plugin::users-permissions.user").update({
               where: { id: user.id },
               data: {
                 AccountBalance: user.AccountBalance + Number(data.amount),
               },
             });
+
             await strapi
               .query("api::electricity-order.electricity-order")
               .update({
@@ -143,40 +171,18 @@ module.exports = createCoreController(
                   status: "Failed",
                 },
               });
-            return ctx.serviceUnavailable(
-              "Sorry something came up from network"
+
+            return ctx.throw(
+              400,
+              makeElectricityPurchase?.data?.response_description
             );
           }
         } else {
-          // get latest user's details snapshot from database
-          const user = await strapi
-            .query("plugin::users-permissions.user")
-            .findOne({
-              where: { id: id },
-            });
-          await strapi.query("plugin::users-permissions.user").update({
-            where: { id: user.id },
-            data: {
-              AccountBalance: user.AccountBalance + Number(data.amount),
-            },
-          });
-
-          await strapi
-            .query("api::electricity-order.electricity-order")
-            .update({
-              where: { request_id: data.request_id },
-              data: {
-                status: "Failed",
-              },
-            });
-
-          return ctx.throw(
-            400,
-            makeElectricityPurchase?.data?.response_description
-          );
+          return ctx.badRequest(verifiedDetails.data.content.error);
         }
-      } else {
-        return ctx.badRequest(verifiedDetails.data.content.error);
+      } catch (error) {
+        console.log(error);
+        throw new ApplicationError("something went wrong, try again");
       }
     },
   })

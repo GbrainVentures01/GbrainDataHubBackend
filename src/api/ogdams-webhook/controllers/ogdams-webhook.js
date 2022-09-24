@@ -18,20 +18,25 @@ module.exports = createCoreController(
     async create(ctx) {
       const reqBody = ctx.request.body;
       console.log(reqBody.event.data.reference);
-      if (reqBody.status === true) {
-        await strapi.query("api::sme-data-order.sme-data-order").update({
-          where: { ref: reqBody.event.data.reference },
-          data: {
-            status: "delivered",
-          },
-        });
-      } else {
-        await strapi.query("api::sme-data-order.sme-data-order").update({
-          where: { ref: reqBody.event.data.reference },
-          data: {
-            status: "failed",
-          },
-        });
+      try {
+        if (reqBody.status === true) {
+          await strapi.query("api::sme-data-order.sme-data-order").update({
+            where: { ref: reqBody.event.data.reference },
+            data: {
+              status: "delivered",
+            },
+          });
+        } else {
+          await strapi.query("api::sme-data-order.sme-data-order").update({
+            where: { ref: reqBody.event.data.reference },
+            data: {
+              status: "failed",
+            },
+          });
+        }
+      } catch (error) {
+        console.log(error);
+        throw new ApplicationError("something went wrong, try again");
       }
     },
   })

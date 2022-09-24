@@ -38,7 +38,8 @@ module.exports = createCoreController(
         return ctx.badRequest("Incorrect Pin");
       }
       try {
-        const newOrder = { data: { pin, ...data, user: id } };
+        const { pin, ...restofdata } = data;
+        const newOrder = { data: { ...restofdata, user: id } };
         const Order = await strapi
           .service("api::data-gifting-order.data-gifting-order")
           .create(newOrder);

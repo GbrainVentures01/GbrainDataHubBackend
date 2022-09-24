@@ -169,6 +169,7 @@ module.exports = {
       });
 
       ctx.send({
+        message: "Password reset successful",
         jwt: getService("jwt").issue({ id: user.id }),
         user: await sanitizeUser(user, ctx),
       });
