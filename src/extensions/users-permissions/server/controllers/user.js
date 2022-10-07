@@ -91,7 +91,7 @@ module.exports = {
       .get();
 
     const { id } = ctx.params;
-    const { email, username, password, pin } = ctx.request.body;
+    const { email, username, password, pin, prev_pin } = ctx.request.body;
 
     const user = await getService("user").fetch({ id });
     const validateData = {
@@ -110,6 +110,7 @@ module.exports = {
     }
 
     if (_.has(ctx.request.body, "prev_pin")) {
+      console.log(prev_pin);
       const validPin = await getService("user").validatePassword(
         prev_pin,
         user.pin
@@ -141,8 +142,10 @@ module.exports = {
     }
 
     let updateData = {
+      prev_pin,
       ...ctx.request.body,
     };
+    console.log(updateData);
 
     const data = await getService("user").edit({ id }, updateData);
     const sanitizedData = await sanitizeOutput(data, ctx);

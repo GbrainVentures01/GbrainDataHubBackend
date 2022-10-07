@@ -1,6 +1,6 @@
 const axios = require("axios");
 const fwave = "https://api.flutterwave.com/";
-const vtpassUrl = "https://sandbox.vtpass.com/api/";
+const vtpassUrl = "https://vtpass.com/api/";
 const ogdamsUrl = "https://simhosting.ogdams.ng/api/v1/";
 
 // const baseUrl = `${testUrl}/api`;
