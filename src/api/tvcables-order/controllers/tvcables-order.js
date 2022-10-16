@@ -59,16 +59,16 @@ module.exports = createCoreController(
         .query("plugin::users-permissions.user")
         .findOne({ where: { id: id } });
 
-      const verifyParams = {
-        billersCode: `${Number(data.billersCode)}`,
-        serviceID: `${data.serviceID}`,
-      };
-
       if (
         user.AccountBalance < Number(data.amount || user.AccountBalance === 0)
       ) {
         return ctx.badRequest("Low Wallet Balance, please fund your wallet");
       }
+      const verifyParams = {
+        billersCode: `${data.billersCode}`,
+        serviceID: `${data.serviceID}`,
+      };
+
       const validPin = await getService("user").validatePassword(
         data.pin,
         user.pin
