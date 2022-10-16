@@ -30,7 +30,7 @@ module.exports = createCoreController(
       const data = ctx.request.body;
       console.log(data);
       const verifyParams = {
-        billersCode: `${Number(data.billersCode)}`,
+        billersCode: `${data.billersCode}`,
         serviceID: `${data.serviceID}`,
       };
       const verifiedDetails = await customNetwork({
