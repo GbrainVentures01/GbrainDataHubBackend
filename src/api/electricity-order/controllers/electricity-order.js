@@ -26,6 +26,33 @@ module.exports = createCoreController(
      * @returns
      */
 
+    async verifyMeter(ctx) {
+      const data = ctx.request.body;
+      console.log(data);
+      const verifyParams = {
+        billersCode: `${Number(data.billersCode)}`,
+        serviceID: `${data.serviceID}`,
+        type: `${data.variation_code}`,
+      };
+      const verifiedDetails = await customNetwork({
+        method: "POST",
+        target: "vtpass",
+        path: "merchant-verify",
+        requestBody: verifyParams,
+        headers: {
+          Authorization: `Basic ${base64encode(
+            `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
+          )}`,
+        },
+      });
+      console.log(verifiedDetails);
+
+      if (!verifiedDetails.data.content.error) {
+        return verifiedDetails.data.content;
+      }
+      return ctx.badRequest(verifiedDetails.data?.content?.error);
+    },
+
     async create(ctx) {
       const { data } = ctx.request.body;
       console.log(data);
