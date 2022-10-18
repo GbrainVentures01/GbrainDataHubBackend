@@ -73,15 +73,21 @@ module.exports = createCoreController(
               )}`,
             },
           });
+          console.log(purchaseExamPin.data.purchased_code);
 
           if (purchaseExamPin.data.code === "000") {
             await strapi.query("api::exam-pin-order.exam-pin-order").update({
               where: { request_id: data.request_id },
               data: {
                 status: "Successful",
+                purchased_pin: purchaseExamPin.data.purchased_code,
               },
             });
-            return ctx.created({ message: "Successful" });
+            return ctx.created({
+              message:
+                "Successful, copy your pin and serial number below or view history to fetch the purchased pin",
+              data: purchaseExamPin.data.purchased_code,
+            });
           } else if (purchaseExamPin.data.code === "099") {
             const status = requeryTransaction({
               requeryParams: data.request_id,
@@ -91,9 +97,14 @@ module.exports = createCoreController(
                 where: { request_id: data.request_id },
                 data: {
                   status: "Successful",
+                  purchased_pin: purchaseExamPin.data.purchased_code,
                 },
               });
-              return ctx.created({ message: "Successful" });
+              return ctx.created({
+                message:
+                  "Successful, copy your pin and serial number below or view history to fetch the purchased pin",
+                data: purchaseExamPin.data.purchased_code,
+              });
             } else {
               const user = await strapi
                 .query("plugin::users-permissions.user")

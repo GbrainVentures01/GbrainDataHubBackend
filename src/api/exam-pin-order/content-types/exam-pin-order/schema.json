@@ -34,7 +34,11 @@
     },
     "status": {
       "type": "enumeration",
-      "enum": ["pending", "sucessful", "failed"],
+      "enum": [
+        "pending",
+        "sucessful",
+        "failed"
+      ],
       "default": "pending"
     },
     "user": {
@@ -46,6 +50,9 @@
     "TRX_Name": {
       "type": "string",
       "default": "Education Pin"
+    },
+    "purchased_pin": {
+      "type": "string"
     }
   }
 }
