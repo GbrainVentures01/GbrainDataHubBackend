@@ -7,7 +7,7 @@ module.exports = async ({ userData, amount, ref }) => {
       method: "POST",
       path: "v3/payments",
       headers: {
-        Authorization: `Bearer ${process.env.FLUTTER_WAVE_TEST_SECRET_KEY}`,
+        Authorization: `Bearer ${process.env.FLUTTER_WAVE_LIVE_SECRET_KEY}`,
       },
       requestBody: {
         amount: amount,
