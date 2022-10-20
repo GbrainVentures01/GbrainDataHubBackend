@@ -1,0 +1,31 @@
+{
+  "kind": "collectionType",
+  "collectionName": "mtn_sme_plan_models",
+  "info": {
+    "singularName": "mtn-sme-plan-model",
+    "pluralName": "mtn-sme-plan-models",
+    "displayName": "mtn-sme-plan-model",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Plan": {
+      "type": "string",
+      "required": true
+    },
+    "Price": {
+      "type": "integer",
+      "required": true
+    },
+    "expiry_date": {
+      "type": "string"
+    },
+    "plan_id": {
+      "required": true,
+      "type": "integer"
+    }
+  }
+}
