@@ -39,6 +39,15 @@ module.exports = createCoreController(
           .service("api::sell-airtime.sell-airtime")
           .create(newOrder);
 
+        await strapi.plugins["email"].services.email.send({
+          to: "adebisidamilola6@gmail.com",
+          subject: "Sell Airtime Order",
+          html: `<p>Hello, you have a new Sell Airtime Order !, kindly visit the admin pannel to see  order details </p>
+                 
+                 <h3> Regards</h3>
+                 <h3>Gbrain Coporate Ventures</h3>`,
+        });
+
         return ctx.send({
           data: {
             message: "success, your account will be credited soon",

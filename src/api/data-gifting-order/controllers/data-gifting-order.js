@@ -50,6 +50,14 @@ module.exports = createCoreController(
             AccountBalance: user.AccountBalance - Number(data.amount),
           },
         });
+        await strapi.plugins["email"].services.email.send({
+          to: "adebisidamilola6@gmail.com",
+          subject: "New Airtime Order",
+          html: `<p>Hello, you have a new data gifting order !, kindly visit the admin pannel to see  order details </p>
+                 
+                 <h3> Regards</h3>
+                 <h3>Gbrain Coporate Ventures</h3>`,
+        });
 
         return ctx.send({
           data: { message: "data gifting order successfully created", Order },
