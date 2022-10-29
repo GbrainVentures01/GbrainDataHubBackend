@@ -130,9 +130,14 @@ module.exports = createCoreController(
                 where: { request_id: data.request_id },
                 data: {
                   status: "Successful",
+                  purchased_token: makeElectricityPurchase.data.purchased_code,
                 },
               });
-            return ctx.created({ message: "Successful" });
+            return ctx.created({
+              message:
+                "Successful, copy your token  below and enter into your meter or view history to fetch the purchased token",
+              data: makeElectricityPurchase.data.purchased_code,
+            });
           } else if (makeElectricityPurchase.data.code === "099") {
             const status = requeryTransaction({
               requeryParams: data.request_id,
@@ -144,9 +149,15 @@ module.exports = createCoreController(
                   where: { request_id: data.request_id },
                   data: {
                     status: "Successful",
+                    purchased_token:
+                      makeElectricityPurchase.data.purchased_code,
                   },
                 });
-              return ctx.created({ message: "Successful" });
+              return ctx.created({
+                message:
+                  "Successful, copy your token  below and enter into your meter or view history to fetch the purchased token",
+                data: makeElectricityPurchase.data.purchased_code,
+              });
             } else {
               // get latest user's details snapshot from database
               const user = await strapi

@@ -50,6 +50,9 @@
     "TRX_Name": {
       "type": "string",
       "default": "Electricity"
+    },
+    "purchased_token": {
+      "type": "string"
     }
   }
 }
