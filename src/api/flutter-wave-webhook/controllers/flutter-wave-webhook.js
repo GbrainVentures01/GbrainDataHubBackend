@@ -23,22 +23,23 @@ module.exports = createCoreController(
       if (reqBody) {
         const user = await strapi
           .query("plugin::users-permissions.user")
-          .findOne({ where: { email: reqBody.customer.email } });
+          .findOne({ where: { email: reqBody.data.customer.email } });
 
         const payload = {
           data: {
-            status: reqBody.status,
-            amount: Number(reqBody.amount),
-            trx_id: reqBody.id,
-            tx_ref: reqBody.txRef,
-            flw_ref: reqBody.flwRef,
-            currency: reqBody.currency,
-            charged_amount: Number(reqBody.charged_amount),
-            app_fee: Number(reqBody.appfee),
+            status: reqBody.data.status,
+            amount: Number(reqBody.data.amount),
+            trx_id: reqBody.data.id,
+            tx_ref: reqBody.data.tx_ref,
+            flw_ref: reqBody.data.flw_ref,
+            currency: reqBody.data.currency,
+            payment_type: reqBody.data.payment_type,
+            charged_amount: Number(reqBody.data.charged_amount),
+            app_fee: Number(reqBody.data.app_fee),
             //   payment_method: reqBody.data.payment_type,
             date_time:
-              reqBody.entity.createdAt || new Date(Date.now()).toISOString(),
-            payer_email: reqBody.customer.email,
+              reqBody.data.created_at || new Date(Date.now()).toISOString(),
+            payer_email: reqBody.data.customer.email,
           },
         };
 
@@ -46,20 +47,20 @@ module.exports = createCoreController(
           await strapi
             .service("api::flutter-wave-webhook.flutter-wave-webhook")
             .create(payload);
-          if (reqBody.status === "successful") {
+          if (reqBody.data.status === "successful") {
             console.log("verifying payment...");
             const flw = new Flutterwave(
               process.env.FLUTTER_WAVE_PUBLIC_KEY,
               process.env.FLUTTER_WAVE_LIVE_SECRET_KEY
             );
 
-            flw.Transaction.verify({ id: reqBody.id })
+            flw.Transaction.verify({ id: reqBody.data.id })
               .then(async (response) => {
                 console.log(response);
                 if (
                   response.data.status === "successful" &&
-                  response.data.amount === reqBody.amount &&
-                  response.data.currency === reqBody.currency
+                  response.data.amount === reqBody.data.amount &&
+                  response.data.currency === reqBody.data.currency
                 ) {
                   await strapi.query("plugin::users-permissions.user").update({
                     where: { id: user.id },
@@ -71,10 +72,10 @@ module.exports = createCoreController(
                   await strapi
                     .query("api::account-funding.account-funding")
                     .update({
-                      where: { tx_ref: reqBody.txRef },
+                      where: { tx_ref: reqBody.data.tx_ref },
                       data: {
                         status: "Success",
-                        transaction_id: reqBody.id.toString(),
+                        transaction_id: reqBody.data.id.toString(),
                       },
                     });
                 } else {
@@ -86,7 +87,7 @@ module.exports = createCoreController(
 
                       subject: "Wallet Funding",
 
-                      html: `<p>Dear ${user.username}, your payment with the trx ref of ${reqBody.tx_ref} was not successful.</p>
+                      html: `<p>Dear ${user.username}, your payment with the trx ref of ${reqBody.data.tx_ref} was not successful.</p>
                     <p>Contact Support for more details</p>
                     <p>Gbrain Corporate Ventures.</p>
                     `,
@@ -94,10 +95,10 @@ module.exports = createCoreController(
                   await strapi
                     .query("api::account-funding.account-funding")
                     .update({
-                      where: { tx_ref: reqBody.tx_ref },
+                      where: { tx_ref: reqBody.data.tx_ref },
                       data: {
                         status: "Failed",
-                        transaction_id: reqBody.id,
+                        transaction_id: reqBody.data.id,
                       },
                     });
                   console.log(EmailSent);

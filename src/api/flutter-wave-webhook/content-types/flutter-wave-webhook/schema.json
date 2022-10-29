@@ -38,6 +38,10 @@
       "type": "string",
       "required": true
     },
+    "payment_type": {
+      "type": "string",
+      "required": false
+    },
     "app_fee": {
       "type": "decimal"
     },
