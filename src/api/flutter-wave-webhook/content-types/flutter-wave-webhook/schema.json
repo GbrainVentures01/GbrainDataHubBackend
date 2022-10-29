@@ -13,7 +13,7 @@
   "pluginOptions": {},
   "attributes": {
     "trx_id": {
-      "type": "decimal",
+      "type": "string",
       "required": true
     },
     "tx_ref": {

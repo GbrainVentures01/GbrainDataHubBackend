@@ -29,7 +29,7 @@ module.exports = createCoreController(
           data: {
             status: reqBody.data.status,
             amount: Number(reqBody.data.amount),
-            trx_id: reqBody.data.id,
+            trx_id: Number(reqBody.data.id).toString(),
             tx_ref: reqBody.data.tx_ref,
             flw_ref: reqBody.data.flw_ref,
             currency: reqBody.data.currency,
