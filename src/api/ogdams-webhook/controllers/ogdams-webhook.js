@@ -26,12 +26,18 @@ module.exports = createCoreController(
               status: "delivered",
             },
           });
+          return ctx.created({
+            message: "success",
+          });
         } else {
           await strapi.query("api::sme-data-order.sme-data-order").update({
             where: { ref: reqBody.event.data.reference },
             data: {
               status: "failed",
             },
+          });
+          return ctx.created({
+            message: "success",
           });
         }
       } catch (error) {

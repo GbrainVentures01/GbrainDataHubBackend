@@ -114,10 +114,14 @@ module.exports = createCoreController(
             .service("api::electricity-order.electricity-order")
             .create(newOrder);
 
+          const makePurchaseParams = {
+            ...restofdata,
+          };
+
           const makeElectricityPurchase = await customNetwork({
             method: "POST",
             path: "pay",
-            requestBody: data,
+            requestBody: makePurchaseParams,
             target: "vtpass",
             headers: {
               Authorization: `Basic ${base64encode(
