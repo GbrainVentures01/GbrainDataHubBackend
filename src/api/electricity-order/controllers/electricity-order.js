@@ -30,7 +30,7 @@ module.exports = createCoreController(
       const data = ctx.request.body;
       console.log(data);
       const verifyParams = {
-        billersCode: `${Number(data.billersCode)}`,
+        billersCode: `${data.billersCode}`,
         serviceID: `${data.serviceID}`,
         type: `${data.variation_code}`,
       };
@@ -60,7 +60,7 @@ module.exports = createCoreController(
         .query("plugin::users-permissions.user")
         .findOne({ where: { id: id } });
       const verifyParams = {
-        billersCode: `${Number(data.billersCode)}`,
+        billersCode: `${data.billersCode}`,
         serviceID: `${data.serviceID}`,
         type: `${data.variation_code}`,
       };

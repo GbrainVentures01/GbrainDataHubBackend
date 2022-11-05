@@ -28,6 +28,10 @@
       "type": "string",
       "required": true
     },
+    "bank_name": {
+      "type": "string",
+      "required": true
+    },
     "phone_number": {
       "type": "string",
       "required": true
