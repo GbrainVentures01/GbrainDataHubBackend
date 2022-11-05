@@ -64,6 +64,7 @@ module.exports = createCoreController(
         serviceID: `${data.serviceID}`,
         type: `${data.variation_code}`,
       };
+      console.log(verifyParams);
 
       if (
         user.AccountBalance < Number(data.amount || user.AccountBalance === 0)
@@ -90,6 +91,8 @@ module.exports = createCoreController(
             )}`,
           },
         });
+
+        console.log(verifiedDetails);
 
         if (!verifiedDetails.data.content.error) {
           // fetch latest user detais from database
@@ -122,6 +125,7 @@ module.exports = createCoreController(
               )}`,
             },
           });
+          console.log(makeElectricityPurchase);
 
           if (makeElectricityPurchase.data.code === "000") {
             await strapi
