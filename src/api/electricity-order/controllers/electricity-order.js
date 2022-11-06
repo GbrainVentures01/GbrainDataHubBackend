@@ -113,9 +113,11 @@ module.exports = createCoreController(
           await strapi
             .service("api::electricity-order.electricity-order")
             .create(newOrder);
-
+          const { amount, phone, ...payload } = restofdata;
           const makePurchaseParams = {
-            ...restofdata,
+            amount: Number(amount),
+            phone: Number(phone),
+            ...payload,
           };
 
           const makeElectricityPurchase = await customNetwork({
@@ -130,6 +132,7 @@ module.exports = createCoreController(
             },
           });
           console.log(makeElectricityPurchase);
+          console.log(makeElectricityPurchase.data.content.transactions);
 
           if (makeElectricityPurchase.data.code === "000") {
             await strapi

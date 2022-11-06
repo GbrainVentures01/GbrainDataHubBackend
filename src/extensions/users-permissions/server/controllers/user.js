@@ -91,7 +91,8 @@ module.exports = {
       .get();
 
     const { id } = ctx.params;
-    const { email, username, password, pin, prev_pin } = ctx.request.body;
+    const { email, username, password, pin } = ctx.request.body;
+    let new_pin;
 
     const user = await getService("user").fetch({ id });
     const validateData = {
@@ -109,15 +110,8 @@ module.exports = {
       throw new ValidationError("password.notNull");
     }
 
-    if (_.has(ctx.request.body, "prev_pin")) {
-      console.log(prev_pin);
-      const validPin = await getService("user").validatePassword(
-        prev_pin,
-        user.pin
-      );
-      if (!validPin || !pin) {
-        throw new ApplicationError("invalid pin");
-      }
+    if (_.has(ctx.request.body, "pin")) {
+      new_pin = await getService("user").hashPin(ctx.request.body);
     }
 
     if (_.has(ctx.request.body, "username")) {
@@ -141,10 +135,17 @@ module.exports = {
       ctx.request.body.email = ctx.request.body.email.toLowerCase();
     }
 
-    let updateData = {
-      prev_pin,
-      ...ctx.request.body,
-    };
+    let updateData;
+    if (pin) {
+      updateData = {
+        pin: new_pin,
+      };
+    } else {
+      const { pin, ...restOfData } = ctx.request.body;
+      updateData = {
+        ...restOfData,
+      };
+    }
     console.log(updateData);
 
     const data = await getService("user").edit({ id }, updateData);
