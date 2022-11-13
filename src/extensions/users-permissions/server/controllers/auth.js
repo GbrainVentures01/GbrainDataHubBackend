@@ -386,7 +386,7 @@ module.exports = {
     settings.message = await getService("users-permissions").template(
       settings.message,
       {
-        URL: "http://localhost:3000/reset-pin",
+        URL: "https://www.gbrainventures.com/reset-pin",
         USER: userInfo,
         TOKEN: resetPasswordToken,
       }
