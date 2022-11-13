@@ -225,7 +225,7 @@ module.exports = {
 
   async forgotPassword(ctx) {
     let { email } = ctx.request.body;
-
+    console.log(email);
     // Check if the provided email is valid or not.
     const isEmail = emailRegExp.test(email);
 
@@ -295,8 +295,9 @@ module.exports = {
 
     try {
       // Send an email to the user.
+
       const EmailSent = await strapi.plugin("email").service("email").send({
-        to: user.email,
+        to: user.email.toLowerCase(),
         // from:
         //   settings.from.email || settings.from.name
         //     ? `${settings.from.name} <${settings.from.email}>`
@@ -306,8 +307,16 @@ module.exports = {
         text: settings.message,
         html: settings.message,
       });
-      console.log("sending email to client ");
-      console.log(EmailSent);
+
+      if (EmailSent.response.statusCode === 200) {
+        await strapi
+          .query("plugin::users-permissions.user")
+          .update({ where: { id: user.id }, data: { resetPasswordToken } });
+
+        ctx.send({
+          message: "password reset link has been sent to the provided email.",
+        });
+      }
     } catch (err) {
       if (err.statusCode === 400) {
         throw new ApplicationError(err.message);
@@ -366,16 +375,18 @@ module.exports = {
         }
       });
 
-    const advanced = await pluginStore.get({
-      key: "advanced",
-    });
+    // const advanced = await pluginStore.get({
+    //   key: "advanced",
+    // });
 
     const userInfo = await sanitizeUser(user, ctx);
+    settings.message =
+      "<p>We heard that you forgot your pin. Sorry about that!</p><p>But don’t worry! You can use the following link to reset your pin:</p><p><%= URL %>?code=<%= TOKEN %></p><p>Thanks.</p>";
 
     settings.message = await getService("users-permissions").template(
       settings.message,
       {
-        URL: advanced.email_reset_password,
+        URL: "http://localhost:3000/reset-pin",
         USER: userInfo,
         TOKEN: resetPasswordToken,
       }
@@ -401,8 +412,17 @@ module.exports = {
         text: settings.message,
         html: settings.message,
       });
-      console.log("sending email to client ");
-      console.log(EmailSent);
+
+      // Update the user.
+      if (EmailSent.response.statusCode === 200) {
+        await strapi
+          .query("plugin::users-permissions.user")
+          .update({ where: { id: user.id }, data: { resetPasswordToken } });
+
+        ctx.send({
+          message: "pin reset link has been sent to the provided email.",
+        });
+      }
     } catch (err) {
       if (err.statusCode === 400) {
         throw new ApplicationError(err.message);
@@ -410,14 +430,6 @@ module.exports = {
         throw new Error(`Couldn't send test email: ${err.message}.`);
       }
     }
-    // Update the user.
-    await strapi
-      .query("plugin::users-permissions.user")
-      .update({ where: { id: user.id }, data: { resetPasswordToken } });
-
-    ctx.send({
-      message: "pin reset link has been sent to the provided email.",
-    });
   },
 
   async register(ctx) {
