@@ -315,14 +315,108 @@ module.exports = {
         throw new Error(`Couldn't send test email: ${err.message}.`);
       }
     }
+  },
+  // forget pin
 
+  async forgotPin(ctx) {
+    let { email } = ctx.request.body;
+
+    // Check if the provided email is valid or not.
+    const isEmail = emailRegExp.test(email);
+
+    if (isEmail) {
+      email = email.toLowerCase();
+    } else {
+      ctx.badRequest("Please provide a valid email address");
+      throw new ValidationError("Please provide a valid email address");
+    }
+
+    const pluginStore = await strapi.store({
+      type: "plugin",
+      name: "users-permissions",
+    });
+
+    // Find the user by email.
+    const user = await strapi
+      .query("plugin::users-permissions.user")
+      .findOne({ where: { email: email.toLowerCase() } });
+
+    // User not found.
+    if (!user) {
+      ctx.notFound("This email does not exist");
+      throw new ApplicationError("This email does not exist");
+    }
+
+    // User blocked
+    if (user.blocked) {
+      ctx.forbidden("This user is disabled");
+      throw new ApplicationError("This user is disabled");
+    }
+
+    // Generate random token.
+    const resetPasswordToken = crypto.randomBytes(64).toString("hex");
+
+    const settings = await pluginStore
+      .get({ key: "email" })
+      .then((storeEmail) => {
+        try {
+          return storeEmail["reset_password"].options;
+        } catch (error) {
+          return {};
+        }
+      });
+
+    const advanced = await pluginStore.get({
+      key: "advanced",
+    });
+
+    const userInfo = await sanitizeUser(user, ctx);
+
+    settings.message = await getService("users-permissions").template(
+      settings.message,
+      {
+        URL: advanced.email_reset_password,
+        USER: userInfo,
+        TOKEN: resetPasswordToken,
+      }
+    );
+
+    settings.object = await getService("users-permissions").template(
+      settings.object,
+      {
+        USER: userInfo,
+      }
+    );
+
+    try {
+      // Send an email to the user.
+      const EmailSent = await strapi.plugin("email").service("email").send({
+        to: user.email,
+        // from:
+        //   settings.from.email || settings.from.name
+        //     ? `${settings.from.name} <${settings.from.email}>`
+        //     : undefined,
+        replyTo: settings.response_email,
+        subject: settings.object,
+        text: settings.message,
+        html: settings.message,
+      });
+      console.log("sending email to client ");
+      console.log(EmailSent);
+    } catch (err) {
+      if (err.statusCode === 400) {
+        throw new ApplicationError(err.message);
+      } else {
+        throw new Error(`Couldn't send test email: ${err.message}.`);
+      }
+    }
     // Update the user.
     await strapi
       .query("plugin::users-permissions.user")
       .update({ where: { id: user.id }, data: { resetPasswordToken } });
 
     ctx.send({
-      message: "password reset link has been sent to the provided email.",
+      message: "pin reset link has been sent to the provided email.",
     });
   },
 
