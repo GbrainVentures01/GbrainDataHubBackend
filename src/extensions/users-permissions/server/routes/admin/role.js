@@ -4,7 +4,7 @@ module.exports = [
   {
     method: "GET",
     path: "/roles/:id",
-    handler: "role.findOne",
+    handler: "role.getRole",
     config: {
       policies: [
         {
@@ -19,7 +19,7 @@ module.exports = [
   {
     method: "GET",
     path: "/roles",
-    handler: "role.find",
+    handler: "role.getRoles",
     config: {
       policies: [
         {

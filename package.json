@@ -11,13 +11,13 @@
     "strapi": "strapi"
   },
   "dependencies": {
-    "@strapi/plugin-i18n": "4.1.12",
-    "@strapi/plugin-users-permissions": "4.1.12",
+    "@strapi/plugin-i18n": "4.0.2",
+    "@strapi/plugin-users-permissions": "4.0.2",
     "@strapi/provider-email-sendgrid": "^4.2.0",
     "@strapi/provider-email-sendmail": "^4.2.0",
     "@strapi/provider-upload-aws-s3": "^4.3.8",
     "@strapi/provider-upload-cloudinary": "^4.3.8",
-    "@strapi/strapi": "4.1.12",
+    "@strapi/strapi": "4.0.2",
     "axios": "^0.26.0",
     "flutterwave-node-v3": "^1.0.10",
     "js-sha512": "^0.8.0",

@@ -90,11 +90,10 @@ module.exports = createCoreController(
 
       const { pin, ...restofdata } = data;
       const newOrder = {
-        data: { ...restofdata, user: user },
+        data: { ...restofdata, user: id },
       };
       console.log(newOrder);
       await strapi.service("api::cg-data-order.cg-data-order").create(newOrder);
-
       await strapi.query("plugin::users-permissions.user").update({
         where: { id: user.id },
         data: {
@@ -121,7 +120,7 @@ module.exports = createCoreController(
         console.log(res);
         if (res.status === 200) {
           await strapi.query("api::cg-data-order.cg-data-order").update({
-            where: { request_Id: request_Id },
+            where: { request_Id: data.request_Id },
             data: {
               status: "qeued",
             },
@@ -129,7 +128,7 @@ module.exports = createCoreController(
           return ctx.send({ data: { message: `Processing...` } });
         } else if (res.status !== 200 || res.status !== 201) {
           await strapi.query("api::cg-data-order.cg-data-order").update({
-            where: { request_Id: request_Id },
+            where: { request_Id: data.request_Id },
             data: {
               status: "failed",
             },

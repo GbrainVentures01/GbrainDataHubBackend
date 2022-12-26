@@ -4,12 +4,12 @@ module.exports = [
   {
     method: "GET",
     path: "/roles/:id",
-    handler: "role.findOne",
+    handler: "role.getRole",
   },
   {
     method: "GET",
     path: "/roles",
-    handler: "role.find",
+    handler: "role.getRoles",
   },
   {
     method: "POST",

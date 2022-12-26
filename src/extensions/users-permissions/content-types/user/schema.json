@@ -137,18 +137,7 @@
       "target": "api::sell-airtime.sell-airtime",
       "mappedBy": "user"
     },
-    "airtel_cg_data_orders": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::airtel-cg-data-order.airtel-cg-data-order",
-      "mappedBy": "users_permissions_user"
-    },
-    "glo_cg_data_orders": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::glo-cg-data-order.glo-cg-data-order",
-      "mappedBy": "users_permissions_user"
-    },
+
     "account_fundings": {
       "type": "relation",
       "relation": "oneToMany",
