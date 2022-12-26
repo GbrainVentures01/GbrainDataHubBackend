@@ -117,7 +117,7 @@ module.exports = createCoreController(
             Authorization: `Token ${process.env.DATA_HOUSE_SECRET}`,
           },
         });
-        console.log(res);
+        console.log(res.body);
         if (res.status === 200) {
           await strapi.query("api::cg-data-order.cg-data-order").update({
             where: { request_Id: data.request_Id },
