@@ -19,7 +19,6 @@ module.exports = createCoreController(
      */
     async create(ctx) {
       const { data } = ctx.request.body;
-      console.log(data);
       const { id } = ctx.state.user;
       const user = await strapi
         .query("plugin::users-permissions.user")
@@ -33,8 +32,11 @@ module.exports = createCoreController(
       }
 
       try {
-        const { pin, ...restofdata } = data;
-        const newOrder = { data: { ...restofdata, user: id } };
+        const { pin, amount, ...restofdata } = data;
+        const newOrder = {
+          data: { ...restofdata, user: id, amount: Number(amount) },
+        };
+
         const Order = await strapi
           .service("api::sell-airtime.sell-airtime")
           .create(newOrder);

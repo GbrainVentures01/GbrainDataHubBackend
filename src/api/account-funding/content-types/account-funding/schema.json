@@ -30,7 +30,11 @@
     },
     "status": {
       "type": "enumeration",
-      "enum": ["Pending", "Success", "Failed"],
+      "enum": [
+        "Pending",
+        "Success",
+        "Failed"
+      ],
       "required": true,
       "default": "Pending"
     },

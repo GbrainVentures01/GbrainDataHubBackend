@@ -1,0 +1,18 @@
+{
+  "kind": "collectionType",
+  "collectionName": "data_house_webhooks",
+  "info": {
+    "singularName": "data-house-webhook",
+    "pluralName": "data-house-webhooks",
+    "displayName": "Data House Webhook"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "message": {
+      "type": "string"
+    }
+  }
+}

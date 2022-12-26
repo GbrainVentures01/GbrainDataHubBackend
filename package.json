@@ -10,17 +10,14 @@
     "build:win": "cross-env NODE_ENV=production npm run build",
     "strapi": "strapi"
   },
-  "devDependencies": {
-    "strapi-utils": "^3.6.8"
-  },
   "dependencies": {
-    "@strapi/plugin-i18n": "4.0.2",
-    "@strapi/plugin-users-permissions": "4.0.2",
+    "@strapi/plugin-i18n": "4.1.12",
+    "@strapi/plugin-users-permissions": "4.1.12",
     "@strapi/provider-email-sendgrid": "^4.2.0",
     "@strapi/provider-email-sendmail": "^4.2.0",
     "@strapi/provider-upload-aws-s3": "^4.3.8",
     "@strapi/provider-upload-cloudinary": "^4.3.8",
-    "@strapi/strapi": "4.0.2",
+    "@strapi/strapi": "4.1.12",
     "axios": "^0.26.0",
     "flutterwave-node-v3": "^1.0.10",
     "js-sha512": "^0.8.0",
@@ -28,11 +25,10 @@
     "pg": "8.6.0",
     "pg-connection-string": "^2.5.0",
     "randomstring": "^1.2.2",
-    "strapi-provider-email-mailjet": "^4.0.0",
-    "strapi-utils": "^3.6.8"
+    "strapi-provider-email-mailjet": "^4.0.0"
   },
   "author": {
-    "name": "A Strapi developer"
+    "name": "Layinton_Developer"
   },
   "strapi": {
     "uuid": "cd8e6a5c-494d-4a67-b8ec-e4f984dbf9ee"

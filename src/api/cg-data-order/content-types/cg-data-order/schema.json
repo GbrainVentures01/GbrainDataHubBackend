@@ -1,0 +1,65 @@
+{
+  "kind": "collectionType",
+  "collectionName": "cg_data_orders",
+  "info": {
+    "singularName": "cg-data-order",
+    "pluralName": "cg-data-orders",
+    "displayName": "CG Data Order",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "network": {
+      "type": "string",
+      "required": true
+    },
+    "network_id": {
+      "type": "integer",
+      "required": true
+    },
+    "plan": {
+      "type": "string",
+      "required": true
+    },
+    "plan_id": {
+      "type": "integer",
+      "required": true
+    },
+    "amount": {
+      "type": "integer",
+      "required": true
+    },
+    "request_Id": {
+      "type": "string",
+      "required": true
+    },
+    "beneficiary": {
+      "type": "string",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "delivered",
+        "failed",
+        "qeued"
+      ],
+      "default": "pending"
+    },
+    "TRX_Name": {
+      "type": "string",
+      "required": true,
+      "default": "Corporate Gifting (CG)"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "cg_data_order"
+    }
+  }
+}

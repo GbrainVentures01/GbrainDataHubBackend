@@ -71,7 +71,7 @@ module.exports = {
 
       if (!user) {
         return ctx.unauthorized("Invalid identifier or password");
-        throw new ValidationError("Invalid identifier or password");
+        // throw new ValidationError("Invalid identifier or password");
       }
 
       if (

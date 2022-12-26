@@ -56,6 +56,11 @@
       "enum": ["Pending", "Sucessful", "Failed"],
       "default": "Pending",
       "required": true
+    },
+    "screenshot": {
+      "allowedTypes": ["images"],
+      "type": "media",
+      "multiple": false
     }
   }
 }

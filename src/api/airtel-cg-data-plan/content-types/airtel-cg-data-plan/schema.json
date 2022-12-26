@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "airtel_cg_data_plans",
+  "info": {
+    "singularName": "airtel-cg-data-plan",
+    "pluralName": "airtel-cg-data-plans",
+    "displayName": "Airtel CG Data Plan",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "plan": {
+      "type": "string",
+      "required": true
+    },
+    "plan_id": {
+      "type": "integer",
+      "required": true
+    },
+    "network_id": {
+      "type": "integer",
+      "required": true
+    },
+    "price": {
+      "type": "integer",
+      "required": true
+    },
+    "expiry_date": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

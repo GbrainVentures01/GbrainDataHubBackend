@@ -1,6 +1,5 @@
 "use strict";
 
-const { sanitizeEntity } = require("strapi-utils/lib");
 const converter = require("../../../utils/converter");
 const calculateTransactionHash = require("../../../utils/monnify/calculateTransactionHash");
 const customNetwork = require("../../../utils/customNetwork");

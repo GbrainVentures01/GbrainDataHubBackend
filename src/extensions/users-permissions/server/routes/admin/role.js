@@ -1,76 +1,76 @@
-'use strict';
+"use strict";
 
 module.exports = [
   {
-    method: 'GET',
-    path: '/roles/:id',
-    handler: 'role.getRole',
+    method: "GET",
+    path: "/roles/:id",
+    handler: "role.findOne",
     config: {
       policies: [
         {
-          name: 'admin::hasPermissions',
+          name: "admin::hasPermissions",
           config: {
-            actions: ['plugin::users-permissions.roles.read'],
+            actions: ["plugin::users-permissions.roles.read"],
           },
         },
       ],
     },
   },
   {
-    method: 'GET',
-    path: '/roles',
-    handler: 'role.getRoles',
+    method: "GET",
+    path: "/roles",
+    handler: "role.find",
     config: {
       policies: [
         {
-          name: 'admin::hasPermissions',
+          name: "admin::hasPermissions",
           config: {
-            actions: ['plugin::users-permissions.roles.read'],
+            actions: ["plugin::users-permissions.roles.read"],
           },
         },
       ],
     },
   },
   {
-    method: 'POST',
-    path: '/roles',
-    handler: 'role.createRole',
+    method: "POST",
+    path: "/roles",
+    handler: "role.createRole",
     config: {
       policies: [
         {
-          name: 'admin::hasPermissions',
+          name: "admin::hasPermissions",
           config: {
-            actions: ['plugin::users-permissions.roles.create'],
+            actions: ["plugin::users-permissions.roles.create"],
           },
         },
       ],
     },
   },
   {
-    method: 'PUT',
-    path: '/roles/:role',
-    handler: 'role.updateRole',
+    method: "PUT",
+    path: "/roles/:role",
+    handler: "role.updateRole",
     config: {
       policies: [
         {
-          name: 'admin::hasPermissions',
+          name: "admin::hasPermissions",
           config: {
-            actions: ['plugin::users-permissions.roles.update'],
+            actions: ["plugin::users-permissions.roles.update"],
           },
         },
       ],
     },
   },
   {
-    method: 'DELETE',
-    path: '/roles/:role',
-    handler: 'role.deleteRole',
+    method: "DELETE",
+    path: "/roles/:role",
+    handler: "role.deleteRole",
     config: {
       policies: [
         {
-          name: 'admin::hasPermissions',
+          name: "admin::hasPermissions",
           config: {
-            actions: ['plugin::users-permissions.roles.delete'],
+            actions: ["plugin::users-permissions.roles.delete"],
           },
         },
       ],
