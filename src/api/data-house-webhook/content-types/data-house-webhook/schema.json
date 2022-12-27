@@ -4,15 +4,41 @@
   "info": {
     "singularName": "data-house-webhook",
     "pluralName": "data-house-webhooks",
-    "displayName": "Data House Webhook"
+    "displayName": "Data House Webhook",
+    "description": ""
   },
   "options": {
     "draftAndPublish": true
   },
   "pluginOptions": {},
   "attributes": {
-    "message": {
+    "mobile_number": {
       "type": "string"
+    },
+    "ident": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "balance_before": {
+      "type": "string"
+    },
+    "balance_after": {
+      "type": "string"
+    },
+    "plan_amount": {
+      "type": "string"
+    },
+    "network": {
+      "type": "integer"
+    },
+    "api_response": {
+      "type": "string"
+    },
+    "refund": {
+      "type": "boolean",
+      "default": false
     }
   }
 }
