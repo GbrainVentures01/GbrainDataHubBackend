@@ -52,7 +52,7 @@ module.exports = createCoreController(
 
         return ctx.send({
           data: {
-            message: "success, your account will be credited soon",
+            message: "SUCCESSFUL, YOUR ACCOUNT WILL BE CREDITED IN 10 - 30MIN",
             Order,
           },
         });
