@@ -36,7 +36,7 @@ module.exports = createCoreController(
               tv_and_cables_orders: true,
               sell_airtimes: true,
               account_fundings: true,
-              cg_data_order: true,
+              cg_data_orders: true,
             },
           });
         const history = {
@@ -49,7 +49,7 @@ module.exports = createCoreController(
             ...user.tv_and_cables_orders,
             ...user.sell_airtimes,
             ...user.account_fundings,
-            ...user.cg_data_order,
+            ...user.cg_data_orders,
           ],
         };
         //  if (history.length === 0){

@@ -137,16 +137,15 @@
       "target": "api::sell-airtime.sell-airtime",
       "mappedBy": "user"
     },
-
     "account_fundings": {
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::account-funding.account-funding",
       "mappedBy": "user"
     },
-    "cg_data_order": {
+    "cg_data_orders": {
       "type": "relation",
-      "relation": "oneToOne",
+      "relation": "oneToMany",
       "target": "api::cg-data-order.cg-data-order",
       "mappedBy": "user"
     }

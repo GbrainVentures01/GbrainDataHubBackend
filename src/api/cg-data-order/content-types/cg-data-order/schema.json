@@ -46,7 +46,12 @@
     },
     "status": {
       "type": "enumeration",
-      "enum": ["pending", "delivered", "failed", "qeued"],
+      "enum": [
+        "pending",
+        "delivered",
+        "failed",
+        "qeued"
+      ],
       "default": "pending"
     },
     "TRX_Name": {
@@ -56,9 +61,9 @@
     },
     "user": {
       "type": "relation",
-      "relation": "oneToOne",
+      "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
-      "inversedBy": "cg_data_order"
+      "inversedBy": "cg_data_orders"
     }
   }
 }
