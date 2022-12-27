@@ -24,6 +24,7 @@
     "nodejs-base64": "^2.0.0",
     "pg": "8.6.0",
     "pg-connection-string": "^2.5.0",
+    "postman-request": "^2.88.1-postman.31",
     "randomstring": "^1.2.2",
     "strapi-provider-email-mailjet": "^4.0.0"
   },

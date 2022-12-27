@@ -36,18 +36,17 @@
       "type": "string",
       "required": true
     },
+    "ident": {
+      "type": "string",
+      "required": false
+    },
     "beneficiary": {
       "type": "string",
       "required": true
     },
     "status": {
       "type": "enumeration",
-      "enum": [
-        "pending",
-        "delivered",
-        "failed",
-        "qeued"
-      ],
+      "enum": ["pending", "delivered", "failed", "qeued"],
       "default": "pending"
     },
     "TRX_Name": {
