@@ -98,89 +98,102 @@ module.exports = createCoreController(
       const newOrder = {
         data: { ...restofdata, user: id },
       };
-
-      await strapi.service("api::cg-data-order.cg-data-order").create(newOrder);
-      await strapi.query("plugin::users-permissions.user").update({
-        where: { id: user.id },
-        data: {
-          AccountBalance: user.AccountBalance - Number(data.amount),
-        },
-      });
-
-      const payload = JSON.stringify({
-        network: Number(data.network_id),
-        plan: Number(data.plan_id),
-        mobile_number: `${data.beneficiary}`,
-        Ported_number: true,
-      });
-
-      const res = await customNetwork({
-        method: "POST",
-        target: "data_house",
-        path: "data/",
-        requestBody: payload,
-        headers: {
-          Authorization: `Token ${process.env.DATA_HOUSE_SECRET}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      console.log(res);
-
-      if (res.status === 201 && res.data.Status === "successful") {
-        await strapi.query("api::cg-data-order.cg-data-order").update({
-          where: { request_Id: data.request_Id },
+      try {
+        await strapi
+          .service("api::cg-data-order.cg-data-order")
+          .create(newOrder);
+        await strapi.query("plugin::users-permissions.user").update({
+          where: { id: user.id },
           data: {
-            status: "delivered",
-            ident: res.data.ident,
+            AccountBalance: user.AccountBalance - Number(data.amount),
           },
         });
-        return ctx.send({
-          data: {
-            message:
-              res.data.api_response ||
-              `Successful gifted ${data.plan} to ${data.beneficiary}`,
+
+        const payload = JSON.stringify({
+          network: Number(data.network_id),
+          plan: Number(data.plan_id),
+          mobile_number: `${data.beneficiary}`,
+          Ported_number: true,
+        });
+
+        const res = await customNetwork({
+          method: "POST",
+          target: "data_house",
+          path: "data/",
+          requestBody: payload,
+          headers: {
+            Authorization: `Token ${process.env.DATA_HOUSE_SECRET}`,
+            "Content-Type": "application/json",
           },
         });
-      } else if (res.data.Status === "failed") {
-        await strapi.query("api::cg-data-order.cg-data-order").update({
-          where: { request_Id: data.request_Id },
-          data: {
-            status: "failed",
-            ident: res.data.ident,
-          },
-        });
-        const user = await strapi
-          .query("plugin::users-permissions.user")
-          .findOne({ where: { id: id } });
+
+        console.log(res);
+
+        if (res.status === 201 && res.data.Status === "successful") {
+          await strapi.query("api::cg-data-order.cg-data-order").update({
+            where: { request_Id: data.request_Id },
+            data: {
+              status: "delivered",
+              ident: res.data.ident,
+            },
+          });
+          return ctx.send({
+            data: {
+              message:
+                res.data.api_response ||
+                `Successful gifted ${data.plan} to ${data.beneficiary}`,
+            },
+          });
+        } else if (res.data.Status === "failed") {
+          await strapi.query("api::cg-data-order.cg-data-order").update({
+            where: { request_Id: data.request_Id },
+            data: {
+              status: "failed",
+              ident: res.data.ident,
+            },
+          });
+          const user = await strapi
+            .query("plugin::users-permissions.user")
+            .findOne({ where: { id: id } });
+          await strapi.query("plugin::users-permissions.user").update({
+            where: { id: user.id },
+            data: {
+              AccountBalance: user.AccountBalance + Number(data.amount),
+            },
+          });
+          console.log(res.data);
+          ctx.throw(400, res.data.api_response);
+        } else if (
+          res.data &&
+          res.data.Status !== "failed" &&
+          res.data.Status !== "successful"
+        ) {
+          await strapi.query("api::cg-data-order.cg-data-order").update({
+            where: { request_Id: data.request_Id },
+            data: {
+              status: "qeued",
+              ident: res.data.ident,
+            },
+          });
+
+          console.log(res.data);
+          return ctx.send({
+            data: { message: "pending" },
+          });
+        } else {
+          console.log(res.data);
+          ctx.throw(500, "transaction was not successful ");
+        }
+      } catch (error) {
+        console.log("from error");
+        console.log(error);
         await strapi.query("plugin::users-permissions.user").update({
           where: { id: user.id },
           data: {
             AccountBalance: user.AccountBalance + Number(data.amount),
           },
         });
-        console.log(res.data);
-        ctx.throw(400, res.data.api_response);
-      } else if (
-        res.data &&
-        res.data.Status !== "failed" &&
-        res.data.Status !== "successful"
-      ) {
-        await strapi.query("api::cg-data-order.cg-data-order").update({
-          where: { request_Id: data.request_Id },
-          data: {
-            status: "qeued",
-            ident: res.data.ident,
-          },
-        });
-
-        console.log(res.data);
-        return ctx.send({
-          data: { message: "pending" },
-        });
-      } else {
-        console.log(res.data);
-        ctx.throw(500, "transaction was not successful ");
+        ctx.throw(500, "transaction was not successful");
       }
     },
   })
