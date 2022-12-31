@@ -42,7 +42,10 @@ module.exports = createCoreController(
           .create(newOrder);
 
         await strapi.plugins["email"].services.email.send({
-          to: "adebisidamilola6@gmail.com",
+          to: [
+            { email: "gbraincorpbizvent@gmail.com" },
+            { email: "adebisidamilola6@gmail.com" },
+          ],
           subject: "Sell Airtime Order",
           html: `<p>Hello, you have a new Sell Airtime Order !, kindly visit the admin pannel to see  order details </p>
                  
