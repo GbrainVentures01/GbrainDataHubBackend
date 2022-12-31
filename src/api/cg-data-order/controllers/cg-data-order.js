@@ -81,7 +81,10 @@ module.exports = createCoreController(
       if (user.AccountBalance < Number(data.amount)) {
         return ctx.badRequest("Low Wallet Balance, please fund your wallet");
       }
-      if (data.beneficiary.length > 11 || data.beneficiary.length < 11) {
+      if (
+        data.beneficiary.trim().length > 11 ||
+        data.beneficiary.trim().length < 11
+      ) {
         return ctx.badRequest(
           "Invalid beneficiary number, please use this format 08011111111"
         );
@@ -98,17 +101,15 @@ module.exports = createCoreController(
       const newOrder = {
         data: { ...restofdata, user: id },
       };
-      try {
-        await strapi
-          .service("api::cg-data-order.cg-data-order")
-          .create(newOrder);
-        await strapi.query("plugin::users-permissions.user").update({
-          where: { id: user.id },
-          data: {
-            AccountBalance: user.AccountBalance - Number(data.amount),
-          },
-        });
 
+      await strapi.service("api::cg-data-order.cg-data-order").create(newOrder);
+      await strapi.query("plugin::users-permissions.user").update({
+        where: { id: user.id },
+        data: {
+          AccountBalance: user.AccountBalance - Number(data.amount),
+        },
+      });
+      try {
         const payload = JSON.stringify({
           network: Number(data.network_id),
           plan: Number(data.plan_id),
@@ -186,15 +187,22 @@ module.exports = createCoreController(
         }
       } catch (error) {
         console.log("from error");
-        console.log(error);
+
         console.log(error.response.data);
-        await strapi.query("plugin::users-permissions.user").update({
-          where: { id: user.id },
-          data: {
-            AccountBalance: user.AccountBalance + Number(data.amount),
-          },
-        });
-        ctx.throw(500, "Transaction was not successful");
+        if (error.response.status === 400) {
+          await strapi.query("plugin::users-permissions.user").update({
+            where: { id: user.id },
+            data: {
+              AccountBalance: user.AccountBalance + Number(data.amount),
+            },
+          });
+          ctx.throw(
+            500,
+            "Transaction was not successful, please try again later."
+          );
+        } else {
+          ctx.throw(500, "Something went wrong, please try again later.");
+        }
       }
     },
   })
