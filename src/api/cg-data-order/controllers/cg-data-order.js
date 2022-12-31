@@ -81,6 +81,11 @@ module.exports = createCoreController(
       if (user.AccountBalance < Number(data.amount)) {
         return ctx.badRequest("Low Wallet Balance, please fund your wallet");
       }
+      if (data.beneficiary.length > 11 || data.beneficiary.length < 11) {
+        return ctx.badRequest(
+          "Invalid beneficiary number, please use this format 08011111111"
+        );
+      }
       const validPin = await getService("user").validatePassword(
         data.pin,
         user.pin
@@ -119,6 +124,8 @@ module.exports = createCoreController(
           "Content-Type": "application/json",
         },
       });
+
+      console.log(res);
 
       if (res.status === 201 && res.data.Status === "successful") {
         await strapi.query("api::cg-data-order.cg-data-order").update({
