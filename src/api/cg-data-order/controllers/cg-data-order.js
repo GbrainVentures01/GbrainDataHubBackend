@@ -190,12 +190,6 @@ module.exports = createCoreController(
 
         console.log(error.response.data);
         if (error.response.status === 400) {
-          await strapi.query("plugin::users-permissions.user").update({
-            where: { id: user.id },
-            data: {
-              AccountBalance: user.AccountBalance + Number(data.amount),
-            },
-          });
           ctx.throw(
             500,
             "Transaction was not successful, please try again later."
