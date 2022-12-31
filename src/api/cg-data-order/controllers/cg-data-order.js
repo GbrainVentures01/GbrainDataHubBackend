@@ -182,18 +182,19 @@ module.exports = createCoreController(
           });
         } else {
           console.log(res.data);
-          ctx.throw(500, "transaction was not successful ");
+          ctx.throw(500, "Transaction was not successful");
         }
       } catch (error) {
         console.log("from error");
         console.log(error);
+        console.log(error.response.data);
         await strapi.query("plugin::users-permissions.user").update({
           where: { id: user.id },
           data: {
             AccountBalance: user.AccountBalance + Number(data.amount),
           },
         });
-        ctx.throw(500, "transaction was not successful");
+        ctx.throw(500, "Transaction was not successful");
       }
     },
   })
