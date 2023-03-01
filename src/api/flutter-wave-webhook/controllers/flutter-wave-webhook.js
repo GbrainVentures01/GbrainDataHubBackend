@@ -49,64 +49,79 @@ module.exports = createCoreController(
             .create(payload);
           if (reqBody.data.status === "successful") {
             console.log("verifying payment...");
-            const flw = new Flutterwave(
-              process.env.FLUTTER_WAVE_PUBLIC_KEY,
-              process.env.FLUTTER_WAVE_LIVE_SECRET_KEY
-            );
+            await strapi.query("plugin::users-permissions.user").update({
+              where: { id: user.id },
+              data: {
+                AccountBalance:
+                  user.AccountBalance + Number(reqBody.data.amount),
+              },
+            });
+            await strapi.query("api::account-funding.account-funding").update({
+              where: { tx_ref: reqBody.data.tx_ref },
+              data: {
+                status: "Success",
+                transaction_id: reqBody.data.id.toString(),
+              },
+            });
 
-            flw.Transaction.verify({ id: reqBody.data.id })
-              .then(async (response) => {
-                console.log(response);
-                if (
-                  response.data.status === "successful" &&
-                  response.data.amount === reqBody.data.amount &&
-                  response.data.currency === reqBody.data.currency
-                ) {
-                  await strapi.query("plugin::users-permissions.user").update({
-                    where: { id: user.id },
-                    data: {
-                      AccountBalance:
-                        user.AccountBalance + Number(response.data.amount),
-                    },
-                  });
-                  await strapi
-                    .query("api::account-funding.account-funding")
-                    .update({
-                      where: { tx_ref: reqBody.data.tx_ref },
-                      data: {
-                        status: "Success",
-                        transaction_id: reqBody.data.id.toString(),
-                      },
-                    });
-                } else {
-                  const EmailSent = await strapi
-                    .plugin("email")
-                    .service("email")
-                    .send({
-                      to: user.email,
+            // const flw = new Flutterwave(
+            //   process.env.FLUTTER_WAVE_PUBLIC_KEY,
+            //   process.env.FLUTTER_WAVE_LIVE_SECRET_KEY
+            // );
 
-                      subject: "Wallet Funding",
+            // flw.Transaction.verify({ id: reqBody.data.id })
+            //   .then(async (response) => {
+            //     console.log(response);
+            //     if (
+            //       response.data.status === "successful" &&
+            //       response.data.amount === reqBody.data.amount &&
+            //       response.data.currency === reqBody.data.currency
+            //     ) {
+            //       await strapi.query("plugin::users-permissions.user").update({
+            //         where: { id: user.id },
+            //         data: {
+            //           AccountBalance:
+            //             user.AccountBalance + Number(response.data.amount),
+            //         },
+            //       });
+            //       await strapi
+            //         .query("api::account-funding.account-funding")
+            //         .update({
+            //           where: { tx_ref: reqBody.data.tx_ref },
+            //           data: {
+            //             status: "Success",
+            //             transaction_id: reqBody.data.id.toString(),
+            //           },
+            //         });
+            //     } else {
+            //       const EmailSent = await strapi
+            //         .plugin("email")
+            //         .service("email")
+            //         .send({
+            //           to: user.email,
 
-                      html: `<p>Dear ${user.username}, your payment with the trx ref of ${reqBody.data.tx_ref} was not successful.</p>
-                    <p>Contact Support for more details</p>
-                    <p>Gbrain Corporate Ventures.</p>
-                    `,
-                    });
-                  await strapi
-                    .query("api::account-funding.account-funding")
-                    .update({
-                      where: { tx_ref: reqBody.data.tx_ref },
-                      data: {
-                        status: "Failed",
-                        transaction_id: reqBody.data.id,
-                      },
-                    });
-                  console.log(EmailSent);
+            //           subject: "Wallet Funding",
 
-                  // Inform the customer their payment was unsuccessful
-                }
-              })
-              .catch((e) => console.log(e));
+            //           html: `<p>Dear ${user.username}, your payment with the trx ref of ${reqBody.data.tx_ref} was not successful.</p>
+            //         <p>Contact Support for more details</p>
+            //         <p>Gbrain Corporate Ventures.</p>
+            //         `,
+            //         });
+            //       await strapi
+            //         .query("api::account-funding.account-funding")
+            //         .update({
+            //           where: { tx_ref: reqBody.data.tx_ref },
+            //           data: {
+            //             status: "Failed",
+            //             transaction_id: reqBody.data.id,
+            //           },
+            //         });
+            //       console.log(EmailSent);
+
+            //       // Inform the customer their payment was unsuccessful
+            //     }
+            //   })
+            //   .catch((e) => console.log(e));
           }
         } catch (error) {
           console.log(error);
