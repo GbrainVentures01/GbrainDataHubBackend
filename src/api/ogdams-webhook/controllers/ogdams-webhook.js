@@ -17,7 +17,7 @@ module.exports = createCoreController(
 
     async create(ctx) {
       const reqBody = ctx.request.body;
-      console.log(reqBody.event.data.reference);
+      console.log(reqBody);
       try {
         if (reqBody.status === true) {
           await strapi.query("api::sme-data-order.sme-data-order").update({

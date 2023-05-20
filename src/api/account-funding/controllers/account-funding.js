@@ -44,7 +44,7 @@ module.exports = createCoreController(
           amount: amount,
           ref: ref,
         });
-        console.log(res);
+       
         if (res.status === "success") {
           ctx.send({
             message: "success",

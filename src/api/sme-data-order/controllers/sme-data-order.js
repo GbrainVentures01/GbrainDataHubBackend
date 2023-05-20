@@ -137,7 +137,16 @@ module.exports = createCoreController(
           headers: { Authorization: `Bearer ${process.env.OGDAMS_API_KEY}` },
         });
         console.log(res);
-        if (res.data.code === 202) {
+        if (res.data.code === 200) {
+          await strapi.query("api::sme-data-order.sme-data-order").update({
+            where: { ref: ref },
+            data: {
+              status: "delivered",
+            },
+          });
+          return ctx.send({ data: { message: `${res.data.data.msg}` } });
+        } 
+        else if (res.data.code === 202) {
           await strapi.query("api::sme-data-order.sme-data-order").update({
             where: { ref: ref },
             data: {
