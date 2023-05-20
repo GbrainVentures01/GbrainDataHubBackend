@@ -144,7 +144,7 @@ module.exports = createCoreController(
               status: "delivered",
             },
           });
-          return ctx.send({ data: { message: `${res.data.data.msg}` } });
+          return ctx.send({ data: { message: `Transaction Successful, check your balance.` } });
         } 
         else if (res.data.code === 202) {
           await strapi.query("api::sme-data-order.sme-data-order").update({
