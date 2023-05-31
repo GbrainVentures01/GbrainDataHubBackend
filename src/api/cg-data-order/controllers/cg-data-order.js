@@ -190,7 +190,7 @@ module.exports = createCoreController(
       } catch (error) {
         console.log("from error");
         console.log(error);
-        if (error.response.status === 400) {
+        if (error.response?.status === 400) {
           await strapi.query("api::cg-data-order.cg-data-order").update({
             where: { request_Id: data.request_Id },
             data: {

@@ -77,7 +77,7 @@ console.log(payload);
 
         if (res.status === 200 && res.data.status ) {
           await strapi.query("api::data-gifting-order.data-gifting-order").update({
-            where: { request_Id: data.request_Id },
+            where: { request_id: data.request_id },
             data: {
               status: "delivered",
               ident: res.data.ident,
@@ -92,7 +92,7 @@ console.log(payload);
           });
         } else if (!res.data.status ) {
           await strapi.query("api::data-gifting-order.data-gifting-order").update({
-            where: { request_Id: data.request_Id },
+            where: { request_id: data.request_id },
             data: {
               status: "failed",
               ident: res.data.ident,
@@ -151,9 +151,9 @@ console.log(payload);
       } catch (error) {
         console.log(error);
         console.log("from error");
-        if (error.response.status === 400) {
+        if (error.response?.status === 400) {
           await strapi.query("api::data-gifting-order.data-gifting-order").update({
-            where: { request_Id: data.request_Id },
+            where: { request_id: data.request_id },
             data: {
               status: "failed",
             },
