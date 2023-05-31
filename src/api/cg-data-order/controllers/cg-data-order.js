@@ -111,8 +111,8 @@ module.exports = createCoreController(
       });
       try {
         const payload = JSON.stringify({
-          network_id: Number(data.network_id),
-          plan_id: Number(data.plan_id),
+          network_id: `${data.network_id}`,
+          plan_id: `${data.plan_id}`,
           phone: `${data.beneficiary}`,
           // Ported_number: true,
         });
@@ -123,14 +123,14 @@ module.exports = createCoreController(
           path: "data",
           requestBody: payload,
           headers: {
-            Authorization: `Token ${process.env.DATA_HOUSE_SECRET}`,
+            Authorization: `Token ${process.env.BELLO_SECRET}`,
             "Content-Type": "application/json",
           },
         });
 
         console.log(res);
 
-        if (res.status === 201 && res.data.Status === "successful") {
+        if (res.status === 201 && res.data.status === "successful") {
           await strapi.query("api::cg-data-order.cg-data-order").update({
             where: { request_Id: data.request_Id },
             data: {
@@ -145,7 +145,7 @@ module.exports = createCoreController(
                 `Successful gifted ${data.plan} to ${data.beneficiary}`,
             },
           });
-        } else if (res.data.Status === "failed") {
+        } else if (res.data.status === "failed") {
           await strapi.query("api::cg-data-order.cg-data-order").update({
             where: { request_Id: data.request_Id },
             data: {
@@ -166,8 +166,8 @@ module.exports = createCoreController(
           ctx.throw(400, res.data.api_response);
         } else if (
           res.data &&
-          res.data.Status !== "failed" &&
-          res.data.Status !== "successful"
+          res.data.status !== "failed" &&
+          res.data.status !== "successful"
         ) {
           await strapi.query("api::cg-data-order.cg-data-order").update({
             where: { request_Id: data.request_Id },

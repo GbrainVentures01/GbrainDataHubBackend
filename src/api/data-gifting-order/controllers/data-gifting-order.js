@@ -55,8 +55,8 @@ module.exports = createCoreController(
    
 
         const payload = JSON.stringify({
-          network_id: Number(data.network_id),
-          plan_id: Number(data.plan_id),
+          network_id: `${data.network_id}`,
+          plan_id: `${data.plan_id}`,
           phone: `${data.beneficiary}`,
           // Ported_number: true,
         });
@@ -74,7 +74,7 @@ console.log(payload);
 
         console.log(res);
 
-        if (res.status === 201 && res.data.Status === "successful") {
+        if (res.status === 201 && res.data.status === "successful") {
           await strapi.query("api::data-gifting-order.data-gifting-order").update({
             where: { request_Id: data.request_Id },
             data: {
@@ -89,7 +89,7 @@ console.log(payload);
                 `Successful gifted ${data.plan} to ${data.beneficiary}`,
             },
           });
-        } else if (res.data.Status === "failed") {
+        } else if (res.data.status === "failed") {
           await strapi.query("api::data-gifting-order.data-gifting-order").update({
             where: { request_Id: data.request_Id },
             data: {
@@ -110,8 +110,8 @@ console.log(payload);
           ctx.throw(400, res.data.api_response);
         } else if (
           res.data &&
-          res.data.Status !== "failed" &&
-          res.data.Status !== "successful"
+          res.data.status !== "failed" &&
+          res.data.status !== "successful"
         ) {
           await strapi.query("api::data-gifting-order.data-gifting-order").update({
             where: { request_Id: data.request_Id },
