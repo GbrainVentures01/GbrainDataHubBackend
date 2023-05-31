@@ -146,7 +146,7 @@ console.log(payload);
         //   data: { message: "data gifting order successfully created", Order },
         // });
       } catch (error) {
-        // throw new ApplicationError(error.message);
+        console.log(error);
         console.log("from error");
         if (error.response.status === 400) {
           await strapi.query("api::data-gifting-order.data-gifting-order").update({
