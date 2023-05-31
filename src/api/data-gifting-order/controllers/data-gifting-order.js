@@ -64,7 +64,7 @@ console.log(payload);
         const res = await customNetwork({
           method: "POST",
           target: "bello",
-          path: "data/",
+          path: "data",
           requestBody: payload,
           headers: {
             Authorization: `Token ${process.env.BELLO_SECRET}`,

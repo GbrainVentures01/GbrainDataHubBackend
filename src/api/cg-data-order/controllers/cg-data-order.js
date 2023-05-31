@@ -120,7 +120,7 @@ module.exports = createCoreController(
         const res = await customNetwork({
           method: "POST",
           target: "bello",
-          path: "data/",
+          path: "data",
           requestBody: payload,
           headers: {
             Authorization: `Token ${process.env.DATA_HOUSE_SECRET}`,
