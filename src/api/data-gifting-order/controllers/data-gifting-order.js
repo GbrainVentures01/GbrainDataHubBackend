@@ -67,7 +67,7 @@ console.log(payload);
           path: "data",
           requestBody: payload,
           headers: {
-            Authorization: `Token ${process.env.BELLO_SECRET}`,
+            Authorization: `Bearer ${process.env.BELLO_SECRET}`,
             "Content-Type": "application/json",
           },
         });
