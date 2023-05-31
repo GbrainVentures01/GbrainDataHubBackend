@@ -86,7 +86,7 @@ console.log(payload);
           return ctx.send({
             data: {
               message:
-                res.data.api_response ||
+                // res.data.api_response  ||
                 `Successful gifted ${data.plan} to ${data.beneficiary}`,
             },
           });
