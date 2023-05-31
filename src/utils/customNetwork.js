@@ -3,6 +3,7 @@ const fwave = "https://api.flutterwave.com/";
 const vtpassUrl = "https://vtpass.com/api/";
 const datahouse = "https://www.datahouse.com.ng/api/";
 const ogdamsUrl = "https://simhosting.ogdams.ng/api/v1/";
+const bello = "https://bellodigitalworld.ng/api/v1/";
 
 // const baseUrl = `${testUrl}/api`;
 
@@ -40,7 +41,8 @@ module.exports = async ({
         return ogdamsUrl;
       case "data_house":
         return datahouse;
-
+      case "bello":
+        return bello;
       default:
         return fwave;
     }

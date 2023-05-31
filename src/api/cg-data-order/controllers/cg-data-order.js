@@ -111,15 +111,15 @@ module.exports = createCoreController(
       });
       try {
         const payload = JSON.stringify({
-          network: Number(data.network_id),
-          plan: Number(data.plan_id),
-          mobile_number: `${data.beneficiary}`,
-          Ported_number: true,
+          network_id: Number(data.network_id),
+          plan_id: Number(data.plan_id),
+          phone: `${data.beneficiary}`,
+          // Ported_number: true,
         });
 
         const res = await customNetwork({
           method: "POST",
-          target: "data_house",
+          target: "bello",
           path: "data/",
           requestBody: payload,
           headers: {

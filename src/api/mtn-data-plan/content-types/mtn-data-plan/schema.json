@@ -20,6 +20,11 @@
       "type": "decimal",
       "required": true
     },
+  
+    "network_id": {
+      "type": "integer",
+      "required": true
+    },
     "expiry_date": {
       "type": "string"
     },

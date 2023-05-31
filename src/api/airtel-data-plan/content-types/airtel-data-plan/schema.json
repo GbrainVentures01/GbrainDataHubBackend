@@ -15,6 +15,14 @@
       "type": "string",
       "required": true
     },
+    "plan_id": {
+      "type": "integer",
+      "required": true
+    },
+    "network_id": {
+      "type": "integer",
+      "required": true
+    },
     "Price": {
       "type": "decimal",
       "required": true

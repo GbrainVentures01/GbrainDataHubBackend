@@ -50,23 +50,115 @@ module.exports = createCoreController(
             AccountBalance: user.AccountBalance - Number(data.amount),
           },
         });
-        await strapi.plugins["email"].services.email.send({
-          to: [
-            { email: "gbraincorpbizvent@gmail.com" },
-            { email: "adebisidamilola6@gmail.com" },
-          ],
-          subject: "New Airtime Order",
-          html: `<p>Hello, you have a new data gifting order !, kindly visit the admin pannel to see  order details </p>
-                 
-                 <h3> Regards</h3>
-                 <h3>Gbrain Coporate Ventures</h3>`,
+
+        const payload = JSON.stringify({
+          network_id: Number(data.network_id),
+          plan_id: Number(data.plan_id),
+          phone: `${data.beneficiary}`,
+          // Ported_number: true,
         });
 
-        return ctx.send({
-          data: { message: "data gifting order successfully created", Order },
+        const res = await customNetwork({
+          method: "POST",
+          target: "bello",
+          path: "data/",
+          requestBody: payload,
+          headers: {
+            Authorization: `Token ${process.env.BELLO_SECRET}`,
+            "Content-Type": "application/json",
+          },
         });
+
+        console.log(res);
+
+        if (res.status === 201 && res.data.Status === "successful") {
+          await strapi.query("api::data-gifting-order.data-gifting-order").update({
+            where: { request_Id: data.request_Id },
+            data: {
+              status: "delivered",
+              ident: res.data.ident,
+            },
+          });
+          return ctx.send({
+            data: {
+              message:
+                res.data.api_response ||
+                `Successful gifted ${data.plan} to ${data.beneficiary}`,
+            },
+          });
+        } else if (res.data.Status === "failed") {
+          await strapi.query("api::data-gifting-order.data-gifting-order").update({
+            where: { request_Id: data.request_Id },
+            data: {
+              status: "failed",
+              ident: res.data.ident,
+            },
+          });
+          const user = await strapi
+            .query("plugin::users-permissions.user")
+            .findOne({ where: { id: id } });
+          await strapi.query("plugin::users-permissions.user").update({
+            where: { id: user.id },
+            data: {
+              AccountBalance: user.AccountBalance + Number(data.amount),
+            },
+          });
+          console.log(res.data);
+          ctx.throw(400, res.data.api_response);
+        } else if (
+          res.data &&
+          res.data.Status !== "failed" &&
+          res.data.Status !== "successful"
+        ) {
+          await strapi.query("api::data-gifting-order.data-gifting-order").update({
+            where: { request_Id: data.request_Id },
+            data: {
+              status: "qeued",
+              ident: res.data.ident,
+            },
+          });
+
+          console.log(res.data);
+          return ctx.send({
+            data: { message: "pending" },
+          });
+        } else {
+          console.log(res.data);
+          ctx.throw(500, "Transaction was not successful");
+        }
+
+        // await strapi.plugins["email"].services.email.send({
+        //   to: [
+        //     { email: "gbraincorpbizvent@gmail.com" },
+        //     { email: "adebisidamilola6@gmail.com" },
+        //   ],
+        //   subject: "New Airtime Order",
+        //   html: `<p>Hello, you have a new data gifting order !, kindly visit the admin pannel to see  order details </p>
+                 
+        //          <h3> Regards</h3>
+        //          <h3>Gbrain Coporate Ventures</h3>`,
+        // });
+
+        // return ctx.send({
+        //   data: { message: "data gifting order successfully created", Order },
+        // });
       } catch (error) {
-        throw new ApplicationError(error.message);
+        // throw new ApplicationError(error.message);
+        console.log("from error");
+        if (error.response.status === 400) {
+          await strapi.query("api::data-gifting-order.data-gifting-order").update({
+            where: { request_Id: data.request_Id },
+            data: {
+              status: "failed",
+            },
+          });
+          ctx.throw(
+            500,
+            "Transaction was not successful, please try again later."
+          );
+        } else {
+          ctx.throw(500, "Something went wrong, please try again later.");
+        }
       }
     },
   })
