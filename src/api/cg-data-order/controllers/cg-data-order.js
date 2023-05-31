@@ -130,7 +130,7 @@ module.exports = createCoreController(
 
         console.log(res);
 
-        if (res.status === 201 && res.data.status === "successful") {
+        if (res.status === 200 && res.data.status ) {
           await strapi.query("api::cg-data-order.cg-data-order").update({
             where: { request_Id: data.request_Id },
             data: {
@@ -145,7 +145,7 @@ module.exports = createCoreController(
                 `Successful gifted ${data.plan} to ${data.beneficiary}`,
             },
           });
-        } else if (res.data.status === "failed") {
+        } else if (!res.data.status ) {
           await strapi.query("api::cg-data-order.cg-data-order").update({
             where: { request_Id: data.request_Id },
             data: {
@@ -164,24 +164,26 @@ module.exports = createCoreController(
           });
           console.log(res.data);
           ctx.throw(400, res.data.api_response);
-        } else if (
-          res.data &&
-          res.data.status !== "failed" &&
-          res.data.status !== "successful"
-        ) {
-          await strapi.query("api::cg-data-order.cg-data-order").update({
-            where: { request_Id: data.request_Id },
-            data: {
-              status: "qeued",
-              ident: res.data.ident,
-            },
-          });
+        } 
+        // else if (
+        //   res.data &&
+        //   res.data.status !== "failed" &&
+        //   res.data.status !== "successful"
+        // ) {
+        //   await strapi.query("api::cg-data-order.cg-data-order").update({
+        //     where: { request_Id: data.request_Id },
+        //     data: {
+        //       status: "qeued",
+        //       ident: res.data.ident,
+        //     },
+        //   });
 
-          console.log(res.data);
-          return ctx.send({
-            data: { message: "pending" },
-          });
-        } else {
+        //   console.log(res.data);
+        //   return ctx.send({
+        //     data: { message: "pending" },
+        //   });
+        // }
+        else {
           console.log(res.data);
           ctx.throw(500, "Transaction was not successful");
         }
