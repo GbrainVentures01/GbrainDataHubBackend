@@ -4,7 +4,7 @@
   "info": {
     "singularName": "mtn-data-plan",
     "pluralName": "mtn-data-plans",
-    "displayName": "Mtn Data Plan",
+    "displayName": "Mtn Gifting Data Plan",
     "description": ""
   },
   "options": {
@@ -20,7 +20,6 @@
       "type": "decimal",
       "required": true
     },
-  
     "network_id": {
       "type": "integer",
       "required": true

@@ -4,7 +4,8 @@
   "info": {
     "singularName": "airtel-data-plan",
     "pluralName": "airtel-data-plans",
-    "displayName": "Airtel Data Plan"
+    "displayName": "Airtel Gifting Data Plan",
+    "description": ""
   },
   "options": {
     "draftAndPublish": true

@@ -22,6 +22,7 @@ module.exports = createCoreController(
      */
     async create(ctx) {
       const { data } = ctx.request.body;
+      console.log(data)
       const { id } = ctx.state.user;
       const user = await strapi
         .query("plugin::users-permissions.user")
@@ -51,13 +52,15 @@ module.exports = createCoreController(
           },
         });
 
+   
+
         const payload = JSON.stringify({
           network_id: Number(data.network_id),
           plan_id: Number(data.plan_id),
           phone: `${data.beneficiary}`,
           // Ported_number: true,
         });
-
+console.log(payload);
         const res = await customNetwork({
           method: "POST",
           target: "bello",
