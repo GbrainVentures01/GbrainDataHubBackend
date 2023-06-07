@@ -49,12 +49,12 @@ module.exports = createCoreController(
       try {
         if (data) {
           const { pin, ...restofdata } = data;
-          const newOrder = { data: { ...restofdata, user: id } };
+          const newOrder = { data: { ...restofdata, user: id, current_balance: user.AccountBalance, previous_balance:user.AccountBalance } };
           await strapi
             .service("api::exam-pin-order.exam-pin-order")
             .create(newOrder);
 
-          await strapi.query("plugin::users-permissions.user").update({
+        const updatedUser =   await strapi.query("plugin::users-permissions.user").update({
             where: { id: user.id },
             data: {
               AccountBalance: user.AccountBalance - Number(data.amount),
@@ -80,6 +80,7 @@ module.exports = createCoreController(
               data: {
                 status: "Successful",
                 purchased_pin: purchaseExamPin.data.purchased_code,
+                current_balance:updatedUser.AccountBalance
               },
             });
             return ctx.created({
@@ -97,6 +98,7 @@ module.exports = createCoreController(
                 data: {
                   status: "Successful",
                   purchased_pin: purchaseExamPin.data.purchased_code,
+                  current_balance:updatedUser.AccountBalance
                 },
               });
               return ctx.created({
@@ -108,7 +110,7 @@ module.exports = createCoreController(
               const user = await strapi
                 .query("plugin::users-permissions.user")
                 .findOne({ where: { id: id } });
-              await strapi.query("plugin::users-permissions.user").update({
+           const updatedUser  =  await strapi.query("plugin::users-permissions.user").update({
                 where: { id: user.id },
                 data: {
                   AccountBalance: user.AccountBalance + Number(data.amount),
@@ -118,6 +120,7 @@ module.exports = createCoreController(
                 where: { request_id: data.request_id },
                 data: {
                   status: "Failed",
+                  current_balance:updatedUser.AccountBalance
                 },
               });
               return ctx.serviceUnavailable("Sorry something came up");
@@ -126,7 +129,7 @@ module.exports = createCoreController(
             const user = await strapi
               .query("plugin::users-permissions.user")
               .findOne({ where: { id: id } });
-            await strapi.query("plugin::users-permissions.user").update({
+        const updatedUser   =  await strapi.query("plugin::users-permissions.user").update({
               where: { id: user.id },
               data: {
                 AccountBalance: user.AccountBalance + Number(data.amount),
@@ -136,6 +139,7 @@ module.exports = createCoreController(
               where: { request_id: data.request_id },
               data: {
                 status: "Failed",
+                current_balance:updatedUser.AccountBalance
               },
             });
             return ctx.throw(400, purchaseExamPin?.data?.response_description);

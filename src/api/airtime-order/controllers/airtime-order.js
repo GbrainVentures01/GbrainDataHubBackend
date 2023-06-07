@@ -46,18 +46,20 @@ module.exports = createCoreController(
         return ctx.badRequest("Incorrect Pin");
       }
       // update latest user's details (debit user's account)
-      await strapi.query("plugin::users-permissions.user").update({
-        where: { id: user.id },
-        data: {
-          AccountBalance: user.AccountBalance - Number(data.amount),
-        },
-      });
+     
       try {
         const { pin, ...restofdata } = data;
-        const newOrder = { data: { ...restofdata, user: id } };
+        const newOrder = { data: { ...restofdata, user: id, current_balance:user.AccountBalance, previous_balance:user.AccountBalance } };
         await strapi
           .service("api::airtime-order.airtime-order")
           .create(newOrder);
+
+       const updatedUser =  await strapi.query("plugin::users-permissions.user").update({
+            where: { id: user.id },
+            data: {
+              AccountBalance: user.AccountBalance - Number(data.amount),
+            },
+          });
 
         const payload = {
           request_id: data.request_id,
@@ -86,6 +88,7 @@ module.exports = createCoreController(
             where: { request_id: data.request_id },
             data: {
               status: "delivered",
+              current_balance:updatedUser.AccountBalance
             },
           });
           return ctx.created({ message: "Successful" });
@@ -97,6 +100,7 @@ module.exports = createCoreController(
             where: { request_id: data.request_id },
             data: {
               status: "processing",
+              current_balance:updatedUser.AccountBalance
             },
           });
           return ctx.created({ message: "Successful" });
@@ -113,6 +117,7 @@ module.exports = createCoreController(
               where: { request_id: data.request_id },
               data: {
                 status: "Successful",
+                current_balance:updatedUser.AccountBalance
               },
             });
             return ctx.created({ message: "Successful" });
@@ -135,6 +140,7 @@ module.exports = createCoreController(
               where: { request_id: data.request_id },
               data: {
                 status: "Failed",
+                current_balance:updatedUser.AccountBalance
               },
             });
             return ctx.serviceUnavailable(
@@ -159,6 +165,7 @@ module.exports = createCoreController(
             where: { request_id: data.request_id },
             data: {
               status: "Failed",
+              current_balance:updatedUser.AccountBalance
             },
           });
           console.log(buyAirtime);
@@ -170,6 +177,7 @@ module.exports = createCoreController(
           where: { request_id: data.request_id },
           data: {
             status: "Failed",
+            current_balance:updatedUser.AccountBalance
           },
         });
         console.log(error);

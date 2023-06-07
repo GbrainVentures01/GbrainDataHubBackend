@@ -100,22 +100,25 @@ module.exports = createCoreController(
             .findOne({
               where: { id: id },
             });
-          // update latest user's details (debit user's account)
-          await strapi.query("plugin::users-permissions.user").update({
-            where: { id: user.id },
-            data: {
-              AccountBalance: user.AccountBalance - Number(data.amount),
-            },
-          });
+        
           const { pin, ...restofdata } = data;
-          const newOrder = { data: { ...restofdata, user: id } };
+          const newOrder = { data: { ...restofdata, user: id, current_balance:user.AccountBalance, previous_balance:user.AccountBalance } };
+
           await strapi
             .service("api::electricity-order.electricity-order")
             .create(newOrder);
-          const { amount, phone, ...payload } = restofdata;
-          const makePurchaseParams = {
-            amount: Number(amount),
-            phone: Number(phone),
+
+  // update latest user's details (debit user's account)
+ const updatedUser = await strapi.query("plugin::users-permissions.user").update({
+    where: { id: user.id },
+    data: {
+      AccountBalance: user.AccountBalance - Number(data.amount),
+    },
+  });       
+             const { amount, phone, ...payload } = restofdata;
+             const makePurchaseParams = {
+             amount: Number(amount),
+             phone: Number(phone),
             ...payload,
           };
 
@@ -141,6 +144,7 @@ module.exports = createCoreController(
                 data: {
                   status: "Successful",
                   purchased_token: makeElectricityPurchase.data.purchased_code,
+                  current_balance:updatedUser.AccountBalance
                 },
               });
             return ctx.created({
@@ -161,6 +165,7 @@ module.exports = createCoreController(
                     status: "Successful",
                     purchased_token:
                       makeElectricityPurchase.data.purchased_code,
+                      current_balance:updatedUser.AccountBalance
                   },
                 });
               return ctx.created({
@@ -177,7 +182,7 @@ module.exports = createCoreController(
                 });
               // update latest user's details (refund user exact amount debited before)
 
-              await strapi.query("plugin::users-permissions.user").update({
+            const updatedUser =   await strapi.query("plugin::users-permissions.user").update({
                 where: { id: user.id },
                 data: {
                   AccountBalance: user.AccountBalance + Number(data.amount),
@@ -189,6 +194,7 @@ module.exports = createCoreController(
                   where: { request_id: data.request_id },
                   data: {
                     status: "Failed",
+                    current_balance:updatedUser.AccountBalance
                   },
                 });
               return ctx.serviceUnavailable(
@@ -202,7 +208,7 @@ module.exports = createCoreController(
               .findOne({
                 where: { id: id },
               });
-            await strapi.query("plugin::users-permissions.user").update({
+        const updatedUser = await strapi.query("plugin::users-permissions.user").update({
               where: { id: user.id },
               data: {
                 AccountBalance: user.AccountBalance + Number(data.amount),
@@ -215,6 +221,7 @@ module.exports = createCoreController(
                 where: { request_id: data.request_id },
                 data: {
                   status: "Failed",
+                  current_balance:updatedUser.AccountBalance
                 },
               });
 

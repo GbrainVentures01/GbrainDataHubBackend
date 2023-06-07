@@ -28,6 +28,12 @@
       "type": "string",
       "required": true
     },
+    "previous_balance": {
+      "type": "decimal"
+    },
+    "current_balance": {
+      "type": "decimal"
+    },
     "status": {
       "type": "enumeration",
       "enum": [

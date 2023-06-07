@@ -30,6 +30,8 @@ module.exports = createCoreController(
           amount: Number(amount),
           customer: user.email,
           TRX_Name: "Wallet Funding",
+          previous_balance: user.AccountBalance,
+          current_balance: user.AccountBalance
         },
       };
       try {

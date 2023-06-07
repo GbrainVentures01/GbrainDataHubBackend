@@ -20,6 +20,12 @@
       "type": "string",
       "required": true
     },
+    "previous_balance": {
+      "type": "decimal"
+    },
+    "current_balance": {
+      "type": "decimal"
+    },
     "amount": {
       "type": "string",
       "required": true

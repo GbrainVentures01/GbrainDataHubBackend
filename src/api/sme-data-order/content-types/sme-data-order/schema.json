@@ -32,6 +32,12 @@
       "type": "string",
       "required": true
     },
+    "previous_balance": {
+      "type": "decimal"
+    },
+    "current_balance": {
+      "type": "decimal"
+    },
     "TRX_Name": {
       "type": "string",
       "default": "Data (SME)"

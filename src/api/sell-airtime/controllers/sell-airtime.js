@@ -34,7 +34,7 @@ module.exports = createCoreController(
       try {
         const { pin, amount, ...restofdata } = data;
         const newOrder = {
-          data: { ...restofdata, user: id, amount: Number(amount) },
+          data: { ...restofdata, user: id, amount: Number(amount), },
         };
 
         const Order = await strapi

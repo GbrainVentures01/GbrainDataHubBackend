@@ -38,6 +38,12 @@
       "required": true,
       "default": "Pending"
     },
+    "previous_balance": {
+      "type": "decimal"
+    },
+    "current_balance": {
+      "type": "decimal"
+    },
     "transaction_id": {
       "type": "string",
       "required": false

@@ -43,6 +43,12 @@
     "serviceID": {
       "type": "string"
     },
+    "previous_balance": {
+      "type": "decimal"
+    },
+    "current_balance": {
+      "type": "decimal"
+    },
     "TRX_Name": {
       "type": "string",
       "default": "Airtime"

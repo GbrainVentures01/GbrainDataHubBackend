@@ -94,6 +94,8 @@ module.exports = createCoreController(
         network: data.network,
         plan: data.plan.Plan,
         amount: data.amount,
+        previous_balance:user.AccountBalance ,
+        current_balance:user.AccountBalance
       };
       const newOrder = {
         data: { ...dataBasePayload },
@@ -102,12 +104,15 @@ module.exports = createCoreController(
         .service("api::sme-data-order.sme-data-order")
         .create(newOrder);
 
-      await strapi.query("plugin::users-permissions.user").update({
+
+
+    const updatedUser =  await strapi.query("plugin::users-permissions.user").update({
         where: { id: user.id },
         data: {
           AccountBalance: user.AccountBalance - Number(data.amount),
         },
       });
+    
 
       const returnNetId = (network) => {
         switch (network) {
@@ -142,6 +147,7 @@ module.exports = createCoreController(
             where: { ref: ref },
             data: {
               status: "delivered",
+              current_balance:updatedUser.AccountBalance
             },
           });
           return ctx.send({ data: { message: `Transaction Successful, kindly check your balance.` } });
@@ -151,6 +157,7 @@ module.exports = createCoreController(
             where: { ref: ref },
             data: {
               status: "processing",
+              current_balance:updatedUser.AccountBalance
             },
           });
           return ctx.send({ data: { message: `${res.data.data.msg}` } });
@@ -159,25 +166,29 @@ module.exports = createCoreController(
             where: { ref: ref },
             data: {
               status: "processing ",
+              current_balance:updatedUser.AccountBalance
             },
           });
           return ctx.send({ data: { message: `${res.data.data.msg}` } });
         } else if (res.data.code === 424) {
+          const user = await strapi
+          .query("plugin::users-permissions.user")
+          .findOne({ where: { id: id } });
+      const updatedUser =  await strapi.query("plugin::users-permissions.user").update({
+          where: { id: user.id },
+          data: {
+            AccountBalance: user.AccountBalance + Number(data.amount),
+          },
+        });
           await strapi.query("api::sme-data-order.sme-data-order").update({
             where: { ref: ref },
             data: {
               status: "failed",
+              current_balance:updatedUser.AccountBalance
             },
           });
-          const user = await strapi
-            .query("plugin::users-permissions.user")
-            .findOne({ where: { id: id } });
-          await strapi.query("plugin::users-permissions.user").update({
-            where: { id: user.id },
-            data: {
-              AccountBalance: user.AccountBalance + Number(data.amount),
-            },
-          });
+        
+        
           ctx.throw(503, "Sorry transaction was not succesful");
         } else {
           ctx.throw(500, "Something went wrong");

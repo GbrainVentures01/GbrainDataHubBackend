@@ -40,6 +40,12 @@
       "type": "string",
       "required": false
     },
+    "previous_balance": {
+      "type": "decimal"
+    },
+    "current_balance": {
+      "type": "decimal"
+    },
     "beneficiary": {
       "type": "string",
       "required": true

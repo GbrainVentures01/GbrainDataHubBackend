@@ -49,7 +49,7 @@ module.exports = createCoreController(
             .create(payload);
           if (reqBody.data.status === "successful") {
             console.log("verifying payment...");
-            await strapi.query("plugin::users-permissions.user").update({
+          const updatedUser =  await strapi.query("plugin::users-permissions.user").update({
               where: { id: user.id },
               data: {
                 AccountBalance:
@@ -61,6 +61,7 @@ module.exports = createCoreController(
               data: {
                 status: "Success",
                 transaction_id: reqBody.data.id.toString(),
+                current_balance: updatedUser.AccountBalance
               },
             });
 

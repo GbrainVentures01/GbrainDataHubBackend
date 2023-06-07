@@ -99,11 +99,11 @@ module.exports = createCoreController(
 
       const { pin, ...restofdata } = data;
       const newOrder = {
-        data: { ...restofdata, user: id },
+        data: { ...restofdata, user: id,current_balance: user.AccountBalance, previous_balance: user.AccountBalance},
       };
 
       await strapi.service("api::cg-data-order.cg-data-order").create(newOrder);
-      await strapi.query("plugin::users-permissions.user").update({
+    const updatedUser =  await strapi.query("plugin::users-permissions.user").update({
         where: { id: user.id },
         data: {
           AccountBalance: user.AccountBalance - Number(data.amount),
@@ -136,6 +136,7 @@ module.exports = createCoreController(
             data: {
               status: "delivered",
               ident: res.data.ident,
+              current_balance:updatedUser.AccountBalance
             },
           });
           return ctx.send({
@@ -151,6 +152,7 @@ module.exports = createCoreController(
             data: {
               status: "failed",
               ident: res.data.ident,
+              current_balance:updatedUser.AccountBalance
             },
           });
           const user = await strapi
@@ -195,6 +197,7 @@ module.exports = createCoreController(
             where: { request_Id: data.request_Id },
             data: {
               status: "failed",
+              current_balance:updatedUser.AccountBalance
             },
           });
           ctx.throw(

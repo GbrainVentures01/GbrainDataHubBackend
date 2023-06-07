@@ -41,12 +41,12 @@ module.exports = createCoreController(
       }
       try {
         const { pin, ...restofdata } = data;
-        const newOrder = { data: { ...restofdata, user: id } };
+        const newOrder = { data: { ...restofdata, user: id, current_balance:user.AccountBalance, previous_balance:user.AccountBalance } };
         const Order = await strapi
           .service("api::data-gifting-order.data-gifting-order")
           .create(newOrder);
 
-        await strapi.query("plugin::users-permissions.user").update({
+      const updatedUser  = await strapi.query("plugin::users-permissions.user").update({
           where: { id: user.id },
           data: {
             AccountBalance: user.AccountBalance - Number(data.amount),
@@ -81,6 +81,7 @@ console.log(payload);
             data: {
               status: "delivered",
               ident: res.data.ident,
+              current_balance:updatedUser.AccountBalance
             },
           });
           return ctx.send({
@@ -96,6 +97,7 @@ console.log(payload);
             data: {
               status: "failed",
               ident: res.data.ident,
+              current_balance:updatedUser.AccountBalance
             },
           });
           const user = await strapi
@@ -156,6 +158,7 @@ console.log(payload);
             where: { request_id: data.request_id },
             data: {
               status: "failed",
+              current_balance:updatedUser.AccountBalance
             },
           });
           ctx.throw(

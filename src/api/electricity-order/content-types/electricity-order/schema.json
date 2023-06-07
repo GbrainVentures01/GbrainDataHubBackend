@@ -28,6 +28,12 @@
       "type": "string",
       "required": true
     },
+    "previous_balance": {
+      "type": "decimal"
+    },
+    "current_balance": {
+      "type": "decimal"
+    },
     "phone": {
       "type": "string",
       "required": true
