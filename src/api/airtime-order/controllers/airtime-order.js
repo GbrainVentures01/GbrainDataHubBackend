@@ -116,7 +116,7 @@ module.exports = createCoreController(
             await strapi.query("api::airtime-order.airtime-order").update({
               where: { request_id: data.request_id },
               data: {
-                status: "Successful",
+                status: "delivered",
                 current_balance:updatedUser.AccountBalance
               },
             });
@@ -130,7 +130,7 @@ module.exports = createCoreController(
               });
             // update latest user's details (refund user exact amount debited before)
 
-            await strapi.query("plugin::users-permissions.user").update({
+         const updatedUser =  await strapi.query("plugin::users-permissions.user").update({
               where: { id: user.id },
               data: {
                 AccountBalance: user.AccountBalance + Number(data.amount),
@@ -139,7 +139,7 @@ module.exports = createCoreController(
             await strapi.query("api::airtime-order.airtime-order").update({
               where: { request_id: data.request_id },
               data: {
-                status: "Failed",
+                status: "failed",
                 current_balance:updatedUser.AccountBalance
               },
             });
@@ -154,7 +154,7 @@ module.exports = createCoreController(
             .findOne({
               where: { id: id },
             });
-          await strapi.query("plugin::users-permissions.user").update({
+            const updatedUser =       await strapi.query("plugin::users-permissions.user").update({
             where: { id: user.id },
             data: {
               AccountBalance: user.AccountBalance + Number(data.amount),
@@ -164,7 +164,7 @@ module.exports = createCoreController(
           await strapi.query("api::airtime-order.airtime-order").update({
             where: { request_id: data.request_id },
             data: {
-              status: "Failed",
+              status: "failed",
               current_balance:updatedUser.AccountBalance
             },
           });
@@ -176,7 +176,7 @@ module.exports = createCoreController(
         await strapi.query("api::airtime-order.airtime-order").update({
           where: { request_id: data.request_id },
           data: {
-            status: "Failed",
+            status: "failed",
             current_balance:updatedUser.AccountBalance
           },
         });

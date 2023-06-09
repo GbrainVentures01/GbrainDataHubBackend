@@ -37,11 +37,11 @@
     "status": {
       "type": "enumeration",
       "enum": [
-        "Pending",
-        "Successful",
-        "Failed"
+        "pending",
+        "delivered",
+        "failed"
       ],
-      "default": "Pending"
+      "default": "pending"
     },
     "user": {
       "type": "relation",

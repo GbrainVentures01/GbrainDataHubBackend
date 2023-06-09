@@ -92,21 +92,22 @@ console.log(payload);
             },
           });
         } else if (!res.data.status ) {
+         
+          const user = await strapi
+            .query("plugin::users-permissions.user")
+            .findOne({ where: { id: id } });
+    const updatedUser   =    await strapi.query("plugin::users-permissions.user").update({
+            where: { id: user.id },
+            data: {
+              AccountBalance: user.AccountBalance + Number(data.amount),
+            },
+          });
           await strapi.query("api::data-gifting-order.data-gifting-order").update({
             where: { request_id: data.request_id },
             data: {
               status: "failed",
               ident: res.data.ident,
               current_balance:updatedUser.AccountBalance
-            },
-          });
-          const user = await strapi
-            .query("plugin::users-permissions.user")
-            .findOne({ where: { id: id } });
-          await strapi.query("plugin::users-permissions.user").update({
-            where: { id: user.id },
-            data: {
-              AccountBalance: user.AccountBalance + Number(data.amount),
             },
           });
           console.log(res.data);
@@ -154,6 +155,15 @@ console.log(payload);
         console.log(error);
         console.log("from error");
         if (error.response?.status === 400) {
+          const user = await strapi
+          .query("plugin::users-permissions.user")
+          .findOne({ where: { id: id } });
+  const updatedUser = await strapi.query("plugin::users-permissions.user").update({
+          where: { id: user.id },
+          data: {
+            AccountBalance: user.AccountBalance + Number(data.amount),
+          },
+        });
           await strapi.query("api::data-gifting-order.data-gifting-order").update({
             where: { request_id: data.request_id },
             data: {
