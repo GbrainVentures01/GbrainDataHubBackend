@@ -231,10 +231,39 @@ module.exports = createCoreController(
             );
           }
         } else {
+          const user = await strapi
+          .query("plugin::users-permissions.user")
+          .findOne({
+            where: { id: id },
+          });
+          await strapi
+          .query("api::electricity-order.electricity-order")
+          .update({
+            where: { request_id: data.request_id },
+            data: {
+              status: "Failed",
+              current_balance:user.AccountBalance
+            },
+          });
+
           return ctx.badRequest(verifiedDetails.data.content.error);
         }
       } catch (error) {
         console.log(error);
+        const user = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({
+          where: { id: id },
+        });
+        await strapi
+        .query("api::electricity-order.electricity-order")
+        .update({
+          where: { request_id: data.request_id },
+          data: {
+            status: "Failed",
+            current_balance:user.AccountBalance
+          },
+        });
         throw new ApplicationError("something went wrong, try again");
       }
     },

@@ -172,10 +172,20 @@ console.log(payload);
             },
           });
           ctx.throw(
-            500,
+            400,
             "Transaction was not successful, please try again later."
           );
         } else {
+          const user = await strapi
+          .query("plugin::users-permissions.user")
+          .findOne({ where: { id: id } });
+          await strapi.query("api::data-gifting-order.data-gifting-order").update({
+            where: { request_id: data.request_id },
+            data: {
+              status: "failed",
+              current_balance:user.AccountBalance
+            },
+          });
           ctx.throw(500, "Something went wrong, please try again later.");
         }
       }

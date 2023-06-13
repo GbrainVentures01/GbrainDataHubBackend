@@ -78,7 +78,7 @@ module.exports = createCoreController(
             await strapi.query("api::exam-pin-order.exam-pin-order").update({
               where: { request_id: data.request_id },
               data: {
-                status: "Successful",
+                status: "sucessful",
                 purchased_pin: purchaseExamPin.data.purchased_code,
                 current_balance:updatedUser.AccountBalance
               },
@@ -96,7 +96,7 @@ module.exports = createCoreController(
               await strapi.query("api::exam-pin-order.exam-pin-order").update({
                 where: { request_id: data.request_id },
                 data: {
-                  status: "Successful",
+                  status: "sucessful",
                   purchased_pin: purchaseExamPin.data.purchased_code,
                   current_balance:updatedUser.AccountBalance
                 },
@@ -119,7 +119,7 @@ module.exports = createCoreController(
               await strapi.query("api::exam-pin-order.exam-pin-order").update({
                 where: { request_id: data.request_id },
                 data: {
-                  status: "Failed",
+                  status: "failed",
                   current_balance:updatedUser.AccountBalance
                 },
               });
@@ -138,17 +138,37 @@ module.exports = createCoreController(
             await strapi.query("api::exam-pin-order.exam-pin-order").update({
               where: { request_id: data.request_id },
               data: {
-                status: "Failed",
+                status: "failed",
                 current_balance:updatedUser.AccountBalance
               },
             });
             return ctx.throw(400, purchaseExamPin?.data?.response_description);
           }
         } else {
+          const user = await strapi
+          .query("plugin::users-permissions.user")
+          .findOne({ where: { id: id } });
+          await strapi.query("api::exam-pin-order.exam-pin-order").update({
+            where: { request_id: data.request_id },
+            data: {
+              status: "failed",
+              current_balance:user.AccountBalance
+            },
+          });
           return ctx.badRequest(purchaseExamPin.data.content.error);
         }
       } catch (error) {
         console.log(error);
+        const user = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({ where: { id: id } });
+        await strapi.query("api::exam-pin-order.exam-pin-order").update({
+          where: { request_id: data.request_id },
+          data: {
+            status: "failed",
+            current_balance:user.AccountBalance
+          },
+        });
         throw new ApplicationError("something went wrong, try again");
       }
     },

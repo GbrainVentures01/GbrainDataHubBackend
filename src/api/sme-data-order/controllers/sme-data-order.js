@@ -191,10 +191,35 @@ module.exports = createCoreController(
         
           ctx.throw(503, "Sorry transaction was not succesful");
         } else {
+          const user = await strapi
+          .query("plugin::users-permissions.user")
+          .findOne({
+            where: { id: id },
+          });
+          await strapi.query("api::sme-data-order.sme-data-order").update({
+            where: { ref: ref },
+            data: {
+              status: "failed",
+              current_balance:user.AccountBalance
+            },
+          });
           ctx.throw(500, "Something went wrong");
         }
       } catch (error) {
+        
         console.log(error);
+        const user = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({
+          where: { id: id },
+        });
+        await strapi.query("api::sme-data-order.sme-data-order").update({
+          where: { ref: ref },
+          data: {
+            status: "failed",
+            current_balance:user.AccountBalance
+          },
+        });
         throw new ApplicationError("something went wrong, try again");
       }
     },

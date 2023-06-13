@@ -173,11 +173,16 @@ module.exports = createCoreController(
           return ctx.throw(400, buyAirtime?.data?.response_description);
         }
       } catch (error) {
+        const user = await strapi
+            .query("plugin::users-permissions.user")
+            .findOne({
+              where: { id: id },
+            });
         await strapi.query("api::airtime-order.airtime-order").update({
           where: { request_id: data.request_id },
           data: {
             status: "failed",
-            current_balance:updatedUser.AccountBalance
+            current_balance:user.AccountBalance
           },
         });
         console.log(error);
