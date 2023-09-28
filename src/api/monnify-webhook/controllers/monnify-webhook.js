@@ -63,13 +63,18 @@ module.exports = createCoreController(
             .create(payload);
           if (reqBody.eventData.paymentStatus.toLowerCase() === "paid") {
             console.log("verifying payment...");
+            const res = await strapi
+              .query("api::account-funding.account-funding")
+              .findOne({
+                where: { tx_ref: reqBody.eventData.paymentReference },
+              });
+            console.log("res: ", res);
             const updatedUser = await strapi
               .query("plugin::users-permissions.user")
               .update({
                 where: { id: user.id },
                 data: {
-                  AccountBalance:
-                    user.AccountBalance + Number(reqBody.eventData.amountPaid),
+                  AccountBalance: user.AccountBalance + Number(res.amount),
                 },
               });
             await strapi.query("api::account-funding.account-funding").update({

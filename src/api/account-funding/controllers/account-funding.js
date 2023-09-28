@@ -29,6 +29,7 @@ module.exports = createCoreController(
       const Fref = `FLW||${generateRef()}`;
       const Cref = `CREDO||${generateRef()}`;
       const Mnfy = `MFY||${generateRef()}`;
+      const amounWithcharges = Number(amount + (amount / 100) * 1.7);
 
       const newFunding = {
         data: {
@@ -67,7 +68,7 @@ module.exports = createCoreController(
           const res = await fundWallet({
             gateway,
             userData: user,
-            amount: amount,
+            amount: amounWithcharges,
             ref: Mnfy,
           });
           console.log(res);
