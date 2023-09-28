@@ -29,7 +29,7 @@ module.exports = async ({ userData, amount, ref, gateway }) => {
       callbackUrl: callbackUrl,
     };
     const MonReq = {
-      amount: Number(amount),
+      amount: amount,
       customerName: `${userData.first_name} ${userData.last_name}`,
       customerEmail: userData.email,
       paymentReference: ref,

@@ -29,8 +29,10 @@ module.exports = createCoreController(
       const Fref = `FLW||${generateRef()}`;
       const Cref = `CREDO||${generateRef()}`;
       const Mnfy = `MFY||${generateRef()}`;
-      const amounWithcharges = Number(amount + (amount / 100) * 1.65);
+      const amountToNumber = Number(amount);
+      const amounWithcharges = amountToNumber + (amountToNumber / 100) * 1.65;
 
+      console.log("amounWithcharges", amounWithcharges);
       const newFunding = {
         data: {
           user: user.id,
