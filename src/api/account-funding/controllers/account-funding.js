@@ -26,10 +26,12 @@ module.exports = createCoreController(
 
       const Fref = `FLW||${generateRef()}`;
       const Cref = `CREDO||${generateRef()}`;
+      const Mnfy = `MFY||${generateRef()}`;
       const newFunding = {
         data: {
           user: user.id,
-          tx_ref: gateway === "fwave" ? Fref : Cref,
+          tx_ref:
+            gateway === "fwave" ? Fref : gateway === "monify" ? Mnfy : Cref,
           amount: Number(amount),
           customer: user.email,
           TRX_Name: "Wallet Funding",
@@ -56,7 +58,23 @@ module.exports = createCoreController(
               response: res,
             });
           } else {
-            ctx.send(503, "service temporarily not available");
+            return ctx.serviceUnavailable("Service temporarily unavailable");
+          }
+        } else if (gateway === "monify") {
+          const res = await fundWallet({
+            gateway,
+            userData: user,
+            amount: amount,
+            ref: Mnfy,
+          });
+          console.log(res);
+          if (res.requestSuccessful) {
+            ctx.send({
+              message: "success",
+              response: res,
+            });
+          } else {
+            return ctx.serviceUnavailable("Service temporarily unavailable");
           }
         } else {
           const res = await fundWallet({
@@ -72,12 +90,12 @@ module.exports = createCoreController(
               response: res,
             });
           } else {
-            ctx.send(503, "service temporarily not available");
+            return ctx.serviceUnavailable("Service temporarily unavailable");
           }
         }
       } catch (err) {
-        ctx.send(500, "internal server error");
         console.log(err);
+        return ctx.internalServerError("Internal server error");
       }
     },
   })

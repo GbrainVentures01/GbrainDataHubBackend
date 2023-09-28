@@ -1,15 +1,16 @@
 "use strict";
 
 const { sha512 } = require("js-sha512");
+const calculateTransactionHash = require("../../../utils/monnify/calculateTransactionHash");
 
 /**
- *  credo-webhook controller
+ *  monnify-webhook controller
  */
 
 const { createCoreController } = require("@strapi/strapi").factories;
 
 module.exports = createCoreController(
-  "api::credo-webhook.credo-webhook",
+  "api::monnify-webhook.monnify-webhook",
   ({ strapi }) => ({
     /**
      * accept webhook from Credo about payment status
@@ -18,42 +19,49 @@ module.exports = createCoreController(
      */
     async create(ctx) {
       const reqBody = ctx.request.body;
-      console.log(reqBody);
-      const businessCode = reqBody.data.businessCode;
-      const success = "TRANSACTION.SUCCESSFUL".toLowerCase();
 
       const reqHeaders = ctx.request.headers;
       console.log(reqHeaders);
-      const signedContent = `${process.env.CREDO_TOKEN}${businessCode}`;
-      const shaVal = sha512(signedContent);
-      const headerSignature = reqHeaders["x-credo-signature"];
-      if (shaVal === headerSignature) {
+
+      const headerSignature = reqHeaders["monnify-signature"];
+      //   const shaVal = sha512(
+      //     `${process.env.MONNIFY_SECRET_KEY}'${JSON.stringify(reqBody)}'`
+      //   );
+      //   console.log(calculateTransactionHash(`${JSON.stringify(reqBody)}`));
+      // TODO: calculate transaction hash
+      const hashRes = await calculateTransactionHash(
+        `${JSON.stringify(reqBody)}`
+      );
+      if (hashRes === headerSignature) {
         const user = await strapi
           .query("plugin::users-permissions.user")
-          .findOne({ where: { email: reqBody.data.customer.customerEmail } });
+          .findOne({
+            where: { email: reqBody.eventData.customer.email },
+          });
 
         const payload = {
           data: {
             status:
-              reqBody.event.toLowerCase() === success ? "successful" : "failed",
-            amount: Number(reqBody.data.debitedAmount),
+              reqBody.eventData.paymentStatus.toLowerCase() === "paid"
+                ? "successful"
+                : "failed",
+            amount: Number(reqBody.eventData.amountPaid),
             // trx_id: reqBody.data.transRef,
-            tx_ref: reqBody.data.businessRef,
-            credo_ref: reqBody.data.transRef,
-            // currency: reqBody.data.currency,
+            tx_ref: reqBody.eventData.paymentReference,
 
-            charged_amount: Number(reqBody.data.transFeeAmount),
-            payment_method: reqBody.data.paymentMethod,
-            date_time: reqBody.data.transactionDate,
-            payer_email: reqBody.data.customer.customerEmail,
+            currency: reqBody.eventData.currency,
+
+            payment_method: reqBody.eventData.paymentMethod,
+            date_time: reqBody.eventData.paidOn,
+            payer_email: reqBody.eventData.customer.email,
           },
         };
 
         try {
           await strapi
-            .service("api::credo-webhook.credo-webhook")
+            .service("api::monnify-webhook.monnify-webhook")
             .create(payload);
-          if (reqBody.event.toLowerCase() === success) {
+          if (reqBody.eventData.paymentStatus.toLowerCase() === "paid") {
             console.log("verifying payment...");
             const updatedUser = await strapi
               .query("plugin::users-permissions.user")
@@ -61,11 +69,11 @@ module.exports = createCoreController(
                 where: { id: user.id },
                 data: {
                   AccountBalance:
-                    user.AccountBalance + Number(reqBody.data.debitedAmount),
+                    user.AccountBalance + Number(reqBody.eventData.amountPaid),
                 },
               });
             await strapi.query("api::account-funding.account-funding").update({
-              where: { tx_ref: reqBody.data.businessRef },
+              where: { tx_ref: reqBody.eventData.paymentReference },
               data: {
                 status: "Success",
                 // transaction_id: reqBody.data.id.toString(),

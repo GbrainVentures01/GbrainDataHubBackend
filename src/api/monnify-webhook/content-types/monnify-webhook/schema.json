@@ -1,0 +1,46 @@
+{
+  "kind": "collectionType",
+  "collectionName": "monnify_webhooks",
+  "info": {
+    "singularName": "monnify-webhook",
+    "pluralName": "monnify-webhooks",
+    "displayName": "Monnify Webhook"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+      "tx_ref": {
+      "type": "string",
+      "required": true
+    },
+  
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+  
+    "payer_email": {
+      "type": "email",
+      "required": true
+    },
+    "payment_method": {
+      "type": "string",
+      "required": true
+    },
+    "date_time": {
+      "required": true,
+      "type": "datetime"
+    },
+    "status": {
+      "type": "string",
+      "required": true
+    },
+      "currency": {
+      "type": "string"
+    
+    }
+
+  }
+}

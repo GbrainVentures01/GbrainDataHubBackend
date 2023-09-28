@@ -5,7 +5,7 @@ const datahouse = "https://www.datahouse.com.ng/api/";
 const ogdamsUrl = "https://simhosting.ogdams.ng/api/v1/";
 const bello = "https://bellodigitalworld.ng/api/v1/";
 const credo = "https://api.public.credodemo.com/";
-// const credo = "https://api.credocentral.com/";
+const monify = "https://api.monnify.com/";
 
 // const baseUrl = `${testUrl}/api`;
 
@@ -47,6 +47,8 @@ module.exports = async ({
         return bello;
       case "credo":
         return credo;
+      case "monify":
+        return monify;
       default:
         return fwave;
     }

@@ -6,10 +6,9 @@ module.exports = async () => {
     const { data } = await customNetwork({
       method: "POST",
       path: "api/v1/auth/login",
+      target: "monify",
       headers: {
-        Authorization: `Basic ${base64encode(
-          `${process.env.MONNIFY_API_KEY}:${process.env.MONNIFY_MERCHANT_CLIENT_SECRET}`
-        )}`,
+        Authorization: `Basic ${base64encode(process.env.MONNIFY_SECRET)}`,
       },
     });
     const token = data?.responseBody?.accessToken;
