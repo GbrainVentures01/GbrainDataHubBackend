@@ -4,6 +4,8 @@ const vtpassUrl = "https://vtpass.com/api/";
 const datahouse = "https://www.datahouse.com.ng/api/";
 const ogdamsUrl = "https://simhosting.ogdams.ng/api/v1/";
 const bello = "https://bellodigitalworld.ng/api/v1/";
+const credo = "https://api.public.credodemo.com/";
+// const credo = "https://api.credocentral.com/";
 
 // const baseUrl = `${testUrl}/api`;
 
@@ -43,6 +45,8 @@ module.exports = async ({
         return datahouse;
       case "bello":
         return bello;
+      case "credo":
+        return credo;
       default:
         return fwave;
     }

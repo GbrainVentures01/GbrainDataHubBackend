@@ -1,0 +1,47 @@
+{
+  "kind": "collectionType",
+  "collectionName": "credo_webhooks",
+  "info": {
+    "singularName": "credo-webhook",
+    "pluralName": "credo-webhooks",
+    "displayName": "Credo Webhook",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "tx_ref": {
+      "type": "string",
+      "required": true
+    },
+    "credo_ref": {
+      "type": "string",
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "charged_amount": {
+      "type": "decimal"
+    },
+    "payer_email": {
+      "type": "email",
+      "required": true
+    },
+    "payment_method": {
+      "type": "string",
+      "required": true
+    },
+    "date_time": {
+      "required": true,
+      "type": "datetime"
+    },
+    "status": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

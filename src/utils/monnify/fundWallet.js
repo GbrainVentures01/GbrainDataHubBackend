@@ -1,24 +1,42 @@
 const customNetwork = require("../customNetwork");
-
-module.exports = async ({ userData, amount, ref }) => {
+const callbackUrl = "http://localhost:3000/confirm-payment";
+// const callbackUrl = "https://www.gbrainventures.com/confirm-payment";
+module.exports = async ({ userData, amount, ref, gateway }) => {
   try {
     console.log("funding");
+    const FwaveReq = {
+      amount: amount,
+      customer: {
+        email: userData.email,
+        phonenumber: userData.phone_number,
+      },
+      tx_ref: ref,
+      currency: "NGN",
+      redirect_url: callbackUrl,
+    };
+    const credoReq = {
+      amount: amount,
+      channels: ["card", "bank"],
+      currency: "NGN",
+      customerPhoneNumber: userData.phone_number,
+      email: userData.email,
+      customerFirstName: userData.first_name,
+      customerLastName: userData.last_name,
+      reference: ref,
+      callbackUrl: callbackUrl,
+    };
     const { data } = await customNetwork({
       method: "POST",
-      path: "v3/payments",
+      target: gateway === "fwave" ? null : "credo",
+      path: gateway === "fwave" ? "v3/payments" : "transaction/initialize",
       headers: {
-        Authorization: `Bearer ${process.env.FLUTTER_WAVE_LIVE_SECRET_KEY}`,
+        Authorization:
+          gateway === "fwave"
+            ? `Bearer ${process.env.FLUTTER_WAVE_LIVE_SECRET_KEY}`
+            : process.env.CREDO_SECRET,
+        // process.env.CREDO_SECRET,
       },
-      requestBody: {
-        amount: amount,
-        customer: {
-          email: userData.email,
-          phonenumber: userData.phone_number,
-        },
-        tx_ref: ref,
-        currency: "NGN",
-        redirect_url: "https://www.gbrainventures.com/confirm-payment",
-      },
+      requestBody: gateway === "fwave" ? FwaveReq : credoReq,
     });
 
     // console.log(data);

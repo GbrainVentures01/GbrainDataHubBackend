@@ -21,17 +21,20 @@ module.exports = createCoreController(
 
     async create(ctx) {
       const amount = ctx.request.body.data.amount;
+      const gateway = ctx.request.body.data.gateway;
       const { user } = ctx.state;
-      const ref = `FLW||${generateRef()}`;
+
+      const Fref = `FLW||${generateRef()}`;
+      const Cref = `CREDO||${generateRef()}`;
       const newFunding = {
         data: {
           user: user.id,
-          tx_ref: ref,
+          tx_ref: gateway === "fwave" ? Fref : Cref,
           amount: Number(amount),
           customer: user.email,
           TRX_Name: "Wallet Funding",
           previous_balance: user.AccountBalance,
-          current_balance: user.AccountBalance
+          current_balance: user.AccountBalance,
         },
       };
       try {
@@ -39,24 +42,42 @@ module.exports = createCoreController(
           .service("api::account-funding.account-funding")
           .create(newFunding);
 
-        const res = await fundWallet({
-          userData: {
-            email: user.email,
-          },
-          amount: amount,
-          ref: ref,
-        });
-       
-        if (res.status === "success") {
-          ctx.send({
-            message: "success",
-            response: res,
+        if (gateway === "fwave") {
+          const res = await fundWallet({
+            gateway,
+            userData: user,
+            amount: amount,
+            ref: Fref,
           });
+          console.log(res);
+          if (res.status === "success") {
+            ctx.send({
+              message: "success",
+              response: res,
+            });
+          } else {
+            ctx.send(503, "service temporarily not available");
+          }
+        } else {
+          const res = await fundWallet({
+            gateway,
+            userData: user,
+            amount: amount * 100,
+            ref: Cref,
+          });
+          console.log(res);
+          if (res.status === 200) {
+            ctx.send({
+              message: "success",
+              response: res,
+            });
+          } else {
+            ctx.send(503, "service temporarily not available");
+          }
         }
       } catch (err) {
+        ctx.send(500, "internal server error");
         console.log(err);
-        // console.log(err.code);
-        // console.log(err.response.body);
       }
     },
   })
