@@ -1,5 +1,5 @@
 const customNetwork = require("../customNetwork");
-const callbackUrl = "http://localhost:3000/confirm-payment";
+const callbackUrl = "https://gbrainventures.netlify.app/confirm-payment";
 // const callbackUrl = "https://www.gbrainventures.com/confirm-payment";
 module.exports = async ({ userData, amount, ref, gateway }) => {
   try {
