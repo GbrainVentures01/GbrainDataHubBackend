@@ -29,7 +29,7 @@ module.exports = createCoreController(
       const Fref = `FLW||${generateRef()}`;
       const Cref = `CREDO||${generateRef()}`;
       const Mnfy = `MFY||${generateRef()}`;
-      const amounWithcharges = Number(amount + (amount / 100) * 1.7);
+      const amounWithcharges = Number(amount + (amount / 100) * 1.65);
 
       const newFunding = {
         data: {
