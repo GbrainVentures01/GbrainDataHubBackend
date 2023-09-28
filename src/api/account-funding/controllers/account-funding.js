@@ -23,10 +23,13 @@ module.exports = createCoreController(
       const amount = ctx.request.body.data.amount;
       const gateway = ctx.request.body.data.gateway;
       const { user } = ctx.state;
+      if (gateway === "credo")
+        return ctx.serviceUnavailable("Service temporarily unavailable");
 
       const Fref = `FLW||${generateRef()}`;
       const Cref = `CREDO||${generateRef()}`;
       const Mnfy = `MFY||${generateRef()}`;
+
       const newFunding = {
         data: {
           user: user.id,
