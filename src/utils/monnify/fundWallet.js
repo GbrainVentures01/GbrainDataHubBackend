@@ -2,8 +2,8 @@ const { base64encode } = require("nodejs-base64");
 const customNetwork = require("../customNetwork");
 const randomString = require("randomstring");
 const getToken = require("./getToken");
-const callbackUrl = "http://localhost:3000/confirm-payment";
-// const callbackUrl = "https://www.gbrainventures.com/confirm-payment";
+// const callbackUrl = "http://localhost:3000/confirm-payment";
+const callbackUrl = "https://www.gbrainventures.com/confirm-payment";
 module.exports = async ({ userData, amount, ref, gateway }) => {
   try {
     console.log("funding");
