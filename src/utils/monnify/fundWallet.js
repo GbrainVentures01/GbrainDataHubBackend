@@ -37,7 +37,7 @@ module.exports = async ({ userData, amount, ref, gateway }) => {
       currencyCode: "NGN",
       contractCode: process.env.MONNIFY_CONTRACT_CODE,
       redirectUrl: callbackUrl,
-      paymentMethods: ["CARD", "ACCOUNT_TRANSFER", "USSD", "PHONE NUMBER"],
+      paymentMethods: ["CARD", "ACCOUNT_TRANSFER", "USSD"],
     };
     let monifyToken;
     if (gateway === "monify") {
