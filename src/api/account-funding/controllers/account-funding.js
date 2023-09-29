@@ -32,7 +32,7 @@ module.exports = createCoreController(
       const amountToNumber = Number(amount);
       const amounWithcharges = amountToNumber + (amountToNumber / 100) * 1.65;
 
-      console.log("amounWithcharges", amounWithcharges);
+      console.log("amounWithcharges", amounWithcharges.toFixed(2));
       const newFunding = {
         data: {
           user: user.id,
@@ -70,7 +70,7 @@ module.exports = createCoreController(
           const res = await fundWallet({
             gateway,
             userData: user,
-            amount: amounWithcharges,
+            amount: amounWithcharges.toFixed(2),
             ref: Mnfy,
           });
           console.log(res);
