@@ -21,7 +21,7 @@ module.exports = createCoreController(
       const reqBody = ctx.request.body;
 
       const reqHeaders = ctx.request.headers;
-      console.log(reqHeaders);
+      console.log(reqBody);
 
       const headerSignature = reqHeaders["monnify-signature"];
       //   const shaVal = sha512(
