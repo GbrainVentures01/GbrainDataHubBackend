@@ -3,6 +3,8 @@
 const { default: axios } = require("axios");
 const fundWallet = require("../../../utils/monnify/fundWallet");
 const generateRef = require("../../../utils/monnify/generateRef");
+const getToken = require("../../../utils/monnify/getToken");
+const createReservedAccount = require("../../../utils/monnify/createReservedAccount");
 
 /**
  *  account-funding controller
@@ -13,6 +15,40 @@ const { createCoreController } = require("@strapi/strapi").factories;
 module.exports = createCoreController(
   "api::account-funding.account-funding",
   ({ strapi }) => ({
+    async generateMonnifyAccount(ctx) {
+      const user = ctx.state.user;
+      const monifyToken = await getToken();
+      const res = await createReservedAccount({
+        token: monifyToken,
+        userData: user,
+      });
+      console.log(res);
+
+      if (res?.requestSuccessful) {
+        const newData = res?.responseBody?.accounts.map((account) => {
+          return {
+            bank_name: account.bankName,
+            account_number: account.accountNumber,
+            account_name: account.accountName,
+          };
+        });
+
+        await strapi.entityService.update(
+          "plugin::users-permissions.user",
+          user.id,
+          {
+            data: {
+              monnify_bank_details: [...newData],
+              hasAccountNum: true,
+            },
+          }
+        );
+        return ctx.created("account created successfully");
+      } else {
+        return ctx.badRequest("account creation failed");
+      }
+    },
+
     /**
      * initiate account funding with flutter wave
      * @param {Object} ctx

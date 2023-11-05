@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_monnify_accounts_monnify_accounts",
+  "info": {
+    "displayName": "Monnify Accounts",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "bank_name": {
+      "type": "string",
+      "required": true
+    },
+    "account_number": {
+      "type": "string",
+      "required": true
+    },
+    "account_name": {
+      "type": "string"
+    }
+  }
+}

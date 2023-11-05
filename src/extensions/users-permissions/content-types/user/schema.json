@@ -90,16 +90,9 @@
       "target": "api::airtime-order.airtime-order",
       "mappedBy": "user"
     },
-    "AccountNumber": {
-      "type": "string",
-      "unique": true
-    },
     "AccountBalance": {
       "default": 0,
       "type": "decimal"
-    },
-    "BankName": {
-      "type": "string"
     },
     "exam_pins_purchases": {
       "type": "relation",
@@ -148,6 +141,17 @@
       "relation": "oneToMany",
       "target": "api::cg-data-order.cg-data-order",
       "mappedBy": "user"
+    },
+    "monnify_bank_details": {
+      "displayName": "Monnify Accounts",
+      "type": "component",
+      "repeatable": true,
+      "component": "monnify-accounts.monnify-accounts"
+    },
+    "hasAccountNum": {
+      "type": "boolean",
+      "default": false,
+      "required": true
     }
   }
 }

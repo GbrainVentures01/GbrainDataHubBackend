@@ -3,9 +3,11 @@ const fwave = "https://api.flutterwave.com/";
 const vtpassUrl = "https://vtpass.com/api/";
 const datahouse = "https://www.datahouse.com.ng/api/";
 const ogdamsUrl = "https://simhosting.ogdams.ng/api/v1/";
+const ogdamsAirtimeUrl = "https://automation.airtimetocash.com/api/v1/";
 const bello = "https://bellodigitalworld.ng/api/v1/";
 const credo = "https://api.public.credodemo.com/";
-const monify = "https://api.monnify.com/";
+// const monify = "https://api.monnify.com/";
+const monify = "https://sandbox.monnify.com/";
 
 // const baseUrl = `${testUrl}/api`;
 
@@ -35,12 +37,15 @@ module.exports = async ({
       "A required parameter is missing. Please provide method or path"
     );
   }
+  console.log("MAKING NETWORK CALL: ");
   const returnBaseUrl = (target) => {
     switch (target) {
       case "vtpass":
         return vtpassUrl;
       case "ogdams":
         return ogdamsUrl;
+      case "ogdams_airtime":
+        return ogdamsAirtimeUrl;
       case "data_house":
         return datahouse;
       case "bello":

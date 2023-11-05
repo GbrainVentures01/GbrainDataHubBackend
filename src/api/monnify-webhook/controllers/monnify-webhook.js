@@ -63,6 +63,38 @@ module.exports = createCoreController(
             .create(payload);
           if (reqBody.eventData.paymentStatus.toLowerCase() === "paid") {
             console.log("verifying payment...");
+            if (
+              reqBody.eventData?.product?.type?.toLowerCase() ===
+              "RESERVED_ACCOUNT".toLocaleLowerCase()
+            ) {
+              const newFunding = {
+                data: {
+                  user: user.id,
+                  tx_ref: reqBody.eventData.paymentReference,
+
+                  amount: Number(reqBody.eventData.amountPaid),
+                  customer: user.email,
+                  TRX_Name: "Wallet Funding",
+                  previous_balance: user.AccountBalance,
+                  current_balance:
+                    user.AccountBalance + Number(reqBody.eventData.amountPaid),
+                  status: "Success",
+                },
+              };
+
+              await strapi.query("plugin::users-permissions.user").update({
+                where: { id: user.id },
+                data: {
+                  AccountBalance:
+                    user.AccountBalance + Number(reqBody.eventData.amountPaid),
+                },
+              });
+              await strapi
+                .service("api::account-funding.account-funding")
+                .create(newFunding);
+            }
+
+            //
             const res = await strapi
               .query("api::account-funding.account-funding")
               .findOne({

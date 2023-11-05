@@ -4,6 +4,7 @@ module.exports = async ({ token, userData }) => {
   try {
     const { data } = await customNetwork({
       method: "POST",
+      target: "monify",
       path: "api/v2/bank-transfer/reserved-accounts",
       headers: { Authorization: `Bearer ${token}` },
       requestBody: {
@@ -12,13 +13,13 @@ module.exports = async ({ token, userData }) => {
         currencyCode: "NGN",
         contractCode: `${process.env.MONNIFY_CONTRACT_CODE}`,
         customerEmail: userData.email,
-        bvn: "21212121212",
+        // bvn: "21212121212",
         customerName: userData.username,
-        getAllAvailableBanks: false,
-        preferredBanks: ["035"],
+        getAllAvailableBanks: true,
+        // preferredBanks: ["50515"],
       },
     });
-    return data?.responseBody;
+    return data;
   } catch (error) {
     return error;
   }

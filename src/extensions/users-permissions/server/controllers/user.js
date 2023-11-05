@@ -176,7 +176,12 @@ module.exports = {
    */
   async findOne(ctx) {
     const { id } = ctx.params;
-    let data = await getService("user").fetch({ id });
+    let data = await strapi.query("plugin::users-permissions.user").findOne({
+      where: { id: id },
+      populate: {
+        monnify_bank_details: true,
+      },
+    });
 
     if (data) {
       data = await sanitizeOutput(data, ctx);

@@ -22,15 +22,15 @@
     },
     "account_number": {
       "type": "string",
-      "required": true
+      "required": false
     },
     "account_name": {
       "type": "string",
-      "required": true
+      "required": false
     },
     "bank_name": {
       "type": "string",
-      "required": true
+      "required": false
     },
     "phone_number": {
       "type": "string",

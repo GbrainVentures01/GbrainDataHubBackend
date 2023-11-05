@@ -52,7 +52,11 @@
     },
     "status": {
       "type": "enumeration",
-      "enum": ["pending", "delivered", "failed"],
+      "enum": [
+        "pending",
+        "delivered",
+        "failed"
+      ],
       "default": "pending"
     },
     "user": {
