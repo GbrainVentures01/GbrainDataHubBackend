@@ -9,7 +9,7 @@ module.exports = async ({ token, userData }) => {
       headers: { Authorization: `Bearer ${token}` },
       requestBody: {
         accountReference: userData.email,
-        accountName: "Test Reserved Account",
+        accountName: userData.username,
         currencyCode: "NGN",
         contractCode: `${process.env.MONNIFY_CONTRACT_CODE}`,
         customerEmail: userData.email,
