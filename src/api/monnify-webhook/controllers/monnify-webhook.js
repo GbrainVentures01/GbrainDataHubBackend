@@ -67,12 +67,14 @@ module.exports = createCoreController(
               reqBody.eventData?.product?.type?.toLowerCase() ===
               "RESERVED_ACCOUNT".toLocaleLowerCase()
             ) {
+              const amount = Number(reqBody.eventData.amountPaid);
+              const charges = (amount / 100) * 1.65;
               const newFunding = {
                 data: {
                   user: user.id,
                   tx_ref: reqBody.eventData.paymentReference,
 
-                  amount: Number(reqBody.eventData.amountPaid),
+                  amount: Number(reqBody.eventData.amountPaid) - charges,
                   customer: user.email,
                   TRX_Name: "Wallet Funding",
                   previous_balance: user.AccountBalance,

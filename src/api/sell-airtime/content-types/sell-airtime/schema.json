@@ -36,6 +36,10 @@
       "type": "string",
       "required": true
     },
+      "session_id": {
+      "type": "string",
+      "required": true
+    },
     "request_id": {
       "type": "string",
       "required": true,

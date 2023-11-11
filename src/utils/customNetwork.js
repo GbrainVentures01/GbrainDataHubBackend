@@ -58,7 +58,8 @@ module.exports = async ({
         return fwave;
     }
   };
-
+  console.log(requestBody);
+  console.log(`${returnBaseUrl(target)}${path}`);
   const config = {
     method,
     url: `${returnBaseUrl(target)}${path}`,

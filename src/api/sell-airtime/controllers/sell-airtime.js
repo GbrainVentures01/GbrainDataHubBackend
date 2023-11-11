@@ -70,7 +70,7 @@ module.exports = createCoreController(
         //          <h3>Gbrain Coporate Ventures</h3>`,
         // });
 
-        if (res.status === 200) {
+        if (res && res.status === 200 && res.data.code === 2000) {
           return ctx.send({
             data: {
               message: res.data.message,
@@ -78,30 +78,57 @@ module.exports = createCoreController(
             },
           });
         } else {
-          return ctx.serviceUnavailable("Service unavailable, please retry");
+          return ctx.serviceUnavailable(
+            res?.data?.message || "service unavailable, please retry"
+          );
         }
       } catch (error) {
         console.log("ERROR: ", error);
-        throw new ApplicationError(error.message);
+        throw new ApplicationError(
+          error?.response?.data?.message ||
+            error.message ||
+            "service unavailable, please retry"
+        );
       }
     },
     async verifyOtp(ctx) {
       const { data } = ctx.request.body;
       console.log(data);
-      const res = await customNetwork({
-        method: "POST",
-        target: "ogdams_airtime",
-        path: "verify/otp",
-        headers: {
-          Authorization: `Bearer ${process.env.OGDAMS_AIRTIME_SECRET}`,
-        },
-        requestBody: {
-          networkName: data.network,
-          sender: data.phone_number,
-          otp: data.otp,
-        },
-      });
-      console.log("RES: ", res);
+      try {
+        const res = await customNetwork({
+          method: "POST",
+          target: "ogdams_airtime",
+          path: "verify/otp",
+          headers: {
+            Authorization: `Bearer ${process.env.OGDAMS_AIRTIME_SECRET}`,
+          },
+          requestBody: {
+            networkName: data.network,
+            sender: data.phone_number,
+            otp: data.otp,
+          },
+        });
+        console.log("RES: ", res);
+        if (res && res.status === 200 && res.data.code === 2000) {
+          return ctx.send({
+            data: {
+              message: res.data.message,
+              sessionId: res.data.data.sessionId,
+            },
+          });
+        } else {
+          return ctx.serviceUnavailable(
+            res?.data?.message || "service unavailable, please retry"
+          );
+        }
+      } catch (error) {
+        console.log("Verification ERROR: ", error);
+        throw new ApplicationError(
+          error?.response?.data?.message ||
+            error.message ||
+            "service unavailable, please retry"
+        );
+      }
     },
     async sellAirtime(ctx) {
       const { data } = ctx.request.body;
@@ -114,9 +141,10 @@ module.exports = createCoreController(
         data: {
           network: data.network,
           phone_number: data.phone_number,
-          request_id: data.reference,
+          request_id: data.request_id,
           previous_balance: user.accountBalance,
           current_balance: user.accountBalance,
+          session_id: data.session_id,
           user: id,
           amount: Number(data.amount),
         },
@@ -125,24 +153,58 @@ module.exports = createCoreController(
         const Order = await strapi
           .service("api::sell-airtime.sell-airtime")
           .create(newOrder);
-      } catch (error) {}
-      const res = await customNetwork({
-        method: "POST",
-        target: "ogdams_airtime",
-        path: "transfer/airtime",
-        headers: {
-          Authorization: `Bearer ${process.env.OGDAMS_AIRTIME_SECRET}`,
-        },
-        requestBody: {
-          networkName: data.network,
-          sender: data.phone_number,
-          pin: data.sim_pin,
-          amount: data.amount,
-          sessionId: data.sessionId,
-          reference: data.reference,
-        },
-      });
-      console.log("RES: ", res);
+        const res = await customNetwork({
+          method: "POST",
+          target: "ogdams_airtime",
+          path: "transfer/airtime",
+          headers: {
+            Authorization: `Bearer ${process.env.OGDAMS_AIRTIME_SECRET}`,
+          },
+          requestBody: {
+            networkName: data.network,
+            sender: data.phone_number,
+            pin: data.sim_pin,
+            count: 1,
+            amount: data.amount,
+            sessionId: data.session_id,
+            reference: data.request_id,
+          },
+        });
+        console.log("RES: ", res);
+        if (res && res.status === 200 && res.data.code === 2000) {
+          await strapi.query("api::sell-airtime.sell-airtime").update({
+            where: { session_id: res.data.data.sessionId },
+            data: {
+              status: "Sucessful",
+
+              current_balance: user.AccountBalance + Number(data.amount),
+            },
+          });
+          await strapi.query("plugin::users-permissions.user").update({
+            where: { id: user.id },
+            data: {
+              AccountBalance: user.AccountBalance + Number(data.amount),
+            },
+          });
+          return ctx.send({
+            data: {
+              message: res.data.message,
+              // Order,
+            },
+          });
+        } else {
+          return ctx.serviceUnavailable(
+            res?.data?.message || "service unavailable, please retry"
+          );
+        }
+      } catch (error) {
+        console.log(error);
+        ctx.serviceUnavailable(
+          error?.response?.data?.message ||
+            error.message ||
+            "service unavailable, please retry"
+        );
+      }
     },
   })
 );

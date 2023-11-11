@@ -218,4 +218,189 @@ module.exports = {
   async me(ctx) {
     const id = ctx.state.params;
   },
+  async getUserStat(ctx) {
+    const id = ctx.state.user.id;
+
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0); // Set to the start of the day
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    // console.log(startOfMonth);
+    // console.log(endOfMonth);
+    try {
+      const user = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({
+          where: {
+            id: id,
+          },
+          populate: {
+            airtime_orders: true,
+            sme_data_orders: true,
+            exam_pins_purchases: true,
+            electricity_bills: true,
+            data_gifting_orders: true,
+            tv_and_cables_orders: true,
+            sell_airtimes: true,
+            account_fundings: true,
+            cg_data_orders: true,
+          },
+        });
+      const transactions = [
+        ...user.airtime_orders,
+        ...user.sme_data_orders,
+        ...user.exam_pins_purchases,
+        ...user.data_gifting_orders,
+        ...user.electricity_bills,
+        ...user.tv_and_cables_orders,
+        ...user.cg_data_orders,
+      ];
+      const fundings = [...user.account_fundings];
+
+      const monthFundings = fundings.filter(
+        (t) =>
+          new Date(t.createdAt) >= startOfMonth &&
+          new Date(t.createdAt) < endOfMonth &&
+          t.status.toLowerCase() === "success"
+      );
+
+      const totalMonthFundings = monthFundings.reduce(
+        (acc, currVal) => acc + currVal.amount,
+        0
+      );
+      const monthlyTransactions = transactions.filter(
+        (t) =>
+          new Date(t.createdAt) >= startOfMonth &&
+          new Date(t.createdAt) < endOfMonth &&
+          (t.status.toLowerCase() === "delivered" ||
+            t.status.toLowerCase() === "successful")
+      );
+      const totalMonthlyTransactions = monthlyTransactions.reduce(
+        (acc, currentVal) => acc + currentVal.amount,
+        0
+      );
+      // console.log(transactions);
+      const todayTransactions = transactions.filter(
+        (t) =>
+          new Date(t.createdAt) >= today &&
+          new Date(t.createdAt) < tomorrow &&
+          (t.status.toLowerCase() === "delivered" ||
+            t.status.toLowerCase() === "successful")
+      );
+      const thisMonthSales = transactions.filter(
+        (t) =>
+          new Date(t.createdAt) >= startOfMonth &&
+          new Date(t.createdAt) < endOfMonth &&
+          (t.status.toLowerCase() === "delivered" ||
+            t.status.toLowerCase() === "successful")
+      );
+
+      const totalPurchase = todayTransactions.reduce(
+        (acc, currentVal) => acc + currentVal.amount,
+        0
+      );
+      console.log(totalPurchase);
+      ctx.send({
+        message: "successful",
+        walletBal: user.AccountBalance,
+        todaysPurchase: totalPurchase,
+        monthlySales: thisMonthSales.length,
+        totalMonthFundings,
+        totalMonthlyTransactions,
+      });
+    } catch (error) {
+      console.log(error);
+      ctx.internalServerError("something went wrong");
+    }
+  },
+
+  async getTransactionByDate(ctx) {
+    const { date } = ctx.params;
+    const id = ctx.state.user.id;
+    console.log(new Date(date));
+    try {
+      const user = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({
+          where: {
+            id: id,
+          },
+          populate: {
+            airtime_orders: true,
+            sme_data_orders: true,
+            exam_pins_purchases: true,
+            electricity_bills: true,
+            data_gifting_orders: true,
+            tv_and_cables_orders: true,
+            sell_airtimes: true,
+            account_fundings: true,
+            cg_data_orders: true,
+          },
+        });
+
+      const datas = [
+        ...user.cg_data_orders,
+        ...user.sme_data_orders,
+        ...user.data_gifting_orders,
+      ];
+      const airtimes = [...user.airtime_orders];
+      const fundings = [...user.account_fundings];
+      const tv_and_cables_orders = [...user.tv_and_cables_orders];
+      const electricity_bills = [...user.electricity_bills];
+      const exam_pins_purchases = [...user.exam_pins_purchases];
+      const sell_airtimes = [...user.sell_airtimes];
+
+      const getTotal = ({ date, entity }) => {
+        const startOfDay = new Date(date);
+        startOfDay.setUTCHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(date);
+        endOfDay.setUTCHours(23, 59, 59, 999);
+        const res = entity.filter(
+          (t) =>
+            new Date(t.createdAt) >= startOfDay &&
+            new Date(t.createdAt) < endOfDay &&
+            (t.status.toLowerCase() === "delivered" ||
+              t.status.toLowerCase() === "successful" ||
+              t.status.toLowerCase() === success)
+        );
+        const amount = res.reduce((acc, currVal) => acc + currVal.amount, 0);
+        return amount;
+      };
+      const totaldatas = getTotal({ date, entity: datas });
+      const totalairtimes = getTotal({ date, entity: airtimes });
+      const totalelelectricity = getTotal({
+        date,
+        entity: electricity_bills,
+      });
+      const totalfundings = getTotal({ date, entity: fundings });
+      const totalcables = getTotal({
+        date,
+        entity: tv_and_cables_orders,
+      });
+      const totalsellairtimes = getTotal({
+        date,
+        entity: sell_airtimes,
+      });
+      const totalexams = getTotal({
+        date,
+        entity: exam_pins_purchases,
+      });
+      ctx.send({
+        message: "successful",
+        totalairtimes,
+        totalcables,
+        totaldatas,
+        totalfundings,
+        totalsellairtimes,
+        totalexams,
+        totalelelectricity,
+      });
+    } catch (error) {
+      console.log(error);
+      ctx.internalServerError("something went wrong");
+    }
+  },
 };

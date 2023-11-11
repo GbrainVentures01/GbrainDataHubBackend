@@ -56,6 +56,7 @@ module.exports = createCoreController(
      */
 
     async create(ctx) {
+      console.log("ROUTE HIT")
       const amount = ctx.request.body.data.amount;
       const gateway = ctx.request.body.data.gateway;
       const { user } = ctx.state;

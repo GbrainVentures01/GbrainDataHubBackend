@@ -1,61 +1,77 @@
-'use strict';
+"use strict";
 
 module.exports = [
   {
-    method: 'GET',
-    path: '/users/count',
-    handler: 'user.count',
+    method: "GET",
+    path: "/users/count",
+    handler: "user.count",
     config: {
-      prefix: '',
+      prefix: "",
     },
   },
   {
-    method: 'GET',
-    path: '/users',
-    handler: 'user.find',
+    method: "GET",
+    path: "/users",
+    handler: "user.find",
     config: {
       auth: {},
-      prefix: '',
+      prefix: "",
     },
   },
   {
-    method: 'GET',
-    path: '/users/me',
-    handler: 'user.me',
+    method: "GET",
+    path: "/users/me",
+    handler: "user.me",
     config: {
-      prefix: '',
+      prefix: "",
     },
   },
   {
-    method: 'GET',
-    path: '/users/:id',
-    handler: 'user.findOne',
+    method: "GET",
+    path: "/users/:id",
+    handler: "user.findOne",
     config: {
-      prefix: '',
+      prefix: "",
     },
   },
   {
-    method: 'POST',
-    path: '/users',
-    handler: 'user.create',
+    method: "POST",
+    path: "/users",
+    handler: "user.create",
     config: {
-      prefix: '',
+      prefix: "",
     },
   },
   {
-    method: 'PUT',
-    path: '/users/:id',
-    handler: 'user.update',
+    method: "PUT",
+    path: "/users/:id",
+    handler: "user.update",
     config: {
-      prefix: '',
+      prefix: "",
     },
   },
   {
-    method: 'DELETE',
-    path: '/users/:id',
-    handler: 'user.destroy',
+    method: "DELETE",
+    path: "/users/:id",
+    handler: "user.destroy",
     config: {
-      prefix: '',
+      prefix: "",
+    },
+  },
+  {
+    method: "GET",
+    path: "/users-stat",
+    handler: "user.getUserStat",
+    config: {
+      prefix: "",
+    },
+  },
+  {
+    method: "GET",
+    path: "/users-stat-by-date/:date",
+    handler: "user.getTransactionByDate",
+    config: {
+      prefix: "",
     },
   },
 ];
