@@ -364,7 +364,7 @@ module.exports = {
             new Date(t.createdAt) < endOfDay &&
             (t.status.toLowerCase() === "delivered" ||
               t.status.toLowerCase() === "successful" ||
-              t.status.toLowerCase() === success)
+              t.status.toLowerCase() === "success")
         );
         const amount = res.reduce((acc, currVal) => acc + currVal.amount, 0);
         return amount;
