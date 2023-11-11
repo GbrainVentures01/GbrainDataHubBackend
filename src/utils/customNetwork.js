@@ -6,8 +6,8 @@ const ogdamsUrl = "https://simhosting.ogdams.ng/api/v1/";
 const ogdamsAirtimeUrl = "https://automation.airtimetocash.com/api/v1/";
 const bello = "https://bellodigitalworld.ng/api/v1/";
 const credo = "https://api.public.credodemo.com/";
-// const monify = "https://api.monnify.com/";
-const monify = "https://sandbox.monnify.com/";
+const monify = "https://api.monnify.com/";
+// const monify = "https://sandbox.monnify.com/";
 
 // const baseUrl = `${testUrl}/api`;
 
