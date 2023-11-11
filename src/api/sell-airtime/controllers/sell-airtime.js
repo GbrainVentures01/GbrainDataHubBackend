@@ -142,8 +142,8 @@ module.exports = createCoreController(
           network: data.network,
           phone_number: data.phone_number,
           request_id: data.request_id,
-          previous_balance: user.accountBalance,
-          current_balance: user.accountBalance,
+          previous_balance: user.AccountBalance,
+          current_balance: user.AccountBalance,
           session_id: data.session_id,
           user: id,
           amount: Number(data.amount),
@@ -172,18 +172,20 @@ module.exports = createCoreController(
         });
         console.log("RES: ", res);
         if (res && res.status === 200 && res.data.code === 2000) {
+          const amountToNumber = Number(data.amount);
+          const amounWithcharges = (amountToNumber / 100) * 90;
           await strapi.query("api::sell-airtime.sell-airtime").update({
             where: { session_id: res.data.data.sessionId },
             data: {
               status: "Sucessful",
 
-              current_balance: user.AccountBalance + Number(data.amount),
+              current_balance: user.AccountBalance + Number(amounWithcharges),
             },
           });
           await strapi.query("plugin::users-permissions.user").update({
             where: { id: user.id },
             data: {
-              AccountBalance: user.AccountBalance + Number(data.amount),
+              AccountBalance: user.AccountBalance + Number(amounWithcharges),
             },
           });
           return ctx.send({
