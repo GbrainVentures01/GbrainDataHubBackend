@@ -15,8 +15,8 @@ module.exports = async ({ token, userData }) => {
         customerEmail: userData.email,
         // bvn: "21212121212",
         customerName: userData.username,
-        getAllAvailableBanks: true,
-        // preferredBanks: ["50515"],
+        // getAllAvailableBanks: true,
+        preferredBanks: ["50515", "0035", "058"],
       },
     });
     return data;
