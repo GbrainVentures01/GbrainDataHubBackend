@@ -195,12 +195,24 @@ module.exports = createCoreController(
             },
           });
         } else {
+          await strapi.query("api::sell-airtime.sell-airtime").update({
+            where: { session_id: res.data.data.sessionId },
+            data: {
+              status: "Failed",
+            },
+          });
           return ctx.serviceUnavailable(
             res?.data?.message || "service unavailable, please retry"
           );
         }
       } catch (error) {
         console.log(error);
+        await strapi.query("api::sell-airtime.sell-airtime").update({
+          where: { session_id: res.data.data.sessionId },
+          data: {
+            status: "Failed",
+          },
+        });
         ctx.serviceUnavailable(
           error?.response?.data?.message ||
             error.message ||
