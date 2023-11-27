@@ -82,8 +82,8 @@ module.exports = createCoreController(
       //     }
       //   };
       const payload = {
-        network_id: 1,
-        plan_id: data.plan.plan_id,
+        network_id: "1",
+        plan_id: `${data.plan.plan_id}`,
         phone: data.beneficiary,
       };
       try {
