@@ -1,0 +1,65 @@
+{
+  "kind": "collectionType",
+  "collectionName": "mtn_sme_1_data_orders",
+  "info": {
+    "singularName": "mtn-sme-1-data-order",
+    "pluralName": "mtn-sme-1-data-orders",
+    "displayName": "MTN SME 1 DATA ORDER"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "network": {
+      "type": "string",
+      "required": true
+    },
+    "ref": {
+      "type": "string",
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "plan": {
+      "type": "string",
+      "required": true
+    },
+    "beneficiary": {
+      "type": "string",
+      "required": true
+    },
+    "previous_balance": {
+      "type": "decimal",
+      "required": true
+    },
+    "current_balance": {
+      "type": "decimal",
+      "required": true
+    },
+    "TRX_Name": {
+      "type": "string",
+      "required": true,
+      "default": "Data (SME 1)"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "delivered",
+        "failed",
+        "processing"
+      ],
+      "default": "pending",
+      "required": true
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "mtn_sme_1_data_orders"
+    }
+  }
+}

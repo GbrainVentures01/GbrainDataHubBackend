@@ -1,0 +1,32 @@
+{
+  "kind": "collectionType",
+  "collectionName": "mtn_sme_2_data_plans",
+  "info": {
+    "singularName": "mtn-sme-2-data-plan",
+    "pluralName": "mtn-sme-2-data-plans",
+    "displayName": "MTN SME 2 DATA PLAN"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Plan": {
+      "type": "string",
+      "required": true
+    },
+    "Price": {
+      "type": "integer",
+      "required": true,
+      "default": 0
+    },
+    "expiry_date": {
+      "type": "string",
+      "required": true
+    },
+    "plan_id": {
+      "type": "integer",
+      "required": true
+    }
+  }
+}

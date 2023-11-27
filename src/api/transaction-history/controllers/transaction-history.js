@@ -37,6 +37,9 @@ module.exports = createCoreController(
               sell_airtimes: true,
               account_fundings: true,
               cg_data_orders: true,
+              mtn_sme_1_data_orders: true,
+              mtn_sme_2_data_orders: true,
+              mtn_coupon_data_orders: true,
             },
           });
         const history = {
@@ -50,6 +53,9 @@ module.exports = createCoreController(
             ...user.sell_airtimes,
             ...user.account_fundings,
             ...user.cg_data_orders,
+            ...user.mtn_sme_1_data_orders,
+            ...user.mtn_sme_2_data_orders,
+            ...user.mtn_coupon_data_orders,
           ],
         };
         //  if (history.length === 0){

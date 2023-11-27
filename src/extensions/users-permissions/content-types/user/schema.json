@@ -152,6 +152,24 @@
       "type": "boolean",
       "default": false,
       "required": true
+    },
+    "mtn_sme_1_data_orders": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::mtn-sme-1-data-order.mtn-sme-1-data-order",
+      "mappedBy": "user"
+    },
+    "mtn_sme_2_data_orders": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::mtn-sme-2-data-order.mtn-sme-2-data-order",
+      "mappedBy": "user"
+    },
+    "mtn_coupon_data_orders": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::mtn-coupon-data-order.mtn-coupon-data-order",
+      "mappedBy": "user"
     }
   }
 }
