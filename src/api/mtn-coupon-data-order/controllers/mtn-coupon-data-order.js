@@ -101,7 +101,7 @@ module.exports = createCoreController(
           return ctx.send({
             data: {
               message:
-                "Transaction Successful, kindly dial *323*3# to check your balance.",
+                "Data Activation Successful, Kindly confirm from your balance.",
               // res.data.api_response ||
               // `Successful gifted ${data.plan.Plan} to ${data.beneficiary}`,
             },
