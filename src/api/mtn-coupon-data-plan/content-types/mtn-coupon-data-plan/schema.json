@@ -7,7 +7,7 @@
     "displayName": "MTN COUPON DATA PLAN"
   },
   "options": {
-    "draftAndPublish": false
+    "draftAndPublish": true
   },
   "pluginOptions": {},
   "attributes": {

@@ -7,7 +7,7 @@
     "displayName": "MTN SME 2 DATA PLAN"
   },
   "options": {
-    "draftAndPublish": false
+    "draftAndPublish": true
   },
   "pluginOptions": {},
   "attributes": {
