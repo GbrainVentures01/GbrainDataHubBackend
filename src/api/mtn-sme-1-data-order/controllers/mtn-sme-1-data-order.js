@@ -109,8 +109,9 @@ module.exports = createCoreController(
           return ctx.send({
             data: {
               message:
-                res.data.api_response ||
-                `Successful gifted ${data.plan} to ${data.beneficiary}`,
+                "Transaction Successful, kindly dial *323*3# to check your balance.",
+              // res.data.api_response ||
+              // `Successful gifted ${data.plan.Plan} to ${data.beneficiary}`,
             },
           });
         } else if (!res.data.status) {

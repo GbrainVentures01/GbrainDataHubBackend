@@ -103,7 +103,7 @@ module.exports = createCoreController(
             data: {
               message:
                 res.data.api_response ||
-                `Successful gifted ${data.plan} to ${data.beneficiary}`,
+                `Successful gifted ${data.plan.Plan} to ${data.beneficiary}`,
             },
           });
         } else if (!res.data.status) {
