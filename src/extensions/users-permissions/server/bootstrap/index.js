@@ -8,9 +8,9 @@
  * run jobs, or perform some special logic.
  */
 const _ = require("lodash");
-const uuid = require("uuid/v4");
+// const uuid = require("uuid/v4");
 const { getService } = require("../utils/index");
-
+const crypto = require("crypto");
 const usersPermissionsActions = require("@strapi/plugin-users-permissions/server/bootstrap/users-permissions-actions");
 
 module.exports = async ({ strapi }) => {
@@ -30,7 +30,7 @@ module.exports = async ({ strapi }) => {
   await getService("users-permissions").initialize();
 
   if (!strapi.config.get("plugin.users-permissions.jwtSecret")) {
-    const jwtSecret = uuid();
+    const jwtSecret = crypto.randomBytes(16).toString("base64");
     strapi.config.set("plugin.users-permissions.jwtSecret", jwtSecret);
 
     if (!process.env.JWT_SECRET) {
