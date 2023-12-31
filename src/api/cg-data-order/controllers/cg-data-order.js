@@ -99,16 +99,23 @@ module.exports = createCoreController(
 
       const { pin, ...restofdata } = data;
       const newOrder = {
-        data: { ...restofdata, user: id,current_balance: user.AccountBalance, previous_balance: user.AccountBalance},
+        data: {
+          ...restofdata,
+          user: id,
+          current_balance: user.AccountBalance,
+          previous_balance: user.AccountBalance,
+        },
       };
 
       await strapi.service("api::cg-data-order.cg-data-order").create(newOrder);
-    const updatedUser =  await strapi.query("plugin::users-permissions.user").update({
-        where: { id: user.id },
-        data: {
-          AccountBalance: user.AccountBalance - Number(data.amount),
-        },
-      });
+      const updatedUser = await strapi
+        .query("plugin::users-permissions.user")
+        .update({
+          where: { id: user.id },
+          data: {
+            AccountBalance: user.AccountBalance - Number(data.amount),
+          },
+        });
       try {
         const payload = JSON.stringify({
           network_id: `${data.network_id}`,
@@ -130,13 +137,13 @@ module.exports = createCoreController(
 
         console.log(res);
 
-        if (res.status === 200 && res.data.status ) {
+        if (res.status === 200 && res.data.status) {
           await strapi.query("api::cg-data-order.cg-data-order").update({
             where: { request_Id: data.request_Id },
             data: {
               status: "delivered",
               ident: res.data.ident,
-              current_balance:updatedUser.AccountBalance
+              current_balance: updatedUser.AccountBalance,
             },
           });
           return ctx.send({
@@ -146,28 +153,29 @@ module.exports = createCoreController(
                 `Successful gifted ${data.plan} to ${data.beneficiary}`,
             },
           });
-        } else if (!res.data.status ) {
-        
+        } else if (!res.data.status) {
           const user = await strapi
             .query("plugin::users-permissions.user")
             .findOne({ where: { id: id } });
-        const updatedUser =  await strapi.query("plugin::users-permissions.user").update({
-            where: { id: user.id },
-            data: {
-              AccountBalance: user.AccountBalance + Number(data.amount),
-            },
-          });
+          const updatedUser = await strapi
+            .query("plugin::users-permissions.user")
+            .update({
+              where: { id: user.id },
+              data: {
+                AccountBalance: user.AccountBalance + Number(data.amount),
+              },
+            });
           await strapi.query("api::cg-data-order.cg-data-order").update({
             where: { request_Id: data.request_Id },
             data: {
               status: "failed",
-              ident: res.data.ident,
-              current_balance:updatedUser.AccountBalance
+              ident: res?.data?.ident || "-",
+              current_balance: updatedUser.AccountBalance,
             },
           });
           console.log(res.data);
           ctx.throw(400, res.data.api_response);
-        } 
+        }
         // else if (
         //   res.data &&
         //   res.data.status !== "failed" &&
@@ -189,14 +197,14 @@ module.exports = createCoreController(
         else {
           console.log(res.data);
           const user = await strapi
-          .query("plugin::users-permissions.user")
-          .findOne({ where: { id: id } });
+            .query("plugin::users-permissions.user")
+            .findOne({ where: { id: id } });
           await strapi.query("api::cg-data-order.cg-data-order").update({
             where: { request_Id: data.request_Id },
             data: {
               status: "failed",
-              ident: res.data.ident,
-              current_balance:user.AccountBalance
+              ident: res?.data?.ident || "-",
+              current_balance: user.AccountBalance,
             },
           });
           ctx.throw(500, "Transaction was not successful");
@@ -206,14 +214,14 @@ module.exports = createCoreController(
         console.log(error);
         if (error.response?.status === 400) {
           const user = await strapi
-          .query("plugin::users-permissions.user")
-          .findOne({ where: { id: id } });
+            .query("plugin::users-permissions.user")
+            .findOne({ where: { id: id } });
           await strapi.query("api::cg-data-order.cg-data-order").update({
             where: { request_Id: data.request_Id },
             data: {
               status: "failed",
-              ident: res.data.ident,
-              current_balance:user.AccountBalance
+              ident: res?.data?.ident || "-",
+              current_balance: user.AccountBalance,
             },
           });
           ctx.throw(
@@ -222,14 +230,14 @@ module.exports = createCoreController(
           );
         } else {
           const user = await strapi
-          .query("plugin::users-permissions.user")
-          .findOne({ where: { id: id } });
+            .query("plugin::users-permissions.user")
+            .findOne({ where: { id: id } });
           await strapi.query("api::cg-data-order.cg-data-order").update({
             where: { request_Id: data.request_Id },
             data: {
               status: "failed",
-              ident: res.data.ident,
-              current_balance:user.AccountBalance
+              ident: res?.data?.ident || "-",
+              current_balance: user.AccountBalance,
             },
           });
           ctx.throw(500, "Something went wrong, please try again later.");
