@@ -13,6 +13,11 @@ module.exports = {
       handler: "account-funding.generateMonnifyAccount",
     },
     {
+      method: "POST",
+      path: "/update-bvn",
+      handler: "account-funding.updateUserBvn",
+    },
+    {
       method: "GET",
       path: "/account-funding",
       handler: "account-funding.find",

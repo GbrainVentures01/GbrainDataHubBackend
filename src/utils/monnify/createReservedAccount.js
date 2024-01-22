@@ -13,7 +13,7 @@ module.exports = async ({ token, userData }) => {
         currencyCode: "NGN",
         contractCode: `${process.env.MONNIFY_CONTRACT_CODE}`,
         customerEmail: userData.email,
-        // bvn: "21212121212",
+
         customerName: userData.username,
         getAllAvailableBanks: false,
         preferredBanks: ["50515", "035", "058"],

@@ -5,6 +5,7 @@ const fundWallet = require("../../../utils/monnify/fundWallet");
 const generateRef = require("../../../utils/monnify/generateRef");
 const getToken = require("../../../utils/monnify/getToken");
 const createReservedAccount = require("../../../utils/monnify/createReservedAccount");
+const customNetwork = require("../../../utils/customNetwork");
 
 /**
  *  account-funding controller
@@ -49,6 +50,33 @@ module.exports = createCoreController(
       }
     },
 
+    async updateUserBvn(ctx) {
+      const { bvn } = req.body.data;
+      const user = ctx.state.user;
+      const monifyToken = await getToken();
+      const res = await customNetwork({
+        method: "PUT",
+        path: `api/v1/bank-transfer/reserved-accounts/update-customer-bvn/${user.email}`,
+        target: "monify",
+        headers: { Authorization: `Bearer ${monifyToken}` },
+        requestBody: {
+          bvn: bvn,
+        },
+      });
+      console.log("BVN REs", res);
+      if (res?.requestSuccessful) {
+        await strapi.query("plugin::users-permissions.user").update({
+          where: { id: user.id },
+          data: {
+            updateBvn: true,
+          },
+        });
+        return ctx.created("bvn updated successfully");
+      } else {
+        return ctx.internalServerError("bvn update failed");
+      }
+    },
+
     /**
      * initiate account funding with flutter wave
      * @param {Object} ctx
@@ -56,7 +84,7 @@ module.exports = createCoreController(
      */
 
     async create(ctx) {
-      console.log("ROUTE HIT")
+      console.log("ROUTE HIT");
       const amount = ctx.request.body.data.amount;
       const gateway = ctx.request.body.data.gateway;
       const { user } = ctx.state;

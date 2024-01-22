@@ -153,6 +153,10 @@
       "default": false,
       "required": true
     },
+      "updateBvn": {
+      "type": "boolean",
+      "default": false
+    },
     "mtn_sme_1_data_orders": {
       "type": "relation",
       "relation": "oneToMany",
