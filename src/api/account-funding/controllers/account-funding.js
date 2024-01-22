@@ -51,7 +51,7 @@ module.exports = createCoreController(
     },
 
     async updateUserBvn(ctx) {
-      const { bvn } = req.body.data;
+      const { bvn } = ctx.req.body.data;
       const user = ctx.state.user;
       const monifyToken = await getToken();
       const res = await customNetwork({
