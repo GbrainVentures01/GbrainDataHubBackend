@@ -54,7 +54,7 @@ module.exports = createCoreController(
       const { bvn } = ctx.request.body.data;
       const user = ctx.state.user;
       const monifyToken = await getToken();
-      const res = await customNetwork({
+      const { data } = await customNetwork({
         method: "PUT",
         path: `api/v1/bank-transfer/reserved-accounts/update-customer-bvn/${user.email}`,
         target: "monify",
@@ -63,8 +63,8 @@ module.exports = createCoreController(
           bvn: bvn,
         },
       });
-      console.log("BVN REs", res);
-      if (res?.requestSuccessful) {
+      console.log("BVN REs", data);
+      if (data?.requestSuccessful) {
         await strapi.query("plugin::users-permissions.user").update({
           where: { id: user.id },
           data: {
