@@ -4,6 +4,7 @@ function isLessThanThreeMins(createdAt) {
   if (!createdAt) throw new Error("createdAt is required");
   const now = moment();
   const differenceInMinutes = moment.duration(now.diff(createdAt)).asMinutes();
+  console.log("differenceInMinutes", differenceInMinutes);
   return differenceInMinutes < 3;
 }
 
