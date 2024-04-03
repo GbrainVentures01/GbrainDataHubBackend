@@ -18,13 +18,7 @@ module.exports = async (id, data, collectionName) => {
     },
     limit: 1,
   });
-  await strapi.query(collectionName).findMany({
-    orderBy: { createdAt: "DESC" },
-    where: {
-      user: id,
-    },
-    limit: 1,
-  });
+
   if (lastTransaction.length > 0) {
     console.log(lastTransaction);
     if (isLessThanThreeMins(lastTransaction[0].createdAt)) {
