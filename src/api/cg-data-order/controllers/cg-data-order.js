@@ -12,6 +12,9 @@ const {
 } = require("../../../extensions/users-permissions/server/utils");
 
 const { default: axios } = require("axios");
+const moment = require("moment");
+const isLessThanThreeMins = require("../../../utils/checkduplicate");
+const checkduplicate = require("../../../utils/checkduplicate");
 
 module.exports = createCoreController(
   "api::cg-data-order.cg-data-order",
@@ -74,6 +77,12 @@ module.exports = createCoreController(
       const { data } = ctx.request.body;
 
       const { id } = ctx.state.user;
+      if (checkduplicate(id, data, "api::cg-data-order.cg-data-order")) {
+        return ctx.badRequest(
+          "possible duplicate transaction, please check history or retry later"
+        );
+      }
+
       const user = await strapi
         .query("plugin::users-permissions.user")
         .findOne({ where: { id: id } });
@@ -150,7 +159,7 @@ module.exports = createCoreController(
             data: {
               message:
                 res.data.api_response ||
-                `Successful gifted ${data.plan} to ${data.beneficiary}`,
+                `Successful gifted ${data.plan} to ${data.beneficiary}, please check your transaction history`,
             },
           });
         } else if (!res.data.status) {

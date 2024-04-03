@@ -63,7 +63,7 @@ module.exports = createCoreController(
           bvn: bvn,
         },
       });
-      console.log("BVN REs", data);
+
       if (data?.requestSuccessful) {
         await strapi.query("plugin::users-permissions.user").update({
           where: { id: user.id },

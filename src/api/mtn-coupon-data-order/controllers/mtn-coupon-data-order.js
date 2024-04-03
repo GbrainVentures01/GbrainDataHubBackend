@@ -10,6 +10,7 @@ const { ApplicationError } = require("@strapi/utils/lib/errors");
 const {
   getService,
 } = require("../../../extensions/users-permissions/server/utils");
+const checkduplicate = require("../../../utils/checkduplicate");
 const { createCoreController } = require("@strapi/strapi").factories;
 
 module.exports = createCoreController(
@@ -19,6 +20,17 @@ module.exports = createCoreController(
       const { data } = ctx.request.body;
 
       const { id } = ctx.state.user;
+      if (
+        checkduplicate(
+          id,
+          data,
+          "api::mtn-coupon-data-order.mtn-coupon-data-order"
+        )
+      ) {
+        return ctx.badRequest(
+          "possible duplicate transaction, please check history or retry later"
+        );
+      }
       const user = await strapi
         .query("plugin::users-permissions.user")
         .findOne({ where: { id: id } });

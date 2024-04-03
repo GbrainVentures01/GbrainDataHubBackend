@@ -9,6 +9,7 @@ const { ApplicationError } = require("@strapi/utils/lib/errors");
 const {
   getService,
 } = require("../../../extensions/users-permissions/server/utils");
+const checkduplicate = require("../../../utils/checkduplicate");
 
 /**
  *  data-order controller
@@ -29,6 +30,11 @@ module.exports = createCoreController(
       const { data } = ctx.request.body;
 
       const { id } = ctx.state.user;
+      if (checkduplicate(id, data, "api::airtime-order.airtime-order")) {
+        return ctx.badRequest(
+          "possible duplicate transaction, please check history or retry later"
+        );
+      }
       const user = await strapi
         .query("plugin::users-permissions.user")
         .findOne({ where: { id: id } });
@@ -46,15 +52,24 @@ module.exports = createCoreController(
         return ctx.badRequest("Incorrect Pin");
       }
       // update latest user's details (debit user's account)
-     
+
       try {
         const { pin, ...restofdata } = data;
-        const newOrder = { data: { ...restofdata, user: id, current_balance:user.AccountBalance, previous_balance:user.AccountBalance } };
+        const newOrder = {
+          data: {
+            ...restofdata,
+            user: id,
+            current_balance: user.AccountBalance,
+            previous_balance: user.AccountBalance,
+          },
+        };
         await strapi
           .service("api::airtime-order.airtime-order")
           .create(newOrder);
 
-       const updatedUser =  await strapi.query("plugin::users-permissions.user").update({
+        const updatedUser = await strapi
+          .query("plugin::users-permissions.user")
+          .update({
             where: { id: user.id },
             data: {
               AccountBalance: user.AccountBalance - Number(data.amount),
@@ -88,7 +103,7 @@ module.exports = createCoreController(
             where: { request_id: data.request_id },
             data: {
               status: "delivered",
-              current_balance:updatedUser.AccountBalance
+              current_balance: updatedUser.AccountBalance,
             },
           });
           return ctx.created({ message: "Successful" });
@@ -100,7 +115,7 @@ module.exports = createCoreController(
             where: { request_id: data.request_id },
             data: {
               status: "processing",
-              current_balance:updatedUser.AccountBalance
+              current_balance: updatedUser.AccountBalance,
             },
           });
           return ctx.created({ message: "Successful" });
@@ -117,7 +132,7 @@ module.exports = createCoreController(
               where: { request_id: data.request_id },
               data: {
                 status: "delivered",
-                current_balance:updatedUser.AccountBalance
+                current_balance: updatedUser.AccountBalance,
               },
             });
             return ctx.created({ message: "Successful" });
@@ -130,17 +145,19 @@ module.exports = createCoreController(
               });
             // update latest user's details (refund user exact amount debited before)
 
-         const updatedUser =  await strapi.query("plugin::users-permissions.user").update({
-              where: { id: user.id },
-              data: {
-                AccountBalance: user.AccountBalance + Number(data.amount),
-              },
-            });
+            const updatedUser = await strapi
+              .query("plugin::users-permissions.user")
+              .update({
+                where: { id: user.id },
+                data: {
+                  AccountBalance: user.AccountBalance + Number(data.amount),
+                },
+              });
             await strapi.query("api::airtime-order.airtime-order").update({
               where: { request_id: data.request_id },
               data: {
                 status: "failed",
-                current_balance:updatedUser.AccountBalance
+                current_balance: updatedUser.AccountBalance,
               },
             });
             return ctx.serviceUnavailable(
@@ -154,18 +171,20 @@ module.exports = createCoreController(
             .findOne({
               where: { id: id },
             });
-            const updatedUser =       await strapi.query("plugin::users-permissions.user").update({
-            where: { id: user.id },
-            data: {
-              AccountBalance: user.AccountBalance + Number(data.amount),
-            },
-          });
+          const updatedUser = await strapi
+            .query("plugin::users-permissions.user")
+            .update({
+              where: { id: user.id },
+              data: {
+                AccountBalance: user.AccountBalance + Number(data.amount),
+              },
+            });
 
           await strapi.query("api::airtime-order.airtime-order").update({
             where: { request_id: data.request_id },
             data: {
               status: "failed",
-              current_balance:updatedUser.AccountBalance
+              current_balance: updatedUser.AccountBalance,
             },
           });
           console.log(buyAirtime);
@@ -174,15 +193,15 @@ module.exports = createCoreController(
         }
       } catch (error) {
         const user = await strapi
-            .query("plugin::users-permissions.user")
-            .findOne({
-              where: { id: id },
-            });
+          .query("plugin::users-permissions.user")
+          .findOne({
+            where: { id: id },
+          });
         await strapi.query("api::airtime-order.airtime-order").update({
           where: { request_id: data.request_id },
           data: {
             status: "failed",
-            current_balance:user.AccountBalance
+            current_balance: user.AccountBalance,
           },
         });
         console.log(error);
