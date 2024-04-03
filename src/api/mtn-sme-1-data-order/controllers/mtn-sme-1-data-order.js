@@ -29,7 +29,7 @@ module.exports = createCoreController(
 
       const { id } = ctx.state.user;
       if (
-        checkduplicate(
+        await checkduplicate(
           id,
           data,
           "api::mtn-sme-1-data-order.mtn-sme-1-data-order"

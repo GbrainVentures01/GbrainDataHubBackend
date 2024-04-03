@@ -73,7 +73,9 @@ module.exports = createCoreController(
       const { data } = ctx.request.body;
 
       const { id } = ctx.state.user;
-      if (checkduplicate(id, data, "api::sme-data-order.sme-data-order")) {
+      if (
+        await checkduplicate(id, data, "api::sme-data-order.sme-data-order")
+      ) {
         return ctx.badRequest(
           "possible duplicate transaction, please check history or retry later"
         );

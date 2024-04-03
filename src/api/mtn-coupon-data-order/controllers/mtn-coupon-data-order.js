@@ -21,7 +21,7 @@ module.exports = createCoreController(
 
       const { id } = ctx.state.user;
       if (
-        checkduplicate(
+        await checkduplicate(
           id,
           data,
           "api::mtn-coupon-data-order.mtn-coupon-data-order"

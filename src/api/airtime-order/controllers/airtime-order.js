@@ -30,7 +30,7 @@ module.exports = createCoreController(
       const { data } = ctx.request.body;
 
       const { id } = ctx.state.user;
-      if (checkduplicate(id, data, "api::airtime-order.airtime-order")) {
+      if (await checkduplicate(id, data, "api::airtime-order.airtime-order")) {
         return ctx.badRequest(
           "possible duplicate transaction, please check history or retry later"
         );
