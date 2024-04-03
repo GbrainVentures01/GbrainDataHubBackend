@@ -19,16 +19,19 @@ module.exports = async (id, data, collectionName) => {
     },
     limit: 1,
   });
-
+  console.log(lastTransaction);
   if (lastTransaction.length > 0) {
-    console.log(lastTransaction);
     if (isLessThanThreeMins(lastTransaction[0].createdAt)) {
       if (
         Number(lastTransaction[0].amount) === Number(data.amount) ||
         lastTransaction[0].beneficiary === data.beneficiary
       ) {
         return true;
+      } else {
+        return false;
       }
+    } else {
+      return false;
     }
   }
   return false;

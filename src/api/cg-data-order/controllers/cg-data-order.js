@@ -77,8 +77,13 @@ module.exports = createCoreController(
       const { data } = ctx.request.body;
 
       const { id } = ctx.state.user;
-
-      if (checkduplicate(id, data, "api::cg-data-order.cg-data-order")) {
+      const isDuplicate = await checkduplicate(
+        id,
+        data,
+        "api::cg-data-order.cg-data-order"
+      );
+      console.log("isDuplicate", isDuplicate);
+      if (isDuplicate) {
         return ctx.badRequest(
           "possible duplicate transaction, please check history or retry later"
         );
