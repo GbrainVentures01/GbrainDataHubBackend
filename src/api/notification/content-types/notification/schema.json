@@ -16,6 +16,10 @@
     },
     "message": {
       "type": "richtext"
+    },
+    "treatAsNew": {
+      "type": "boolean",
+      "default": false
     }
   }
 }
