@@ -267,7 +267,7 @@ module.exports = {
       );
 
       const totalMonthFundings = monthFundings.reduce(
-        (acc, currVal) => acc + currVal.amount,
+        (acc, currVal) => acc + Number(currVal.amount),
         0
       );
       const monthlyTransactions = transactions.filter(
@@ -278,7 +278,7 @@ module.exports = {
             t.status.toLowerCase() === "successful")
       );
       const totalMonthlyTransactions = monthlyTransactions.reduce(
-        (acc, currentVal) => acc + currentVal.amount,
+        (acc, currentVal) => acc + Number(currentVal.amount),
         0
       );
       // console.log(transactions);
@@ -298,7 +298,7 @@ module.exports = {
       );
 
       const totalPurchase = todayTransactions.reduce(
-        (acc, currentVal) => acc + currentVal.amount,
+        (acc, currentVal) => acc + Number(currentVal.amount),
         0
       );
       console.log(totalPurchase);
@@ -319,7 +319,7 @@ module.exports = {
   async getTransactionByDate(ctx) {
     const { date } = ctx.params;
     const id = ctx.state.user.id;
-    console.log(new Date(date));
+
     try {
       const user = await strapi
         .query("plugin::users-permissions.user")
