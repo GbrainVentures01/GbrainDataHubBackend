@@ -141,7 +141,7 @@ module.exports = createCoreController(
           await strapi
             .query("api::mtn-sme-1-data-order.mtn-sme-1-data-order")
             .update({
-              where: { request_Id: data.request_Id },
+              where: { ref: ref },
               data: {
                 status: "failed",
                 current_balance: updatedUser.AccountBalance,
@@ -191,13 +191,21 @@ module.exports = createCoreController(
           const user = await strapi
             .query("plugin::users-permissions.user")
             .findOne({ where: { id: id } });
+          const updatedUser = await strapi
+            .query("plugin::users-permissions.user")
+            .update({
+              where: { id: user.id },
+              data: {
+                AccountBalance: user.AccountBalance + Number(data.amount),
+              },
+            });
           await strapi
             .query("api::mtn-sme-1-data-order.mtn-sme-1-data-order")
             .update({
-              where: { request_Id: data.request_Id },
+              where: { ref: ref },
               data: {
                 status: "failed",
-                current_balance: user.AccountBalance,
+                current_balance: updatedUser.AccountBalance,
               },
             });
           ctx.throw(
