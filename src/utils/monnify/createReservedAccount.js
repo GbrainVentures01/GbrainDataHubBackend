@@ -21,6 +21,7 @@ module.exports = async ({ token, userData, bvn }) => {
     });
     return data;
   } catch (error) {
+    console.log("ERROR: ", error);
     return error;
   }
 };

@@ -60,7 +60,7 @@ module.exports = createCoreController(
           monnify_bank_details: true,
         }
       })
-      console.log({ length:UserFromDb.monnify_bank_details.length, bvn:UserFromDb.updateBvn, isLogicTrue:!UserFromDb.updateBvn && (UserFromDb.monnify_bank_details.length === 0 ) });
+      console.log({UserFromDb});
       if (!UserFromDb.updateBvn && (UserFromDb.monnify_bank_details.length === 0 )) {
         try {
   
@@ -94,6 +94,7 @@ module.exports = createCoreController(
             return ctx.created("account created successfully");
           }
         } catch (error) {
+          console.log(error);
           return ctx.internalServerError("something went wrong");
         }
       }
