@@ -79,7 +79,7 @@ module.exports = createCoreController(
             await strapi.entityService.update("plugin::users-permissions.user", user.id,
               {
                 data: {
-                  monnify_account_details: [...UserFromDb.monnify_bank_details, ...newData],
+                  monnify_bank_details: [...UserFromDb.monnify_bank_details, ...newData],
                   updateBvn: true,
                 },
               }
