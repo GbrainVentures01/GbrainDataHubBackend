@@ -81,6 +81,7 @@ module.exports = createCoreController(
                 data: {
                   monnify_bank_details: [...UserFromDb.monnify_bank_details, ...newData],
                   updateBvn: true,
+                  hasAccountNum:true
                 },
               }
             );
