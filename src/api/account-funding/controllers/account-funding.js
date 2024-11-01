@@ -64,7 +64,7 @@ module.exports = createCoreController(
       if (!UserFromDb.updateBvn && (UserFromDb.monnify_bank_details.length === 0 )) {
         try {
   
-          const acc = await createReservedAccount({ token, userData: user, bvn: bvn });
+          const acc = await createReservedAccount({ token:monifyToken, userData: user, bvn: bvn });
           if(!acc?.requestSuccessful) return ctx.badRequest(acc?.errorMessage??"unable to generate virtual account");
           if (acc?.requestSuccessful) {
             const newData = acc?.responseBody?.accounts.map((account) => {
