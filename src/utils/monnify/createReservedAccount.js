@@ -1,6 +1,6 @@
 const customNetwork = require("../customNetwork");
 
-module.exports = async ({ token, userData }) => {
+module.exports = async ({ token, userData, bvn }) => {
   try {
     const { data } = await customNetwork({
       method: "POST",
@@ -13,7 +13,7 @@ module.exports = async ({ token, userData }) => {
         currencyCode: "NGN",
         contractCode: `${process.env.MONNIFY_CONTRACT_CODE}`,
         customerEmail: userData.email,
-
+        bvn:bvn,
         customerName: userData.username,
         getAllAvailableBanks: false,
         preferredBanks: ["50515", "035", "058"],
@@ -21,6 +21,7 @@ module.exports = async ({ token, userData }) => {
     });
     return data;
   } catch (error) {
+    console.log("ERROR: ", error);
     return error;
   }
 };

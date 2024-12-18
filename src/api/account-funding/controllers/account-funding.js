@@ -54,6 +54,52 @@ module.exports = createCoreController(
       const { bvn } = ctx.request.body.data;
       const user = ctx.state.user;
       const monifyToken = await getToken();
+      const UserFromDb = await strapi.query("plugin::users-permissions.user").findOne({
+        where: { id: user.id },
+        populate: {
+          monnify_bank_details: true,
+        }
+      })
+      console.log({UserFromDb});
+      if (!UserFromDb.updateBvn && (UserFromDb.monnify_bank_details.length === 0 )) {
+        try {
+  
+          const acc = await createReservedAccount({ token:monifyToken, userData: user, bvn: bvn });
+          if(!acc?.requestSuccessful) return ctx.badRequest(acc?.errorMessage??"unable to generate virtual account");
+          if (acc?.requestSuccessful) {
+            const newData = acc?.responseBody?.accounts.map((account) => {
+              return {
+                bank_name: account.bankName,
+                account_number: account.accountNumber,
+                account_name: account.accountName,
+              };
+            });
+            console.log("MONNIFY: ", newData)
+  
+            await strapi.entityService.update("plugin::users-permissions.user", user.id,
+              {
+                data: {
+                  monnify_bank_details: [...UserFromDb.monnify_bank_details, ...newData],
+                  updateBvn: true,
+                  hasAccountNum:true
+                },
+              }
+            );
+            // update({
+            //   where: { id: user.id },
+            //   data: {
+            //     monnify_account_details: [...UserFromDb.monnify_account_details, ...newData],
+            //     updateBvn: true,
+            //   },
+            // });
+            return ctx.created("account created successfully");
+          }
+        } catch (error) {
+          console.log(error);
+          return ctx.internalServerError("something went wrong");
+        }
+      }
+    
       const { data } = await customNetwork({
         method: "PUT",
         path: `api/v1/bank-transfer/reserved-accounts/update-customer-bvn/${user.email}`,
