@@ -42,21 +42,24 @@ module.exports = createCoreController(
               mtn_coupon_data_orders: true,
             },
           });
+        const sortedHistory = [
+          ...user.airtime_orders,
+          ...user.sme_data_orders,
+          ...user.exam_pins_purchases,
+          ...user.data_gifting_orders,
+          ...user.electricity_bills,
+          ...user.tv_and_cables_orders,
+          ...user.sell_airtimes,
+          ...user.account_fundings,
+          ...user.cg_data_orders,
+          ...user.mtn_sme_1_data_orders,
+          ...user.mtn_sme_2_data_orders,
+          ...user.mtn_coupon_data_orders,
+        ]
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .slice(0, 200);
         const history = {
-          histories: [
-            ...user.airtime_orders,
-            ...user.sme_data_orders,
-            ...user.exam_pins_purchases,
-            ...user.data_gifting_orders,
-            ...user.electricity_bills,
-            ...user.tv_and_cables_orders,
-            ...user.sell_airtimes,
-            ...user.account_fundings,
-            ...user.cg_data_orders,
-            ...user.mtn_sme_1_data_orders,
-            ...user.mtn_sme_2_data_orders,
-            ...user.mtn_coupon_data_orders,
-          ],
+          histories: sortedHistory,
         };
         //  if (history.length === 0){
         //     ctx.send({
