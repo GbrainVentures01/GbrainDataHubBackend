@@ -13,6 +13,11 @@ module.exports = {
       handler: "account-funding.generateMonnifyAccount",
     },
     {
+      method: "PUT",
+      path: "/generate-palmpay-account",
+      handler: "account-funding.generatePalmpayAccount",
+    },
+    {
       method: "POST",
       path: "/update-bvn",
       handler: "account-funding.updateUserBvn",

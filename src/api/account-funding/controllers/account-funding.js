@@ -6,6 +6,7 @@ const generateRef = require("../../../utils/monnify/generateRef");
 const getToken = require("../../../utils/monnify/getToken");
 const createReservedAccount = require("../../../utils/monnify/createReservedAccount");
 const customNetwork = require("../../../utils/customNetwork");
+const generatePalmpayAccount = require("../../../utils/monnify/generatePalmpayAccount");
 
 /**
  *  account-funding controller
@@ -50,22 +51,81 @@ module.exports = createCoreController(
       }
     },
 
+    async generatePalmpayAccount(ctx) {
+      const user = ctx.state.user;
+      const UserFromDb = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({
+          where: { id: user.id },
+          populate: {
+            monnify_bank_details: true,
+          },
+        });
+      if (!UserFromDb) {
+        return ctx.badRequest("user not found");
+      }
+      const monifyToken = await getToken();
+      const res = await generatePalmpayAccount({
+        token: monifyToken,
+        userData: user,
+      });
+      console.log(res);
+
+      if (res?.requestSuccessful) {
+        const newData = res?.responseBody?.accounts.map((account) => {
+          return {
+            bank_name: account.bankName,
+            account_number: account.accountNumber,
+            account_name: account.accountName,
+          };
+        });
+
+        await strapi.entityService.update(
+          "plugin::users-permissions.user",
+          user.id,
+          {
+            data: {
+              monnify_bank_details: [
+                ...UserFromDb.monnify_bank_details,
+                ...newData,
+              ],
+              updateBvn: true,
+              hasAccountNum: true,
+            },
+          }
+        );
+        return ctx.created("account generated successfully");
+      } else {
+        return ctx.badRequest("account generation failed");
+      }
+    },
     async updateUserBvn(ctx) {
       const { bvn } = ctx.request.body.data;
       const user = ctx.state.user;
       const monifyToken = await getToken();
-      const UserFromDb = await strapi.query("plugin::users-permissions.user").findOne({
-        where: { id: user.id },
-        populate: {
-          monnify_bank_details: true,
-        }
-      })
-      console.log({UserFromDb});
-      if (!UserFromDb.updateBvn && (UserFromDb.monnify_bank_details.length === 0 )) {
+      const UserFromDb = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({
+          where: { id: user.id },
+          populate: {
+            monnify_bank_details: true,
+          },
+        });
+      console.log({ UserFromDb });
+      if (
+        !UserFromDb.updateBvn &&
+        UserFromDb.monnify_bank_details.length === 0
+      ) {
         try {
-  
-          const acc = await createReservedAccount({ token:monifyToken, userData: user, bvn: bvn });
-          if(!acc?.requestSuccessful) return ctx.badRequest(acc?.errorMessage??"unable to generate virtual account");
+          const acc = await createReservedAccount({
+            token: monifyToken,
+            userData: user,
+            bvn: bvn,
+          });
+          if (!acc?.requestSuccessful)
+            return ctx.badRequest(
+              acc?.errorMessage ?? "unable to generate virtual account"
+            );
           if (acc?.requestSuccessful) {
             const newData = acc?.responseBody?.accounts.map((account) => {
               return {
@@ -74,14 +134,19 @@ module.exports = createCoreController(
                 account_name: account.accountName,
               };
             });
-            console.log("MONNIFY: ", newData)
-  
-            await strapi.entityService.update("plugin::users-permissions.user", user.id,
+            console.log("MONNIFY: ", newData);
+
+            await strapi.entityService.update(
+              "plugin::users-permissions.user",
+              user.id,
               {
                 data: {
-                  monnify_bank_details: [...UserFromDb.monnify_bank_details, ...newData],
+                  monnify_bank_details: [
+                    ...UserFromDb.monnify_bank_details,
+                    ...newData,
+                  ],
                   updateBvn: true,
-                  hasAccountNum:true
+                  hasAccountNum: true,
                 },
               }
             );
@@ -99,7 +164,7 @@ module.exports = createCoreController(
           return ctx.internalServerError("something went wrong");
         }
       }
-    
+
       const { data } = await customNetwork({
         method: "PUT",
         path: `api/v1/bank-transfer/reserved-accounts/update-customer-bvn/${user.email}`,
