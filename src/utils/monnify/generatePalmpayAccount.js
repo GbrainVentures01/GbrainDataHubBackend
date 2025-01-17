@@ -9,7 +9,7 @@ module.exports = async ({ token, userData }) => {
       headers: { Authorization: `Bearer ${token}` },
       requestBody: {
         getAllAvailableBanks: false,
-        preferredBanks: ["058"],
+        preferredBanks: ["50515", "058"],
       },
     });
     return data;
