@@ -35,9 +35,15 @@ module.exports = createCoreController(
               {
                 filters: {
                   user: id,
-                  beneficiary: {
-                    $contains: search,
-                  },
+                  $or: [
+                    { beneficiary: { $contains: search } },
+                    { request_id: { $contains: search } },
+                    {
+                      network: {
+                        $contains: search,
+                      },
+                    },
+                  ],
                 },
                 populate: ["user"],
                 start,
@@ -56,6 +62,10 @@ module.exports = createCoreController(
               {
                 filters: {
                   user: id,
+                  $or: [
+                    { tx_ref: { $contains: search } },
+                    { amount: { $contains: search } },
+                  ],
                 },
                 populate: ["user"],
                 start,
@@ -73,12 +83,15 @@ module.exports = createCoreController(
               {
                 filters: {
                   user: id,
+                  $or: [
+                    { request_id: { $contains: search } },
+                    { variation_code: { $contains: search } },
+                    { billersCode: { $contains: search } },
+                  ],
                 },
                 populate: ["user"],
-                pagination: {
-                  page,
-                  pageSize,
-                },
+                start,
+                limit,
                 sort,
               }
             );
@@ -92,12 +105,15 @@ module.exports = createCoreController(
               {
                 filters: {
                   user: id,
+                  $or: [
+                    { request_id: { $contains: search } },
+                    { variation_code: { $contains: search } },
+                    { billersCode: { $contains: search } },
+                  ],
                 },
                 populate: ["user"],
-                pagination: {
-                  page,
-                  pageSize,
-                },
+                start,
+                limit,
                 sort,
               }
             );
@@ -111,12 +127,11 @@ module.exports = createCoreController(
               {
                 filters: {
                   user: id,
+                  $or: [{ request_id: { $contains: search } }],
                 },
                 populate: ["user"],
-                pagination: {
-                  page,
-                  pageSize,
-                },
+                start,
+                limit,
                 sort,
               }
             );
@@ -130,12 +145,19 @@ module.exports = createCoreController(
               {
                 filters: {
                   user: id,
+                  $or: [
+                    { phone_number: { $contains: search } },
+                    { request_id: { $contains: search } },
+                    {
+                      network: {
+                        $contains: search,
+                      },
+                    },
+                  ],
                 },
                 populate: ["user"],
-                pagination: {
-                  page,
-                  pageSize,
-                },
+                start,
+                limit,
                 sort,
               }
             );
@@ -150,12 +172,19 @@ module.exports = createCoreController(
               {
                 filters: {
                   user: id,
+                  $or: [
+                    { beneficiary: { $contains: search } },
+                    { request_id: { $contains: search } },
+                    {
+                      network: {
+                        $contains: search,
+                      },
+                    },
+                  ],
                 },
                 populate: ["user"],
-                pagination: {
-                  page,
-                  pageSize,
-                },
+                start,
+                limit,
                 sort,
               }
             );
@@ -169,12 +198,19 @@ module.exports = createCoreController(
               {
                 filters: {
                   user: id,
+                  $or: [
+                    { beneficiary: { $contains: search } },
+                    { request_id: { $contains: search } },
+                    {
+                      network: {
+                        $contains: search,
+                      },
+                    },
+                  ],
                 },
                 populate: ["user"],
-                pagination: {
-                  page,
-                  pageSize,
-                },
+                start,
+                limit,
                 sort,
               }
             );
@@ -188,12 +224,19 @@ module.exports = createCoreController(
               {
                 filters: {
                   user: id,
+                  $or: [
+                    { beneficiary: { $contains: search } },
+                    { request_id: { $contains: search } },
+                    {
+                      network: {
+                        $contains: search,
+                      },
+                    },
+                  ],
                 },
                 populate: ["user"],
-                pagination: {
-                  page,
-                  pageSize,
-                },
+                start,
+                limit,
                 sort,
               }
             );
@@ -207,12 +250,19 @@ module.exports = createCoreController(
               {
                 filters: {
                   user: id,
+                  $or: [
+                    { beneficiary: { $contains: search } },
+                    { request_id: { $contains: search } },
+                    {
+                      network: {
+                        $contains: search,
+                      },
+                    },
+                  ],
                 },
                 populate: ["user"],
-                pagination: {
-                  page,
-                  pageSize,
-                },
+                start,
+                limit,
                 sort,
               }
             );
@@ -226,12 +276,19 @@ module.exports = createCoreController(
               {
                 filters: {
                   user: id,
+                  $or: [
+                    { beneficiary: { $contains: search } },
+                    { request_id: { $contains: search } },
+                    {
+                      network: {
+                        $contains: search,
+                      },
+                    },
+                  ],
                 },
                 populate: ["user"],
-                pagination: {
-                  page,
-                  pageSize,
-                },
+                start,
+                limit,
                 sort,
               }
             );
@@ -245,12 +302,19 @@ module.exports = createCoreController(
               {
                 filters: {
                   user: id,
+                  $or: [
+                    { beneficiary: { $contains: search } },
+                    { request_id: { $contains: search } },
+                    {
+                      network: {
+                        $contains: search,
+                      },
+                    },
+                  ],
                 },
                 populate: ["user"],
-                pagination: {
-                  page,
-                  pageSize,
-                },
+                start,
+                limit,
                 sort,
               }
             );
