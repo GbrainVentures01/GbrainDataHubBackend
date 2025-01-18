@@ -34,14 +34,18 @@ module.exports = createCoreController(
               "api::airtime-order.airtime-order",
               {
                 filters: {
-                  user: id,
-                  $or: [
-                    { beneficiary: { $contains: search } },
-                    { request_id: { $contains: search } },
+                  $and: [
+                    { user: id },
                     {
-                      network: {
-                        $contains: search,
-                      },
+                      $or: [
+                        { beneficiary: { $contains: search } },
+                        { request_id: { $contains: search } },
+                        {
+                          network: {
+                            $contains: search,
+                          },
+                        },
+                      ],
                     },
                   ],
                 },
@@ -61,10 +65,14 @@ module.exports = createCoreController(
               "api::account-funding.account-funding",
               {
                 filters: {
-                  user: id,
-                  $or: [
-                    { tx_ref: { $contains: search } },
-                    { amount: { $contains: search } },
+                  $and: [
+                    { user: id },
+                    {
+                      $or: [
+                        { tx_ref: { $contains: search } },
+                        { amount: { $contains: search } },
+                      ],
+                    },
                   ],
                 },
                 populate: ["user"],
@@ -82,11 +90,15 @@ module.exports = createCoreController(
               "api::electricity-order.electricity-order",
               {
                 filters: {
-                  user: id,
-                  $or: [
-                    { request_id: { $contains: search } },
-                    { variation_code: { $contains: search } },
-                    { billersCode: { $contains: search } },
+                  $and: [
+                    { user: id },
+                    {
+                      $or: [
+                        { request_id: { $contains: search } },
+                        { variation_code: { $contains: search } },
+                        { billersCode: { $contains: search } },
+                      ],
+                    },
                   ],
                 },
                 populate: ["user"],
@@ -104,11 +116,15 @@ module.exports = createCoreController(
               "api::tvcables-order.tvcables-order",
               {
                 filters: {
-                  user: id,
-                  $or: [
-                    { request_id: { $contains: search } },
-                    { variation_code: { $contains: search } },
-                    { billersCode: { $contains: search } },
+                  $and: [
+                    { user: id },
+                    {
+                      $or: [
+                        { request_id: { $contains: search } },
+                        { variation_code: { $contains: search } },
+                        { billersCode: { $contains: search } },
+                      ],
+                    },
                   ],
                 },
                 populate: ["user"],
@@ -126,8 +142,10 @@ module.exports = createCoreController(
               "api::exam-pin-order.exam-pin-order",
               {
                 filters: {
-                  user: id,
-                  $or: [{ request_id: { $contains: search } }],
+                  $and: [
+                    { user: id },
+                    { $or: [{ request_id: { $contains: search } }] },
+                  ],
                 },
                 populate: ["user"],
                 start,
@@ -144,14 +162,18 @@ module.exports = createCoreController(
               "api::sell-airtime.sell-airtime",
               {
                 filters: {
-                  user: id,
-                  $or: [
-                    { phone_number: { $contains: search } },
-                    { request_id: { $contains: search } },
+                  $and: [
+                    { user: id },
                     {
-                      network: {
-                        $contains: search,
-                      },
+                      $or: [
+                        { phone_number: { $contains: search } },
+                        { request_id: { $contains: search } },
+                        {
+                          network: {
+                            $contains: search,
+                          },
+                        },
+                      ],
                     },
                   ],
                 },
@@ -171,14 +193,18 @@ module.exports = createCoreController(
               "api::mtn-sme-1-data-order.mtn-sme-1-data-order",
               {
                 filters: {
-                  user: id,
-                  $or: [
-                    { beneficiary: { $contains: search } },
-                    { request_id: { $contains: search } },
+                  $and: [
+                    { user: id },
                     {
-                      network: {
-                        $contains: search,
-                      },
+                      $or: [
+                        { beneficiary: { $contains: search } },
+                        { request_id: { $contains: search } },
+                        {
+                          network: {
+                            $contains: search,
+                          },
+                        },
+                      ],
                     },
                   ],
                 },
@@ -197,14 +223,18 @@ module.exports = createCoreController(
               "api::mtn-sme-2-data-order.mtn-sme-2-data-order",
               {
                 filters: {
-                  user: id,
-                  $or: [
-                    { beneficiary: { $contains: search } },
-                    { request_id: { $contains: search } },
+                  $and: [
+                    { user: id },
                     {
-                      network: {
-                        $contains: search,
-                      },
+                      $or: [
+                        { beneficiary: { $contains: search } },
+                        { request_id: { $contains: search } },
+                        {
+                          network: {
+                            $contains: search,
+                          },
+                        },
+                      ],
                     },
                   ],
                 },
@@ -223,14 +253,18 @@ module.exports = createCoreController(
               "api::sme-data-order.sme-data-order",
               {
                 filters: {
-                  user: id,
-                  $or: [
-                    { beneficiary: { $contains: search } },
-                    { request_id: { $contains: search } },
+                  $and: [
+                    { user: id },
                     {
-                      network: {
-                        $contains: search,
-                      },
+                      $or: [
+                        { beneficiary: { $contains: search } },
+                        { request_id: { $contains: search } },
+                        {
+                          network: {
+                            $contains: search,
+                          },
+                        },
+                      ],
                     },
                   ],
                 },
@@ -249,14 +283,18 @@ module.exports = createCoreController(
               "api::data-gifting-order.data-gifting-order",
               {
                 filters: {
-                  user: id,
-                  $or: [
-                    { beneficiary: { $contains: search } },
-                    { request_id: { $contains: search } },
+                  $and: [
+                    { user: id },
                     {
-                      network: {
-                        $contains: search,
-                      },
+                      $or: [
+                        { beneficiary: { $contains: search } },
+                        { request_id: { $contains: search } },
+                        {
+                          network: {
+                            $contains: search,
+                          },
+                        },
+                      ],
                     },
                   ],
                 },
@@ -275,14 +313,18 @@ module.exports = createCoreController(
               "api::cg-data-order.cg-data-order",
               {
                 filters: {
-                  user: id,
-                  $or: [
-                    { beneficiary: { $contains: search } },
-                    { request_id: { $contains: search } },
+                  $and: [
+                    { user: id },
                     {
-                      network: {
-                        $contains: search,
-                      },
+                      $or: [
+                        { beneficiary: { $contains: search } },
+                        { request_id: { $contains: search } },
+                        {
+                          network: {
+                            $contains: search,
+                          },
+                        },
+                      ],
                     },
                   ],
                 },
@@ -301,14 +343,18 @@ module.exports = createCoreController(
               "api::mtn-coupon-data-order.mtn-coupon-data-order",
               {
                 filters: {
-                  user: id,
-                  $or: [
-                    { beneficiary: { $contains: search } },
-                    { request_id: { $contains: search } },
+                  $and: [
+                    { user: id },
                     {
-                      network: {
-                        $contains: search,
-                      },
+                      $or: [
+                        { beneficiary: { $contains: search } },
+                        { request_id: { $contains: search } },
+                        {
+                          network: {
+                            $contains: search,
+                          },
+                        },
+                      ],
                     },
                   ],
                 },
@@ -328,13 +374,19 @@ module.exports = createCoreController(
               "api::account-funding.account-funding",
               {
                 filters: {
-                  user: id,
+                  $and: [
+                    { user: id },
+                    {
+                      $or: [
+                        { tx_ref: { $contains: search } },
+                        { amount: { $contains: search } },
+                      ],
+                    },
+                  ],
                 },
                 populate: ["user"],
-                pagination: {
-                  page,
-                  pageSize,
-                },
+                start,
+                limit,
                 sort,
               }
             );
