@@ -68,10 +68,7 @@ module.exports = createCoreController(
                   $and: [
                     { user: id },
                     {
-                      $or: [
-                        { tx_ref: { $contains: search } },
-                        { amount: { $contains: search } },
-                      ],
+                      $or: [{ tx_ref: { $contains: search } }],
                     },
                   ],
                 },
@@ -377,10 +374,7 @@ module.exports = createCoreController(
                   $and: [
                     { user: id },
                     {
-                      $or: [
-                        { tx_ref: { $contains: search } },
-                        { amount: { $contains: search } },
-                      ],
+                      $or: [{ tx_ref: { $contains: search } }],
                     },
                   ],
                 },
@@ -395,6 +389,7 @@ module.exports = createCoreController(
               data: accountFundings,
             });
         }
+
         // const user = await strapi
         //   .query("plugin::users-permissions.user")
         //   .findOne({
