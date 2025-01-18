@@ -39,17 +39,24 @@ module.exports = createCoreController(
                     {
                       $or: [
                         { beneficiary: { $contains: search } },
+                        { beneficiary: { $eq: search } },
                         { request_id: { $contains: search } },
+                        { request_id: { $eq: search } },
                         {
                           network: {
                             $contains: search,
+                          },
+                        },
+                        {
+                          network: {
+                            $eq: search,
                           },
                         },
                       ],
                     },
                   ],
                 },
-                populate: ["user"],
+
                 start,
                 limit,
                 sort,
@@ -68,11 +75,14 @@ module.exports = createCoreController(
                   $and: [
                     { user: id },
                     {
-                      $or: [{ tx_ref: { $contains: search } }],
+                      $or: [
+                        { tx_ref: { $contains: search } },
+                        { tx_ref: { $eq: search } },
+                      ],
                     },
                   ],
                 },
-                populate: ["user"],
+
                 start,
                 limit,
                 sort,
@@ -92,13 +102,16 @@ module.exports = createCoreController(
                     {
                       $or: [
                         { request_id: { $contains: search } },
+                        { request_id: { $eq: search } },
                         { variation_code: { $contains: search } },
+                        { variation_code: { $eq: search } },
                         { billersCode: { $contains: search } },
+                        { billersCode: { $eq: search } },
                       ],
                     },
                   ],
                 },
-                populate: ["user"],
+
                 start,
                 limit,
                 sort,
@@ -118,13 +131,16 @@ module.exports = createCoreController(
                     {
                       $or: [
                         { request_id: { $contains: search } },
+                        { request_id: { $eq: search } },
                         { variation_code: { $contains: search } },
+                        { variation_code: { $eq: search } },
                         { billersCode: { $contains: search } },
+                        { billersCode: { $eq: search } },
                       ],
                     },
                   ],
                 },
-                populate: ["user"],
+
                 start,
                 limit,
                 sort,
@@ -141,10 +157,15 @@ module.exports = createCoreController(
                 filters: {
                   $and: [
                     { user: id },
-                    { $or: [{ request_id: { $contains: search } }] },
+                    {
+                      $or: [
+                        { request_id: { $contains: search } },
+                        { request_id: { $eq: search } },
+                      ],
+                    },
                   ],
                 },
-                populate: ["user"],
+
                 start,
                 limit,
                 sort,
@@ -164,17 +185,24 @@ module.exports = createCoreController(
                     {
                       $or: [
                         { phone_number: { $contains: search } },
+                        { phone_number: { $eq: search } },
                         { request_id: { $contains: search } },
+                        { request_id: { $eq: search } },
                         {
                           network: {
                             $contains: search,
+                          },
+                        },
+                        {
+                          network: {
+                            $eq: search,
                           },
                         },
                       ],
                     },
                   ],
                 },
-                populate: ["user"],
+
                 start,
                 limit,
                 sort,
@@ -195,17 +223,24 @@ module.exports = createCoreController(
                     {
                       $or: [
                         { beneficiary: { $contains: search } },
-                        { request_id: { $contains: search } },
+                        { beneficiary: { $eq: search } },
+                        { ref: { $contains: search } },
+                        { ref: { $eq: search } },
                         {
                           network: {
                             $contains: search,
+                          },
+                        },
+                        {
+                          network: {
+                            $eq: search,
                           },
                         },
                       ],
                     },
                   ],
                 },
-                populate: ["user"],
+
                 start,
                 limit,
                 sort,
@@ -225,17 +260,24 @@ module.exports = createCoreController(
                     {
                       $or: [
                         { beneficiary: { $contains: search } },
-                        { request_id: { $contains: search } },
+                        { beneficiary: { $eq: search } },
+                        { ref: { $contains: search } },
+                        { ref: { $eq: search } },
                         {
                           network: {
                             $contains: search,
+                          },
+                        },
+                        {
+                          network: {
+                            $eq: search,
                           },
                         },
                       ],
                     },
                   ],
                 },
-                populate: ["user"],
+
                 start,
                 limit,
                 sort,
@@ -255,17 +297,24 @@ module.exports = createCoreController(
                     {
                       $or: [
                         { beneficiary: { $contains: search } },
-                        { request_id: { $contains: search } },
+                        { beneficiary: { $eq: search } },
+                        { ref: { $contains: search } },
+                        { ref: { $eq: search } },
                         {
                           network: {
                             $contains: search,
+                          },
+                        },
+                        {
+                          network: {
+                            $eq: search,
                           },
                         },
                       ],
                     },
                   ],
                 },
-                populate: ["user"],
+
                 start,
                 limit,
                 sort,
@@ -285,17 +334,24 @@ module.exports = createCoreController(
                     {
                       $or: [
                         { beneficiary: { $contains: search } },
+                        { beneficiary: { $eq: search } },
                         { request_id: { $contains: search } },
+                        { request_id: { $eq: search } },
                         {
                           network: {
                             $contains: search,
+                          },
+                        },
+                        {
+                          network: {
+                            $eq: search,
                           },
                         },
                       ],
                     },
                   ],
                 },
-                populate: ["user"],
+
                 start,
                 limit,
                 sort,
@@ -315,17 +371,24 @@ module.exports = createCoreController(
                     {
                       $or: [
                         { beneficiary: { $contains: search } },
+                        { beneficiary: { $eq: search } },
                         { request_id: { $contains: search } },
+                        { request_id: { $eq: search } },
                         {
                           network: {
                             $contains: search,
+                          },
+                        },
+                        {
+                          network: {
+                            $eq: search,
                           },
                         },
                       ],
                     },
                   ],
                 },
-                populate: ["user"],
+
                 start,
                 limit,
                 sort,
@@ -345,17 +408,23 @@ module.exports = createCoreController(
                     {
                       $or: [
                         { beneficiary: { $contains: search } },
+                        { beneficiary: { $eq: search } },
+
                         { request_id: { $contains: search } },
+                        { request_id: { $eq: search } },
                         {
                           network: {
                             $contains: search,
+                          },
+                          network: {
+                            $eq: search,
                           },
                         },
                       ],
                     },
                   ],
                 },
-                populate: ["user"],
+
                 start,
                 limit,
                 sort,
@@ -374,11 +443,14 @@ module.exports = createCoreController(
                   $and: [
                     { user: id },
                     {
-                      $or: [{ tx_ref: { $contains: search } }],
+                      $or: [
+                        { tx_ref: { $contains: search } },
+                        { tx_ref: { $eq: search } },
+                      ],
                     },
                   ],
                 },
-                populate: ["user"],
+
                 start,
                 limit,
                 sort,
