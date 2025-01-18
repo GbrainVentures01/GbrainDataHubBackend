@@ -22,6 +22,7 @@ module.exports = createCoreController(
     async find(ctx) {
       const { id } = ctx.state.user;
       const { limit, start, search, type } = ctx.query;
+      console.log({ id, limit, start, search, type });
       const sort = {
         createdAt: "desc",
       };
@@ -29,7 +30,7 @@ module.exports = createCoreController(
       try {
         switch (type) {
           case "airtime":
-            const airtimePurchases = await strapi.service.findMany(
+            const airtimePurchases = await strapi.entityService.findMany(
               "api::airtime-order.airtime-order",
               {
                 filters: {
@@ -50,7 +51,7 @@ module.exports = createCoreController(
             });
 
           case "account-funding":
-            const accountFundings = await strapi.service.findMany(
+            const accountFundings = await strapi.entityService.findMany(
               "api::account-funding.account-funding",
               {
                 filters: {
@@ -67,7 +68,7 @@ module.exports = createCoreController(
               data: accountFundings,
             });
           case "electricity":
-            const electricityBills = await strapi.service.findMany(
+            const electricityBills = await strapi.entityService.findMany(
               "api::electricity-order.electricity-order",
               {
                 filters: {
@@ -86,7 +87,7 @@ module.exports = createCoreController(
               data: electricityBills,
             });
           case "tv-cables":
-            const tvCablesOrders = await strapi.service.findMany(
+            const tvCablesOrders = await strapi.entityService.findMany(
               "api::tvcables-order.tvcables-order",
               {
                 filters: {
@@ -105,7 +106,7 @@ module.exports = createCoreController(
               data: tvCablesOrders,
             });
           case "exam-pins":
-            const examPinOrders = await strapi.service.findMany(
+            const examPinOrders = await strapi.entityService.findMany(
               "api::exam-pin-order.exam-pin-order",
               {
                 filters: {
@@ -124,7 +125,7 @@ module.exports = createCoreController(
               data: examPinOrders,
             });
           case "sell-airtime":
-            const sellAirtimeOrders = await strapi.service.findMany(
+            const sellAirtimeOrders = await strapi.entityService.findMany(
               "api::sell-airtime.sell-airtime",
               {
                 filters: {
@@ -144,7 +145,7 @@ module.exports = createCoreController(
             });
 
           case "sme-1-data":
-            const sme1DataOrders = await strapi.service.findMany(
+            const sme1DataOrders = await strapi.entityService.findMany(
               "api::mtn-sme-1-data-order.mtn-sme-1-data-order",
               {
                 filters: {
@@ -163,7 +164,7 @@ module.exports = createCoreController(
               data: sme1DataOrders,
             });
           case "sme-2-data":
-            const sme2DataOrders = await strapi.service.findMany(
+            const sme2DataOrders = await strapi.entityService.findMany(
               "api::mtn-sme-2-data-order.mtn-sme-2-data-order",
               {
                 filters: {
@@ -182,7 +183,7 @@ module.exports = createCoreController(
               data: sme2DataOrders,
             });
           case "sme-data":
-            const smeDataOrders = await strapi.service.findMany(
+            const smeDataOrders = await strapi.entityService.findMany(
               "api::sme-data-order.sme-data-order",
               {
                 filters: {
@@ -201,7 +202,7 @@ module.exports = createCoreController(
               data: smeDataOrders,
             });
           case "data-gifting":
-            const dataGiftingOrders = await strapi.service.findMany(
+            const dataGiftingOrders = await strapi.entityService.findMany(
               "api::data-gifting-order.data-gifting-order",
               {
                 filters: {
@@ -220,7 +221,7 @@ module.exports = createCoreController(
               data: dataGiftingOrders,
             });
           case "cg-data":
-            const cgDataOrders = await strapi.service.findMany(
+            const cgDataOrders = await strapi.entityService.findMany(
               "api::cg-data-order.cg-data-order",
               {
                 filters: {
@@ -239,7 +240,7 @@ module.exports = createCoreController(
               data: cgDataOrders,
             });
           case "mtn-coupon-data":
-            const mtnCouponDataOrders = await strapi.service.findMany(
+            const mtnCouponDataOrders = await strapi.entityService.findMany(
               "api::mtn-coupon-data-order.mtn-coupon-data-order",
               {
                 filters: {
@@ -259,7 +260,7 @@ module.exports = createCoreController(
             });
 
           default:
-            accountFundings = await strapi.service.findMany(
+            accountFundings = await strapi.entityService.findMany(
               "api::account-funding.account-funding",
               {
                 filters: {
