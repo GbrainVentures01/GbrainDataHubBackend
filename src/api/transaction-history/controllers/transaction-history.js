@@ -22,7 +22,6 @@ module.exports = createCoreController(
     async find(ctx) {
       const { id } = ctx.state.user;
       const { limit, start, search, type } = ctx.query;
-      console.log({ id, limit, start, search, type });
       const sort = {
         createdAt: "desc",
       };
@@ -410,8 +409,8 @@ module.exports = createCoreController(
                         { beneficiary: { $contains: search } },
                         { beneficiary: { $eq: search } },
 
-                        { request_id: { $contains: search } },
-                        { request_id: { $eq: search } },
+                        { ref: { $contains: search } },
+                        { ref: { $eq: search } },
                         {
                           network: {
                             $contains: search,
