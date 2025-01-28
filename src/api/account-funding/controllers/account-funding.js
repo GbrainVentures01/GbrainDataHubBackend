@@ -63,6 +63,7 @@ module.exports = createCoreController(
           .query("plugin::users-permissions.user")
           .findOne({
             where: { id: user.id },
+            payvessel_accounts: true,
           });
         if (!UserFromDb) {
           return ctx.badRequest("user not found");
