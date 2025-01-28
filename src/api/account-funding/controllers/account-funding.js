@@ -53,9 +53,9 @@ module.exports = createCoreController(
     },
 
     async generatePayVesselAccount(ctx) {
-      const { bvn, fullName } = ctx.request.body.data;
-      if ((!bvn, !fullName)) {
-        return ctx.badRequest("bvn and full name is required");
+      const { bvn } = ctx.request.body.data;
+      if (!bvn) {
+        return ctx.badRequest("bvn is required");
       }
       const user = ctx.state.user;
       try {
@@ -72,8 +72,8 @@ module.exports = createCoreController(
           userData: user,
           requestBody: {
             email: user.email,
-            name: fullName,
-            phoneNumber: user.phoneNumber,
+            name: user.first_name + " " + user.last_name,
+            phoneNumber: user.phone_number,
             bankcode: ["120001"],
             account_type: "STATIC",
             businessid: process.env.PAYVESSEL_BUSINESS_ID,
@@ -119,9 +119,9 @@ module.exports = createCoreController(
       }
     },
     async updateUserBvn(ctx) {
-      const { bvn, fullName } = ctx.request.body.data;
-      if (!bvn || !fullName) {
-        return ctx.badRequest("bvn and full name is required");
+      const { bvn } = ctx.request.body.data;
+      if (!bvn) {
+        return ctx.badRequest("bvn  is required");
       }
       const user = ctx.state.user;
       const monifyToken = await getToken();
@@ -194,8 +194,8 @@ module.exports = createCoreController(
             userData: user,
             requestBody: {
               email: user.email,
-              name: fullName,
-              phoneNumber: user.phoneNumber,
+              name: user.first_name + " " + user.last_name,
+              phoneNumber: user.phone_number,
               bankcode: ["120001"],
               account_type: "STATIC",
               businessid: process.env.PAYVESSEL_BUSINESS_ID,
