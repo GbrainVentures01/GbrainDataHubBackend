@@ -105,7 +105,7 @@ module.exports = createCoreController(
             {
               data: {
                 payvessel_accounts: [
-                  ...UserFromDb.payvessel_accounts,
+                  // ...UserFromDb.payvessel_accounts,
                   ...newData,
                 ],
                 updateBvn: true,
@@ -231,7 +231,7 @@ module.exports = createCoreController(
               {
                 data: {
                   payvessel_accounts: [
-                    ...UserFromDb.payvessel_accounts,
+                    // ...UserFromDb.payvessel_accounts,
                     ...newData,
                   ],
                   updateBvn: true,
