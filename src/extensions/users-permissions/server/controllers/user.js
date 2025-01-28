@@ -180,6 +180,7 @@ module.exports = {
       where: { id: id },
       populate: {
         monnify_bank_details: true,
+        payvessel_accounts: true,
       },
     });
 
