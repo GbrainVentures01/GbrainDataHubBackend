@@ -88,7 +88,7 @@ module.exports = createCoreController(
         console.log(res);
 
         if (res?.status) {
-          const newData = res?.responseBody?.banks.map((account) => {
+          const newData = res?.banks.map((account) => {
             return {
               bankName: account.bankName,
               accountNumber: account.accountNumber,
@@ -214,7 +214,7 @@ module.exports = createCoreController(
           console.log(res);
 
           if (res?.status) {
-            const newData = res?.responseBody?.banks.map((account) => {
+            const newData = res?.banks.map((account) => {
               return {
                 bankName: account.bankName,
                 accountNumber: account.accountNumber,
