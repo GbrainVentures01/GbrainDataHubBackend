@@ -6,7 +6,8 @@ const generateRef = require("../../../utils/monnify/generateRef");
 const getToken = require("../../../utils/monnify/getToken");
 const createReservedAccount = require("../../../utils/monnify/createReservedAccount");
 const customNetwork = require("../../../utils/customNetwork");
-const generatePalmpayAccount = require("../../../utils/monnify/generatePalmpayAccount");
+const generatePalmpayAccount = require("../../../utils/monnify/generatePayVesselAccount");
+const generatePayVesselAccount = require("../../../utils/monnify/generatePayVesselAccount");
 
 /**
  *  account-funding controller
@@ -51,56 +52,77 @@ module.exports = createCoreController(
       }
     },
 
-    async generatePalmpayAccount(ctx) {
+    async generatePayVesselAccount(ctx) {
+      const { bvn, nin } = ctx.request.body.data;
+      if (!bvn || !nin) {
+        return ctx.badRequest("bvn and nin is required");
+      }
       const user = ctx.state.user;
-      const UserFromDb = await strapi
-        .query("plugin::users-permissions.user")
-        .findOne({
-          where: { id: user.id },
-          populate: {
-            monnify_bank_details: true,
+      try {
+        const UserFromDb = await strapi
+          .query("plugin::users-permissions.user")
+          .findOne({
+            where: { id: user.id },
+          });
+        if (!UserFromDb) {
+          return ctx.badRequest("user not found");
+        }
+
+        const res = await generatePayVesselAccount({
+          userData: user,
+          requestBody: {
+            email: user.email,
+            name: user.username,
+            phoneNumber: user.phoneNumber,
+            bankcode: ["120001"],
+            account_type: "STATIC",
+            businessid: process.env.PAYVESSEL_BUSINESS_ID,
+            bvn: bvn,
+            nin: nin,
           },
         });
-      if (!UserFromDb) {
-        return ctx.badRequest("user not found");
-      }
-      const monifyToken = await getToken();
-      const res = await generatePalmpayAccount({
-        token: monifyToken,
-        userData: user,
-      });
-      console.log(res);
+        console.log(res);
 
-      if (res?.requestSuccessful) {
-        const newData = res?.responseBody?.accounts.map((account) => {
-          return {
-            bank_name: account.bankName,
-            account_number: account.accountNumber,
-            account_name: account.accountName,
-          };
-        });
+        if (res?.status) {
+          const newData = res?.responseBody?.banks.map((account) => {
+            return {
+              bankName: account.bankName,
+              accountNumber: account.accountNumber,
+              accountName: account.accountName,
+              account_type: account.account_type,
+              expire_date: account.expire_date,
+              trackingReference: account.trackingReference,
+            };
+          });
 
-        await strapi.entityService.update(
-          "plugin::users-permissions.user",
-          user.id,
-          {
-            data: {
-              monnify_bank_details: [
-                ...UserFromDb.monnify_bank_details,
-                ...newData,
-              ],
-              updateBvn: true,
-              hasAccountNum: true,
-            },
-          }
-        );
-        return ctx.created("account generated successfully");
-      } else {
-        return ctx.badRequest("account generation failed");
+          await strapi.entityService.update(
+            "plugin::users-permissions.user",
+            user.id,
+            {
+              data: {
+                payvessel_accounts: [
+                  ...UserFromDb.payvessel_accounts,
+                  ...newData,
+                ],
+                updateBvn: true,
+                hasAccountNum: true,
+              },
+            }
+          );
+          return ctx.created("account generated successfully");
+        } else {
+          return ctx.badRequest("account generation failed");
+        }
+      } catch (error) {
+        console.log(error);
+        return ctx.internalServerError("something went wrong");
       }
     },
     async updateUserBvn(ctx) {
-      const { bvn } = ctx.request.body.data;
+      const { bvn, nin } = ctx.request.body.data;
+      if (!bvn || !nin) {
+        return ctx.badRequest("bvn and nin is required");
+      }
       const user = ctx.state.user;
       const monifyToken = await getToken();
       const UserFromDb = await strapi
@@ -109,6 +131,7 @@ module.exports = createCoreController(
           where: { id: user.id },
           populate: {
             monnify_bank_details: true,
+            payvessel_accounts: true,
           },
         });
       console.log({ UserFromDb });
@@ -158,6 +181,59 @@ module.exports = createCoreController(
             //   },
             // });
             return ctx.created("account created successfully");
+          }
+        } catch (error) {
+          console.log(error);
+          return ctx.internalServerError("something went wrong");
+        }
+      }
+
+      if (!UserFromDb.updateBvn && UserFromDb.payvessel_accounts.length === 0) {
+        try {
+          const res = await generatePayVesselAccount({
+            userData: user,
+            requestBody: {
+              email: user.email,
+              name: user.username,
+              phoneNumber: user.phoneNumber,
+              bankcode: ["120001"],
+              account_type: "STATIC",
+              businessid: process.env.PAYVESSEL_BUSINESS_ID,
+              bvn: bvn,
+              nin: nin,
+            },
+          });
+          console.log(res);
+
+          if (res?.status) {
+            const newData = res?.responseBody?.banks.map((account) => {
+              return {
+                bankName: account.bankName,
+                accountNumber: account.accountNumber,
+                accountName: account.accountName,
+                account_type: account.account_type,
+                expire_date: account.expire_date,
+                trackingReference: account.trackingReference,
+              };
+            });
+
+            await strapi.entityService.update(
+              "plugin::users-permissions.user",
+              user.id,
+              {
+                data: {
+                  payvessel_accounts: [
+                    ...UserFromDb.payvessel_accounts,
+                    ...newData,
+                  ],
+                  updateBvn: true,
+                  hasAccountNum: true,
+                },
+              }
+            );
+            return ctx.created(" successful operation");
+          } else {
+            return ctx.badRequest("operation failed");
           }
         } catch (error) {
           console.log(error);

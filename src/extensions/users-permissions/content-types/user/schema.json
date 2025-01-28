@@ -153,7 +153,7 @@
       "default": false,
       "required": true
     },
-      "updateBvn": {
+    "updateBvn": {
       "type": "boolean",
       "default": false
     },
@@ -174,6 +174,12 @@
       "relation": "oneToMany",
       "target": "api::mtn-coupon-data-order.mtn-coupon-data-order",
       "mappedBy": "user"
+    },
+    "payvessel_accounts": {
+      "displayName": "payvessel_accounts",
+      "type": "component",
+      "repeatable": true,
+      "component": "payvessel-accounts.payvessel-accounts"
     }
   }
 }

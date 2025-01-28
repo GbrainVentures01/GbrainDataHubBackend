@@ -1,0 +1,35 @@
+{
+  "kind": "collectionType",
+  "collectionName": "pay_vessel_webhooks",
+  "info": {
+    "singularName": "pay-vessel-webhook",
+    "pluralName": "pay-vessel-webhooks",
+    "displayName": "PayVessel Webhook"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "tx_ref": {
+      "type": "string",
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "settlementAmount": {
+      "required": true,
+      "type": "decimal"
+    },
+    "description": {
+      "type": "string",
+      "required": true
+    },
+    "fee": {
+      "required": true,
+      "type": "decimal"
+    }
+  }
+}

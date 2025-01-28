@@ -14,8 +14,8 @@ module.exports = {
     },
     {
       method: "PUT",
-      path: "/generate-palmpay-account",
-      handler: "account-funding.generatePalmpayAccount",
+      path: "/generate-payvessel-account",
+      handler: "account-funding.generatePayVesselAccount",
     },
     {
       method: "POST",

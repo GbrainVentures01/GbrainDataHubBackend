@@ -1,0 +1,30 @@
+{
+  "collectionName": "components_payvessel_accounts_payvessel_accounts",
+  "info": {
+    "displayName": "payvessel_accounts"
+  },
+  "options": {},
+  "attributes": {
+    "bankName": {
+      "type": "string",
+      "required": true
+    },
+    "accountNumber": {
+      "type": "string",
+      "required": true
+    },
+    "accountName": {
+      "type": "string"
+    },
+    "account_type": {
+      "type": "string"
+    },
+    "trackingReference": {
+      "type": "string",
+      "required": true
+    },
+    "expire_date": {
+      "type": "string"
+    }
+  }
+}

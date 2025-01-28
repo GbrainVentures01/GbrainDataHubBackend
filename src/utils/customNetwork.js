@@ -7,6 +7,7 @@ const ogdamsAirtimeUrl = "https://automation.airtimetocash.com/api/v1/";
 const bello = "https://bellodigitalworld.ng/api/v1/";
 const credo = "https://api.public.credodemo.com/";
 const monify = "https://api.monnify.com/";
+const payvessel = "https://api.payvessel.com/";
 // const monify = "https://sandbox.monnify.com/";
 
 // const baseUrl = `${testUrl}/api`;
@@ -54,6 +55,8 @@ module.exports = async ({
         return credo;
       case "monify":
         return monify;
+      case "payvessel":
+        return payvessel;
       default:
         return fwave;
     }
