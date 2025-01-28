@@ -67,13 +67,16 @@ module.exports = createCoreController(
         if (!UserFromDb) {
           return ctx.badRequest("user not found");
         }
-
+        const phone_number =
+          user.phone_number.length < 11
+            ? `0${user?.phone_number}`
+            : user.phone_number;
         const res = await generatePayVesselAccount({
           userData: user,
           requestBody: {
             email: user.email,
             name: user.first_name + " " + user.last_name,
-            phoneNumber: user.phone_number,
+            phoneNumber: phone_number,
             bankcode: ["120001"],
             account_type: "STATIC",
             businessid: process.env.PAYVESSEL_BUSINESS_ID,
@@ -190,12 +193,16 @@ module.exports = createCoreController(
 
       if (!UserFromDb.updateBvn && UserFromDb.payvessel_accounts.length === 0) {
         try {
+          const phone_number =
+            user.phone_number.length < 11
+              ? `0${user?.phone_number}`
+              : user.phone_number;
           const res = await generatePayVesselAccount({
             userData: user,
             requestBody: {
               email: user.email,
               name: user.first_name + " " + user.last_name,
-              phoneNumber: user.phone_number,
+              phoneNumber: phone_number, //user.phone_number,
               bankcode: ["120001"],
               account_type: "STATIC",
               businessid: process.env.PAYVESSEL_BUSINESS_ID,
