@@ -53,9 +53,9 @@ module.exports = createCoreController(
     },
 
     async generatePayVesselAccount(ctx) {
-      const { bvn, nin } = ctx.request.body.data;
-      if (!bvn || !nin) {
-        return ctx.badRequest("bvn and nin is required");
+      const { bvn } = ctx.request.body.data;
+      if (!bvn) {
+        return ctx.badRequest("bvn is required");
       }
       const user = ctx.state.user;
       try {
@@ -78,7 +78,7 @@ module.exports = createCoreController(
             account_type: "STATIC",
             businessid: process.env.PAYVESSEL_BUSINESS_ID,
             bvn: bvn,
-            nin: nin,
+            // nin: nin,
           },
         });
         console.log(res);
@@ -119,9 +119,9 @@ module.exports = createCoreController(
       }
     },
     async updateUserBvn(ctx) {
-      const { bvn, nin } = ctx.request.body.data;
-      if (!bvn || !nin) {
-        return ctx.badRequest("bvn and nin is required");
+      const { bvn } = ctx.request.body.data;
+      if (!bvn) {
+        return ctx.badRequest("bvn is required");
       }
       const user = ctx.state.user;
       const monifyToken = await getToken();
@@ -200,7 +200,7 @@ module.exports = createCoreController(
               account_type: "STATIC",
               businessid: process.env.PAYVESSEL_BUSINESS_ID,
               bvn: bvn,
-              nin: nin,
+              // nin: nin,
             },
           });
           console.log(res);
