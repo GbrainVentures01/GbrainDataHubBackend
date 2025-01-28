@@ -13,7 +13,7 @@ module.exports = {
       handler: "account-funding.generateMonnifyAccount",
     },
     {
-      method: "PUT",
+      method: "POST",
       path: "/generate-payvessel-account",
       handler: "account-funding.generatePayVesselAccount",
     },
