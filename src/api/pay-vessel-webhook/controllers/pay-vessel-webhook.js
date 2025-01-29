@@ -11,29 +11,20 @@ module.exports = createCoreController(
   "api::pay-vessel-webhook.pay-vessel-webhook",
   ({ strapi }) => ({
     async create(ctx) {
-      console.log({
-        ctx,
-        body: ctx.request.body,
-        headers: ctx.request.headers,
-      });
       const payload = ctx.request.body;
-      const payvessel_signature =
-        ctx.request.headers["payvessel-http-signature"];
+      // const payvessel_signature =
+      //   ctx.request.headers["payvessel-http-signature"];
 
       const ip_address = ctx.request.headers["x-forwarded-for"];
 
-      const secret = "PVSECRET-";
-      const hash = crypto
-        .createHmac("sha512", secret)
-        .update(JSON.stringify(payload))
-        .digest("hex");
-      const ipAddress = ["3.255.23.38", "162.246.254.36"];
-      console.log({
-        payvessel_signature,
-        ip_address,
-        hash,
-      });
-      if (payvessel_signature === hash && ipAddress.includes(ip_address)) {
+      // const secret = "PVSECRET-";
+      // const hash = crypto
+      //   .createHmac("sha512", secret)
+      //   .update(JSON.stringify(payload))
+      //   .digest("hex");
+      const ipAddress = [process.env.PAYVESSEL_IP1, process.env.PAYVESSEL_IP2];
+
+      if (ipAddress.includes(ip_address)) {
         const data = payload;
         const amount = parseFloat(data.order.amount);
         const settlementAmount = parseFloat(data.order.settlement_amount);
