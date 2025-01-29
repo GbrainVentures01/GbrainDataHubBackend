@@ -27,6 +27,14 @@
       "type": "string",
       "required": true
     },
+    "payer_email": {
+      "type": "email",
+      "required": true
+    },
+    "status": {
+      "type": "string",
+      "required": true
+    },
     "fee": {
       "required": true,
       "type": "decimal"
