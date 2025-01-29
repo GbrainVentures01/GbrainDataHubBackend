@@ -21,16 +21,18 @@ module.exports = createCoreController(
         ctx.request.headers["payvessel-http-signature"];
 
       const ip_address = ctx.request.headers["x-forwarded-for"];
-      console.log({
-        payvessel_signature,
-        ip_address,
-      });
+
       const secret = "PVSECRET-";
       const hash = crypto
         .createHmac("sha512", secret)
         .update(JSON.stringify(payload))
         .digest("hex");
       const ipAddress = ["3.255.23.38", "162.246.254.36"];
+      console.log({
+        payvessel_signature,
+        ip_address,
+        hash,
+      });
       if (payvessel_signature === hash && ipAddress.includes(ip_address)) {
         const data = payload;
         const amount = parseFloat(data.order.amount);
