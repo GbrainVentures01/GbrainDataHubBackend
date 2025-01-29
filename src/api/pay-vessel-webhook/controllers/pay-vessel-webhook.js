@@ -11,14 +11,15 @@ module.exports = createCoreController(
   ({ strapi }) => ({
     async create(ctx) {
       console.log({
-        body: ctx.req.body,
-        headers: ctx.req.headers,
+        ctx,
+        body: ctx.request.body,
+        headers: ctx.request.headers,
       });
-      const payload = ctx.req.body;
-      const payvessel_signature = ctx.req.header(
+      const payload = ctx.request.body;
+      const payvessel_signature = ctx.request.headers(
         "HTTP_PAYVESSEL_HTTP_SIGNATURE"
       );
-      const ip_address = req.connection.remoteAddress;
+      const ip_address = ctx.request.connection.remoteAddress;
       const secret = "PVSECRET-";
       const hash = crypto
         .createHmac("sha512", secret)
