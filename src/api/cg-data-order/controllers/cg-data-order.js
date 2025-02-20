@@ -136,6 +136,7 @@ module.exports = createCoreController(
           network_id: `${data.network_id}`,
           plan_id: `${data.plan_id}`,
           phone: `${data.beneficiary}`,
+          pin: process.env.BELLO_PIN,
           // Ported_number: true,
         });
 
