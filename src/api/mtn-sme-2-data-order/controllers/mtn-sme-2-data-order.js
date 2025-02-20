@@ -90,6 +90,7 @@ module.exports = createCoreController(
         network_id: "1",
         plan_id: `${data.plan.plan_id}`,
         phone: data.beneficiary,
+        pin: process.env.BELLO_PIN,
       };
       try {
         const res = await customNetwork({
