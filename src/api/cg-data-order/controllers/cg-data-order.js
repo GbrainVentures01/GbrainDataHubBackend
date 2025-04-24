@@ -85,7 +85,7 @@ module.exports = createCoreController(
       console.log("isDuplicate", isDuplicate);
       if (isDuplicate) {
         return ctx.badRequest(
-          "Possible Duplicate Transaction, Kindly check the history before retrying or try again later."
+          "Possible Duplicate Transaction, Kindly check the history before retrying or try again after 90 seconds."
         );
       }
 

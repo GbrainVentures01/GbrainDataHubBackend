@@ -1,11 +1,11 @@
 const moment = require("moment");
 
-function isLessThanThreeMins(createdAt) {
+function isLessThan90Seconds(createdAt) {
   if (!createdAt) throw new Error("createdAt is required");
   const now = moment();
-  const differenceInMinutes = moment.duration(now.diff(createdAt)).asMinutes();
-  console.log("differenceInMinutes", differenceInMinutes);
-  return differenceInMinutes < 3;
+  const differenceInSeconds = moment.duration(now.diff(createdAt)).asSeconds();
+  console.log("differenceInSeconds", differenceInMinutes);
+  return differenceInSeconds < 90;
 }
 
 module.exports = async (id, data, collectionName) => {
@@ -21,7 +21,7 @@ module.exports = async (id, data, collectionName) => {
   });
   console.log(lastTransaction);
   if (lastTransaction.length > 0) {
-    if (isLessThanThreeMins(lastTransaction[0].createdAt)) {
+    if (isLessThan90Seconds(lastTransaction[0].createdAt)) {
       if (
         Number(lastTransaction[0].amount) === Number(data.amount) ||
         lastTransaction[0].beneficiary === data.beneficiary

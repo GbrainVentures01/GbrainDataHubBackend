@@ -77,7 +77,7 @@ module.exports = createCoreController(
         await checkduplicate(id, data, "api::sme-data-order.sme-data-order")
       ) {
         return ctx.badRequest(
-          "Possible Duplicate Transaction, Kindly check the history before retrying or try again later."
+          "Possible Duplicate Transaction, Kindly check the history before retrying or try again after 90 seconds."
         );
       }
       const user = await strapi

@@ -32,7 +32,7 @@ module.exports = createCoreController(
       const { id } = ctx.state.user;
       if (await checkduplicate(id, data, "api::airtime-order.airtime-order")) {
         return ctx.badRequest(
-          "Possible Duplicate Transaction, Kindly check the history before retrying or try again later."
+          "Possible Duplicate Transaction, Kindly check the history before retrying or try again after 90 seconds."
         );
       }
       const user = await strapi
