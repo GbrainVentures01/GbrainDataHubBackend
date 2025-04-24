@@ -4,7 +4,7 @@ function isLessThan90Seconds(createdAt) {
   if (!createdAt) throw new Error("createdAt is required");
   const now = moment();
   const differenceInSeconds = moment.duration(now.diff(createdAt)).asSeconds();
-  console.log("differenceInSeconds", differenceInMinutes);
+  console.log("differenceInSeconds", differenceInSeconds);
   return differenceInSeconds < 90;
 }
 
