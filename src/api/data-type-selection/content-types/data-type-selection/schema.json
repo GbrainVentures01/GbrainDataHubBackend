@@ -1,0 +1,32 @@
+{
+  "kind": "collectionType",
+  "collectionName": "data_type_selections",
+  "info": {
+    "singularName": "data-type-selection",
+    "pluralName": "data-type-selections",
+    "displayName": "DATA TYPE SELECTION SETTINGS",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "required": true,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "url": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

@@ -4,7 +4,7 @@
   "info": {
     "singularName": "mtn-coupon-data-plan",
     "pluralName": "mtn-coupon-data-plans",
-    "displayName": "MTN COUPON DATA PLAN"
+    "displayName": "MTN CDG/COUPON DATA PLAN"
   },
   "options": {
     "draftAndPublish": true
