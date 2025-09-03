@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "crypto_tokens",
+  "info": {
+    "singularName": "crypto-token",
+    "pluralName": "crypto-tokens",
+    "displayName": "Crypto Token",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "currencyCode": {
+      "type": "string",
+      "required": true
+    },
+    "currencyName": {
+      "type": "string",
+      "required": true
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true,
+      "required": true
+    },
+    "currentRate": {
+      "type": "float",
+      "default": 0,
+      "required": false
+    },
+    "icon": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "crypto_networks": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::crypto-network.crypto-network",
+      "mappedBy": "crypto_tokens"
+    }
+  }
+}

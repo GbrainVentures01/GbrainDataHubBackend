@@ -1,0 +1,63 @@
+{
+  "kind": "collectionType",
+  "collectionName": "crypto_networks",
+  "info": {
+    "singularName": "crypto-network",
+    "pluralName": "crypto-networks",
+    "displayName": "Crypto Network",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "networkName": {
+      "type": "string",
+      "required": true
+    },
+    "networkCode": {
+      "type": "string",
+      "required": true
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true,
+      "required": true
+    },
+    "crypto_tokens": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::crypto-token.crypto-token",
+      "inversedBy": "crypto_networks"
+    },
+    "minimumDeposit": {
+      "type": "float",
+      "default": 0,
+      "required": false
+    },
+    "depositFee": {
+      "type": "float",
+      "default": 0,
+      "required": false
+    },
+    "minimumWithdrawal": {
+      "type": "float",
+      "default": 0
+    },
+    "withdrawalFee": {
+      "type": "float",
+      "default": 0
+    },
+    "maximumDecimalPlaces": {
+      "type": "float",
+      "default": 0
+    },
+    "receiveFeeType": {
+      "type": "string"
+    },
+    "withdrawalFeeType": {
+      "type": "string"
+    }
+  }
+}
