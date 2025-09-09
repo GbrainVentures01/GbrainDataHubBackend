@@ -40,13 +40,7 @@ class ObiexAPI {
     requestConfig.headers["X-API-TIMESTAMP"] = timestamp;
     requestConfig.headers["X-API-SIGNATURE"] = signature;
     requestConfig.headers["X-API-KEY"] = this.apiKey;
-    requestConfig.headers["Content-Type"] = "application/json";
-
-    // Debug logging
-    console.log("🔧 Request Debug Info:");
-    console.log("URL:", `${this.baseURL}${requestConfig.url}`);
-    console.log("Method:", requestConfig.method);
-    console.log("Headers:", requestConfig.headers);
+    // requestConfig.headers["Content-Type"] = "application/json";
 
     return requestConfig;
   }
@@ -61,10 +55,6 @@ class ObiexAPI {
       .createHmac("sha256", this.apiSecret)
       .update(content)
       .digest("hex");
-
-    console.log("🔧 Signature Debug Info:");
-    console.log("Content:", content);
-    console.log("Signature:", signature);
 
     return {
       timestamp,

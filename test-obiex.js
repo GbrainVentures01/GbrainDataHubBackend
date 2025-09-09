@@ -6,20 +6,23 @@ async function testObiexAuth() {
     console.log("🔄 Testing OBIEX API authentication...");
 
     // Test getSupportedTokens endpoint
-    console.log("📋 Fetching supported tokens...");
+    // console.log("📋 Fetching supported tokens...");
     const supportedTokens = await obiexAPI.getSupportedTokens();
-    console.log(
-      "✅ Supported tokens response:",
-      JSON.stringify(supportedTokens, null, 2)
-    );
+    for (const [currencyCode, tokenData] of Object.entries(
+      supportedTokens?.data
+    )) {
+      console.log(
+        `Currency: ${currencyCode}, Data: ${JSON.stringify(tokenData)}`
+      );
+    }
 
     // Test getTradableSwapCurrencies endpoint
-    console.log("💱 Fetching tradable swap currencies...");
-    const tradableCurrencies = await obiexAPI.getTradableSwapCurrencies();
-    console.log(
-      "✅ Tradable currencies response:",
-      JSON.stringify(tradableCurrencies, null, 2)
-    );
+    // console.log("💱 Fetching tradable swap currencies...");
+    // const tradableCurrencies = await obiexAPI.getTradableSwapCurrencies();
+    // console.log(
+    //   "✅ Tradable currencies response:",
+    //   JSON.stringify(tradableCurrencies, null, 2)
+    // );
 
     console.log("🎉 OBIEX API authentication test completed successfully!");
   } catch (error) {

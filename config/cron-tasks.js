@@ -1,45 +1,31 @@
 module.exports = {
   /**
-   * Test OBIEX API authentication every minute
-   * This cron job tests the getSupportedTokens and getTradableSwapCurrencies endpoints
-   * to ensure authentication is working properly
+   * Sync crypto tokens and networks from OBIEX daily at midnight
+   * This cron job fetches supported tokens from OBIEX and updates the local database
    */
-  testObiexAuthentication: {
+  syncCryptoTokensFromObiex: {
     task: async ({ strapi }) => {
       try {
-        const obiexAPI = require("../src/utils/obiex/obiex_utils");
+        console.log("� Starting daily OBIEX token synchronization...");
 
-        console.log("🔄 Testing OBIEX API authentication...");
+        const result = await strapi
+          .service("api::crypto-token.crypto-token")
+          .syncTokensFromObiex();
 
-        // Test getSupportedTokens endpoint
-        console.log("📋 Fetching supported tokens...");
-        const supportedTokens = await obiexAPI.getSupportedTokens();
         console.log(
-          "✅ Supported tokens fetched successfully:",
-          supportedTokens,
-          "tokens"
+          "🎉 Daily OBIEX token synchronization completed successfully!"
         );
-
-        // Test getTradableSwapCurrencies endpoint
-        console.log("💱 Fetching tradable swap currencies...");
-        const tradableCurrencies = await obiexAPI.getTradableSwapCurrencies();
-        console.log(
-          "✅ Tradable currencies fetched successfully:",
-          tradableCurrencies,
-          "currencies"
-        );
-
-        console.log("🎉 OBIEX API authentication test completed successfully!");
+        console.log("📊 Sync Results:", result.stats);
       } catch (error) {
         console.error(
-          "❌ OBIEX API authentication test failed:",
+          "❌ Daily OBIEX token synchronization failed:",
           error.message
         );
-        console.error("Error details:", error.response?.data || error);
+        console.error("Error details:", error);
       }
     },
     options: {
-      rule: "* * * * *", // Every minute (minute hour day month day-of-week)
+      rule: "0 0 * * *", // Every day at midnight (minute hour day month day-of-week)
       tz: "Africa/Lagos", // Nigeria timezone
     },
   },

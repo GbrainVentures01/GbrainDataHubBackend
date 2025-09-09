@@ -1,9 +1,9 @@
-'use strict';
+"use strict";
 
 /**
- * crypto-token router.
+ * crypto-token router
  */
 
-const { createCoreRouter } = require('@strapi/strapi').factories;
+const { createCoreRouter } = require("@strapi/strapi").factories;
 
-module.exports = createCoreRouter('api::crypto-token.crypto-token');
+module.exports = createCoreRouter("api::crypto-token.crypto-token");

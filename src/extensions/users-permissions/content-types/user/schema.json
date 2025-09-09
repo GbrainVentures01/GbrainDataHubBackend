@@ -28,13 +28,13 @@
     },
     "first_name": {
       "type": "string",
-      "required": true,
-      "configurable": false
+      "required": false,
+      "configurable": true
     },
     "last_name": {
       "type": "string",
-      "required": true,
-      "configurable": false
+      "required": false,
+      "configurable": true
     },
     "phone_number": {
       "type": "string",
