@@ -1729,4 +1729,79 @@ module.exports = {
       });
     }
   },
+
+  /**
+   * Verify Email with Code - Verify email using verification code (for mobile registration)
+   */
+  async verifyEmailWithCode(ctx) {
+    const { email, code } = ctx.request.body;
+
+    if (!email || !code) {
+      return ctx.badRequest("Email and verification code are required", {
+        errorCode: "MISSING_FIELDS",
+      });
+    }
+
+    try {
+      const normalizedEmail = email.toLowerCase();
+
+      // Find user by email
+      const user = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({ where: { email: normalizedEmail } });
+
+      if (!user) {
+        return ctx.badRequest("Invalid email or code", {
+          errorCode: "INVALID_CREDENTIALS",
+        });
+      }
+
+      if (user.confirmed) {
+        return ctx.badRequest("Email address is already verified", {
+          errorCode: "ALREADY_VERIFIED",
+        });
+      }
+
+      if (user.blocked) {
+        return ctx.forbidden("Account is suspended", {
+          errorCode: "ACCOUNT_SUSPENDED",
+        });
+      }
+
+      // Verify and mark code as used
+      const isValid = await strapi
+        .service("api::verification-code.verification-code")
+        .validateCode(normalizedEmail, code, "email_verification");
+
+      if (!isValid) {
+        return ctx.badRequest("Invalid or expired verification code", {
+          errorCode: "INVALID_CODE",
+        });
+      }
+
+      // Update user as confirmed
+      await strapi.query("plugin::users-permissions.user").update({
+        where: { id: user.id },
+        data: { confirmed: true },
+      });
+
+      const sanitizedUser = await sanitizeUser(user, ctx);
+
+      // Generate JWT token for immediate login
+      const jwt = getService("jwt").issue({ id: user.id });
+
+      ctx.send({
+        message: "Email verified successfully",
+        user: sanitizedUser,
+        jwt,
+        verified: true,
+      });
+    } catch (error) {
+      strapi.log.error("Verify email with code error:", error);
+      ctx.internalServerError({
+        error: "Unable to verify email. Please try again.",
+        errorCode: "VERIFY_EMAIL_ERROR",
+      });
+    }
+  },
 };

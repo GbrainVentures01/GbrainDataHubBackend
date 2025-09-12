@@ -170,4 +170,13 @@ module.exports = [
       prefix: "",
     },
   },
+  {
+    method: "POST",
+    path: "/auth/mobile/verify-email",
+    handler: "auth.verifyEmailWithCode",
+    config: {
+      middlewares: ["plugin::users-permissions.rateLimit"],
+      prefix: "",
+    },
+  },
 ];
