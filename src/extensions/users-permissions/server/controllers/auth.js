@@ -32,6 +32,172 @@ const sanitizeUser = (user, ctx) => {
   return sanitize.contentAPI.output(user, userSchema, { auth });
 };
 
+// Helper function to extract device and location information
+const getSecurityInfo = (ctx) => {
+  const ipAddress = ctx.request.ip || ctx.request.headers["x-forwarded-for"] || "unknown";
+  const userAgent = ctx.request.headers["user-agent"] || "Unknown Device";
+  
+  // Extract device info from user agent
+  let deviceInfo = "Unknown Device";
+  let browserInfo = "Unknown Browser";
+  
+  if (userAgent) {
+    // Basic device detection
+    if (/iPhone/i.test(userAgent)) {
+      deviceInfo = "iPhone";
+    } else if (/iPad/i.test(userAgent)) {
+      deviceInfo = "iPad";
+    } else if (/Android/i.test(userAgent)) {
+      deviceInfo = "Android Device";
+    } else if (/Windows/i.test(userAgent)) {
+      deviceInfo = "Windows Device";
+    } else if (/Mac/i.test(userAgent)) {
+      deviceInfo = "Mac Device";
+    } else if (/Linux/i.test(userAgent)) {
+      deviceInfo = "Linux Device";
+    }
+    
+    // Basic browser detection
+    if (/Chrome/i.test(userAgent) && !/Edge/i.test(userAgent)) {
+      browserInfo = "Chrome";
+    } else if (/Firefox/i.test(userAgent)) {
+      browserInfo = "Firefox";
+    } else if (/Safari/i.test(userAgent) && !/Chrome/i.test(userAgent)) {
+      browserInfo = "Safari";
+    } else if (/Edge/i.test(userAgent)) {
+      browserInfo = "Edge";
+    }
+  }
+  
+  return {
+    ipAddress,
+    deviceInfo,
+    browserInfo,
+    userAgent,
+    timestamp: new Date().toISOString(),
+    location: "Unknown Location" // Could be enhanced with IP geolocation service
+  };
+};
+
+// Helper function to send security notification email
+const sendSecurityNotificationEmail = async (user, securityInfo, action, additionalInfo = {}) => {
+  const emailSubject = `Security Alert: ${action} - GBrain Ventures`;
+  
+  const emailHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        .container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; }
+        .header { background: linear-gradient(135deg, #83529f, #a855f7); color: white; padding: 30px; text-align: center; }
+        .content { padding: 30px; background: #f8f9fa; }
+        .security-box { background: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .info-table th, .info-table td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        .info-table th { background-color: #f1f5f9; font-weight: bold; }
+        .footer { text-align: center; padding: 20px; color: #666; }
+        .warning { background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 8px; margin: 20px 0; color: #721c24; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🔐 Security Alert</h1>
+          <p>GBrain Ventures Account Activity</p>
+        </div>
+        <div class="content">
+          <h2>${action}</h2>
+          <p>Hello ${user.username || user.email},</p>
+          <p>We detected a ${action.toLowerCase()} on your GBrain Ventures account. Here are the details:</p>
+          
+          <table class="info-table">
+            <tr>
+              <th>Date & Time</th>
+              <td>${new Date(securityInfo.timestamp).toLocaleString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit',
+                timeZoneName: 'short'
+              })}</td>
+            </tr>
+            <tr>
+              <th>IP Address</th>
+              <td>${securityInfo.ipAddress}</td>
+            </tr>
+            <tr>
+              <th>Device</th>
+              <td>${securityInfo.deviceInfo}</td>
+            </tr>
+            <tr>
+              <th>Browser</th>
+              <td>${securityInfo.browserInfo}</td>
+            </tr>
+            <tr>
+              <th>Location</th>
+              <td>${securityInfo.location}</td>
+            </tr>
+            ${additionalInfo.code ? `
+            <tr>
+              <th>Verification Code</th>
+              <td style="font-family: monospace; font-size: 18px; font-weight: bold;">${additionalInfo.code}</td>
+            </tr>
+            ` : ''}
+          </table>
+          
+          <div class="security-box">
+            <p><strong>🛡️ Security Tips:</strong></p>
+            <ul>
+              <li>If this was you, no action is needed</li>
+              <li>If you don't recognize this activity, change your password immediately</li>
+              <li>Never share your account credentials with anyone</li>
+              <li>Use strong, unique passwords for your financial accounts</li>
+            </ul>
+          </div>
+          
+          ${action.includes('Login') ? `
+          <div class="warning">
+            <p><strong>⚠️ Didn't authorize this login?</strong></p>
+            <p>If you didn't sign in to your account, please:</p>
+            <ul>
+              <li>Change your password immediately</li>
+              <li>Contact our support team</li>
+              <li>Review your account activity</li>
+            </ul>
+          </div>
+          ` : ''}
+          
+          <p>If you have any concerns about your account security, please contact our support team immediately.</p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} GBrain Ventures | Financial Technology Platform</p>
+          <p>This is an automated security notification. Please do not reply to this email.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    await strapi
+      .plugin("email")
+      .service("email")
+      .send({
+        to: user.email,
+        subject: emailSubject,
+        html: emailHtml,
+        text: `Security Alert: ${action} detected on your GBrain Ventures account from IP ${securityInfo.ipAddress} using ${securityInfo.deviceInfo} (${securityInfo.browserInfo}) at ${new Date(securityInfo.timestamp).toLocaleString()}. If this wasn't you, please contact support immediately.`,
+      });
+    
+    strapi.log.info(`Security notification sent to ${user.email} for ${action}`);
+  } catch (error) {
+    strapi.log.error(`Failed to send security notification to ${user.email}:`, error);
+  }
+};
+
 // declare variable to store  access token
 let myAccessToken;
 
@@ -663,17 +829,23 @@ module.exports = {
 
       // Check if user is confirmed (mobile users must verify email)
       if (!user.confirmed) {
-        return ctx.forbidden("Please verify your email address before signing in", {
-          errorCode: "EMAIL_NOT_VERIFIED",
-          email: user.email,
-        });
+        return ctx.forbidden(
+          "Please verify your email address before signing in",
+          {
+            errorCode: "EMAIL_NOT_VERIFIED",
+            email: user.email,
+          }
+        );
       }
 
       // Check if user is blocked
       if (user.blocked) {
-        return ctx.forbidden("Your account has been suspended. Please contact support.", {
-          errorCode: "ACCOUNT_SUSPENDED",
-        });
+        return ctx.forbidden(
+          "Your account has been suspended. Please contact support.",
+          {
+            errorCode: "ACCOUNT_SUSPENDED",
+          }
+        );
       }
 
       // Validate password
@@ -692,12 +864,18 @@ module.exports = {
       const jwt = getService("jwt").issue({ id: user.id });
       const sanitizedUser = await sanitizeUser(user, ctx);
 
+      // Get security information
+      const securityInfo = getSecurityInfo(ctx);
+
       // Log successful login
-      const ipAddress = ctx.request.ip || ctx.request.headers["x-forwarded-for"] || "unknown";
-      
       strapi.log.info(
-        `Mobile login successful for ${user.email} from IP ${ipAddress}`
+        `Mobile login successful for ${user.email} from IP ${securityInfo.ipAddress} using ${securityInfo.deviceInfo}`
       );
+
+      // Send security notification email (non-blocking)
+      sendSecurityNotificationEmail(user, securityInfo, "Account Login").catch(error => {
+        strapi.log.error("Failed to send login security notification:", error);
+      });
 
       ctx.send({
         jwt,
@@ -846,6 +1024,9 @@ module.exports = {
           .service("api::verification-code.verification-code")
           .generateCode(user.email, "email_verification");
 
+        // Get security information  
+        const securityInfo = getSecurityInfo(ctx);
+
         const emailSubject = "Welcome to GBrain Ventures - Verify Your Email";
 
         const emailHtml = `
@@ -870,6 +1051,7 @@ module.exports = {
                 font-family: 'Courier New', monospace;
               }
               .info-box { background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; }
+              .security-info { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 12px; color: #666; }
               .footer { text-align: center; padding: 20px; color: #666; }
             </style>
           </head>
@@ -898,6 +1080,14 @@ module.exports = {
                   </ul>
                 </div>
                 
+                <div class="security-info">
+                  <strong>🔐 Registration Details:</strong><br>
+                  Date: ${new Date(securityInfo.timestamp).toLocaleString()}<br>
+                  IP Address: ${securityInfo.ipAddress}<br>
+                  Device: ${securityInfo.deviceInfo}<br>
+                  Browser: ${securityInfo.browserInfo}
+                </div>
+                
                 <p><strong>⚠️ Important:</strong> This verification code expires in 10 minutes. Enter this code in your mobile app to complete registration.</p>
                 
                 <p><strong>Security Note:</strong> Never share this code with anyone. GBrain Ventures will never ask for your verification code via phone or email.</p>
@@ -918,7 +1108,7 @@ module.exports = {
             to: user.email,
             subject: emailSubject,
             html: emailHtml,
-            text: `Welcome to GBrain Ventures! Your email verification code is: ${verificationCode}. This code expires in 10 minutes.`,
+            text: `Welcome to GBrain Ventures! Your email verification code is: ${verificationCode}. This code expires in 10 minutes. Registration from IP: ${securityInfo.ipAddress} using ${securityInfo.deviceInfo}.`,
           });
 
         // Log successful registration
@@ -1124,73 +1314,16 @@ module.exports = {
         .service("api::verification-code.verification-code")
         .generateCode(user.email, "password_reset");
 
-      const emailSubject = "GBrain Ventures - Password Reset Code";
+      // Get security information
+      const securityInfo = getSecurityInfo(ctx);
 
-      const emailHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            .container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; }
-            .header { background: linear-gradient(135deg, #83529f, #a855f7); color: white; padding: 30px; text-align: center; }
-            .content { padding: 30px; background: #f8f9fa; }
-            .code-box { 
-              background: #dc3545; 
-              color: white; 
-              font-size: 32px; 
-              font-weight: bold; 
-              text-align: center; 
-              padding: 20px; 
-              margin: 20px 0; 
-              border-radius: 8px; 
-              letter-spacing: 4px;
-              font-family: 'Courier New', monospace;
-            }
-            .warning-box { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0; }
-            .footer { text-align: center; padding: 20px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🔐 Password Reset Request</h1>
-              <p>GBrain Ventures</p>
-            </div>
-            <div class="content">
-              <h2>Reset Your Password</h2>
-              <p>We received a request to reset your password. Use the code below to reset your password:</p>
-              
-              <div class="code-box">
-                ${resetCode}
-              </div>
-              
-              <div class="warning-box">
-                <p><strong>🔒 Security Notice:</strong></p>
-                <ul>
-                  <li>This code expires in 10 minutes</li>
-                  <li>Never share this code with anyone</li>
-                  <li>If you didn't request this, please ignore this email</li>
-                </ul>
-              </div>
-            </div>
-            <div class="footer">
-              <p>© ${new Date().getFullYear()} GBrain Ventures | Financial Technology Platform</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-
-      await strapi
-        .plugin("email")
-        .service("email")
-        .send({
-          to: user.email,
-          subject: emailSubject,
-          html: emailHtml,
-          text: `Your GBrain Ventures password reset code is: ${resetCode}. This code expires in 10 minutes.`,
-        });
+      // Send security notification with reset code
+      await sendSecurityNotificationEmail(
+        user, 
+        securityInfo, 
+        "Password Reset Request", 
+        { code: resetCode }
+      );
 
       ctx.send({
         message: "Password reset code sent to your email",
@@ -1327,6 +1460,12 @@ module.exports = {
 
       const sanitizedUser = await sanitizeUser(user, ctx);
 
+      // Get security information and send notification
+      const securityInfo = getSecurityInfo(ctx);
+      sendSecurityNotificationEmail(user, securityInfo, "Password Reset Successful").catch(error => {
+        strapi.log.error("Failed to send password reset success notification:", error);
+      });
+
       ctx.send({
         message: "Password reset successful",
         user: sanitizedUser,
@@ -1390,74 +1529,16 @@ module.exports = {
         .service("api::verification-code.verification-code")
         .generateCode(user.email, "pin_reset");
 
-      const emailSubject = "GBrain Ventures - Transaction PIN Reset Code";
+      // Get security information
+      const securityInfo = getSecurityInfo(ctx);
 
-      const emailHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            .container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; }
-            .header { background: linear-gradient(135deg, #83529f, #a855f7); color: white; padding: 30px; text-align: center; }
-            .content { padding: 30px; background: #f8f9fa; }
-            .code-box { 
-              background: #e74c3c; 
-              color: white; 
-              font-size: 32px; 
-              font-weight: bold; 
-              text-align: center; 
-              padding: 20px; 
-              margin: 20px 0; 
-              border-radius: 8px; 
-              letter-spacing: 4px;
-              font-family: 'Courier New', monospace;
-            }
-            .warning-box { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0; }
-            .footer { text-align: center; padding: 20px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🔢 Transaction PIN Reset</h1>
-              <p>GBrain Ventures</p>
-            </div>
-            <div class="content">
-              <h2>Reset Your Transaction PIN</h2>
-              <p>We received a request to reset your transaction PIN. Use the code below to reset your PIN:</p>
-              
-              <div class="code-box">
-                ${resetCode}
-              </div>
-              
-              <div class="warning-box">
-                <p><strong>🔒 Security Notice:</strong></p>
-                <ul>
-                  <li>This code expires in 10 minutes</li>
-                  <li>Never share this code with anyone</li>
-                  <li>Your transaction PIN is used to authorize financial transactions</li>
-                  <li>If you didn't request this, please ignore this email</li>
-                </ul>
-              </div>
-            </div>
-            <div class="footer">
-              <p>© ${new Date().getFullYear()} GBrain Ventures | Financial Technology Platform</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-
-      await strapi
-        .plugin("email")
-        .service("email")
-        .send({
-          to: user.email,
-          subject: emailSubject,
-          html: emailHtml,
-          text: `Your GBrain Ventures transaction PIN reset code is: ${resetCode}. This code expires in 10 minutes.`,
-        });
+      // Send security notification with PIN reset code
+      await sendSecurityNotificationEmail(
+        user, 
+        securityInfo, 
+        "Transaction PIN Reset Request", 
+        { code: resetCode }
+      );
 
       ctx.send({
         message: "Transaction PIN reset code sent to your email",
@@ -1578,10 +1659,16 @@ module.exports = {
       // Update user transaction PIN
       await strapi.query("plugin::users-permissions.user").update({
         where: { id: user.id },
-        data: { 
+        data: {
           transactionPin: hashedPin,
-          hasTransactionPin: true 
+          hasTransactionPin: true,
         },
+      });
+
+      // Get security information and send notification
+      const securityInfo = getSecurityInfo(ctx);
+      sendSecurityNotificationEmail(user, securityInfo, "Transaction PIN Reset Successful").catch(error => {
+        strapi.log.error("Failed to send PIN reset success notification:", error);
       });
 
       ctx.send({
@@ -1648,7 +1735,9 @@ module.exports = {
       }
 
       // Hash the PIN
-      const hashedPin = await getService("user").hashPin({ pin: transactionPin });
+      const hashedPin = await getService("user").hashPin({
+        pin: transactionPin,
+      });
 
       // Update user with transaction PIN
       await strapi.query("plugin::users-permissions.user").update({
@@ -1659,61 +1748,10 @@ module.exports = {
         },
       });
 
-      // Send confirmation email
-      const emailSubject = "Transaction PIN Set Successfully";
-      const emailHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            .container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; }
-            .header { background: linear-gradient(135deg, #83529f, #a855f7); color: white; padding: 30px; text-align: center; }
-            .content { padding: 30px; background: #f8f9fa; }
-            .success-box { background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 8px; margin: 20px 0; color: #155724; }
-            .footer { text-align: center; padding: 20px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>✅ Transaction PIN Set</h1>
-              <p>GBrain Ventures</p>
-            </div>
-            <div class="content">
-              <h2>PIN Setup Successful</h2>
-              <p>Your transaction PIN has been successfully set up for your GBrain Ventures mobile account.</p>
-              
-              <div class="success-box">
-                <p><strong>🔐 Security Features:</strong></p>
-                <ul>
-                  <li>Your PIN is encrypted and securely stored</li>
-                  <li>Required for all financial transactions</li>
-                  <li>Can be changed anytime in app settings</li>
-                  <li>Never share your PIN with anyone</li>
-                </ul>
-              </div>
-              
-              <p><strong>Next Steps:</strong></p>
-              <ul>
-                <li>You can now make secure transactions</li>
-                <li>Access premium features in the app</li>
-                <li>Manage your financial portfolio</li>
-              </ul>
-            </div>
-            <div class="footer">
-              <p>© ${new Date().getFullYear()} GBrain Ventures | Financial Technology Platform</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-
-      await strapi.plugin("email").service("email").send({
-        to: user.email,
-        subject: emailSubject,
-        html: emailHtml,
-        text: `Your GBrain Ventures transaction PIN has been successfully set up. You can now perform secure financial transactions. Never share your PIN with anyone.`,
+      // Get security information and send notification
+      const securityInfo = getSecurityInfo(ctx);
+      sendSecurityNotificationEmail(user, securityInfo, "Transaction PIN Setup Successful").catch(error => {
+        strapi.log.error("Failed to send PIN setup success notification:", error);
       });
 
       ctx.send({
@@ -1789,6 +1827,12 @@ module.exports = {
 
       // Generate JWT token for immediate login
       const jwt = getService("jwt").issue({ id: user.id });
+
+      // Get security information and send notification
+      const securityInfo = getSecurityInfo(ctx);
+      sendSecurityNotificationEmail(user, securityInfo, "Email Verification Successful").catch(error => {
+        strapi.log.error("Failed to send email verification success notification:", error);
+      });
 
       ctx.send({
         message: "Email verified successfully",
