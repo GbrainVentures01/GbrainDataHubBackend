@@ -1,0 +1,61 @@
+{
+  "kind": "collectionType",
+  "collectionName": "verification_codes",
+  "info": {
+    "singularName": "verification-code",
+    "pluralName": "verification-codes",
+    "displayName": "Verification Code",
+    "description": "Stores verification codes for email/SMS verification"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "code": {
+      "type": "string",
+      "required": true
+    },
+    "hashedCode": {
+      "type": "string",
+      "required": true
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": [
+        "email_verification",
+        "password_reset",
+        "pin_reset",
+        "two_factor"
+      ],
+      "required": true
+    },
+    "expiresAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "isUsed": {
+      "type": "boolean",
+      "default": false
+    },
+    "attempts": {
+      "type": "integer",
+      "default": 0
+    },
+    "maxAttempts": {
+      "type": "integer",
+      "default": 3
+    },
+    "ipAddress": {
+      "type": "string"
+    },
+    "userAgent": {
+      "type": "text"
+    }
+  }
+}

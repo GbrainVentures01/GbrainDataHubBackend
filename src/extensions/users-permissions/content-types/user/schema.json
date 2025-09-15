@@ -57,6 +57,30 @@
       "configurable": false,
       "private": true
     },
+    "transactionPin": {
+      "type": "password",
+
+      "configurable": false,
+      "private": true
+    },
+    "hasTransactionPin": {
+      "type": "boolean",
+      "default": false,
+      "required": true
+    },
+    "biometricEnabled": {
+      "type": "boolean",
+      "default": false,
+      "required": false
+    },
+    "biometricEnabledAt": {
+      "type": "datetime",
+      "required": false
+    },
+    "biometricDisabledAt": {
+      "type": "datetime",
+      "required": false
+    },
     "resetPasswordToken": {
       "type": "string",
       "configurable": false,
@@ -76,6 +100,11 @@
       "type": "boolean",
       "default": false,
       "configurable": false
+    },
+    "avatar": {
+      "type": "string",
+      "required": false,
+      "configurable": true
     },
     "role": {
       "type": "relation",
@@ -188,6 +217,12 @@
     "giftCardBalance": {
       "type": "float",
       "default": 0
+    },
+    "verificationCodes": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::verification-code.verification-code",
+      "mappedBy": "user"
     }
   }
 }

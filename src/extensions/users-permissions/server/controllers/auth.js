@@ -34,13 +34,16 @@ const sanitizeUser = (user, ctx) => {
 
 // Helper function to extract device and location information
 const getSecurityInfo = (ctx) => {
-  const ipAddress = ctx.request.ip || ctx.request.headers["x-forwarded-for"] || "unknown";
+  const ipAddress =
+    ctx.request.ip || ctx.request.headers["x-forwarded-for"] || "unknown";
   const userAgent = ctx.request.headers["user-agent"] || "Unknown Device";
-  
+
+  console.log("HEADERS: ", ctx.request.headers);
+  console.log("USER AGENT: ", userAgent);
   // Extract device info from user agent
   let deviceInfo = "Unknown Device";
   let browserInfo = "Unknown Browser";
-  
+
   if (userAgent) {
     // Basic device detection
     if (/iPhone/i.test(userAgent)) {
@@ -55,8 +58,10 @@ const getSecurityInfo = (ctx) => {
       deviceInfo = "Mac Device";
     } else if (/Linux/i.test(userAgent)) {
       deviceInfo = "Linux Device";
+    } else {
+      deviceInfo = userAgent;
     }
-    
+
     // Basic browser detection
     if (/Chrome/i.test(userAgent) && !/Edge/i.test(userAgent)) {
       browserInfo = "Chrome";
@@ -66,23 +71,30 @@ const getSecurityInfo = (ctx) => {
       browserInfo = "Safari";
     } else if (/Edge/i.test(userAgent)) {
       browserInfo = "Edge";
+    } else {
+      browserInfo = userAgent;
     }
   }
-  
+
   return {
     ipAddress,
     deviceInfo,
     browserInfo,
     userAgent,
     timestamp: new Date().toISOString(),
-    location: "Unknown Location" // Could be enhanced with IP geolocation service
+    location: "Unknown Location", // Could be enhanced with IP geolocation service
   };
 };
 
 // Helper function to send security notification email
-const sendSecurityNotificationEmail = async (user, securityInfo, action, additionalInfo = {}) => {
+const sendSecurityNotificationEmail = async (
+  user,
+  securityInfo,
+  action,
+  additionalInfo = {}
+) => {
   const emailSubject = `Security Alert: ${action} - GBrain Ventures`;
-  
+
   const emailHtml = `
     <!DOCTYPE html>
     <html>
@@ -114,14 +126,14 @@ const sendSecurityNotificationEmail = async (user, securityInfo, action, additio
           <table class="info-table">
             <tr>
               <th>Date & Time</th>
-              <td>${new Date(securityInfo.timestamp).toLocaleString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric', 
-                hour: '2-digit', 
-                minute: '2-digit',
-                timeZoneName: 'short'
+              <td>${new Date(securityInfo.timestamp).toLocaleString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZoneName: "short",
               })}</td>
             </tr>
             <tr>
@@ -140,12 +152,16 @@ const sendSecurityNotificationEmail = async (user, securityInfo, action, additio
               <th>Location</th>
               <td>${securityInfo.location}</td>
             </tr>
-            ${additionalInfo.code ? `
+            ${
+              additionalInfo.code
+                ? `
             <tr>
               <th>Verification Code</th>
               <td style="font-family: monospace; font-size: 18px; font-weight: bold;">${additionalInfo.code}</td>
             </tr>
-            ` : ''}
+            `
+                : ""
+            }
           </table>
           
           <div class="security-box">
@@ -158,7 +174,9 @@ const sendSecurityNotificationEmail = async (user, securityInfo, action, additio
             </ul>
           </div>
           
-          ${action.includes('Login') ? `
+          ${
+            action.includes("Login")
+              ? `
           <div class="warning">
             <p><strong>⚠️ Didn't authorize this login?</strong></p>
             <p>If you didn't sign in to your account, please:</p>
@@ -168,7 +186,9 @@ const sendSecurityNotificationEmail = async (user, securityInfo, action, additio
               <li>Review your account activity</li>
             </ul>
           </div>
-          ` : ''}
+          `
+              : ""
+          }
           
           <p>If you have any concerns about your account security, please contact our support team immediately.</p>
         </div>
@@ -189,12 +209,23 @@ const sendSecurityNotificationEmail = async (user, securityInfo, action, additio
         to: user.email,
         subject: emailSubject,
         html: emailHtml,
-        text: `Security Alert: ${action} detected on your GBrain Ventures account from IP ${securityInfo.ipAddress} using ${securityInfo.deviceInfo} (${securityInfo.browserInfo}) at ${new Date(securityInfo.timestamp).toLocaleString()}. If this wasn't you, please contact support immediately.`,
+        text: `Security Alert: ${action} detected on your GBrain Ventures account from IP ${
+          securityInfo.ipAddress
+        } using ${securityInfo.deviceInfo} (${
+          securityInfo.browserInfo
+        }) at ${new Date(
+          securityInfo.timestamp
+        ).toLocaleString()}. If this wasn't you, please contact support immediately.`,
       });
-    
-    strapi.log.info(`Security notification sent to ${user.email} for ${action}`);
+
+    strapi.log.info(
+      `Security notification sent to ${user.email} for ${action}`
+    );
   } catch (error) {
-    strapi.log.error(`Failed to send security notification to ${user.email}:`, error);
+    strapi.log.error(
+      `Failed to send security notification to ${user.email}:`,
+      error
+    );
   }
 };
 
@@ -796,10 +827,10 @@ module.exports = {
    * Mobile Login - Enhanced login with better error handling for mobile apps
    */
   async mobileLogin(ctx) {
-    const { email, password } = ctx.request.body;
+    const { identifier, password } = ctx.request.body;
 
     // Validate required fields
-    if (!email || !password) {
+    if (!identifier || !password) {
       return ctx.badRequest("Email and password are required", {
         errorCode: "MISSING_CREDENTIALS",
       });
@@ -807,14 +838,14 @@ module.exports = {
 
     try {
       // Check if email format is valid
-      const isValidEmail = emailRegExp.test(email);
+      const isValidEmail = emailRegExp.test(identifier);
       if (!isValidEmail) {
         return ctx.badRequest("Please provide a valid email address", {
           errorCode: "INVALID_EMAIL_FORMAT",
         });
       }
 
-      const normalizedEmail = email.toLowerCase();
+      const normalizedEmail = identifier.toLowerCase();
 
       // Find user by email
       const user = await strapi
@@ -873,9 +904,14 @@ module.exports = {
       );
 
       // Send security notification email (non-blocking)
-      sendSecurityNotificationEmail(user, securityInfo, "Account Login").catch(error => {
-        strapi.log.error("Failed to send login security notification:", error);
-      });
+      sendSecurityNotificationEmail(user, securityInfo, "Account Login").catch(
+        (error) => {
+          strapi.log.error(
+            "Failed to send login security notification:",
+            error
+          );
+        }
+      );
 
       ctx.send({
         jwt,
@@ -1022,9 +1058,16 @@ module.exports = {
       try {
         const verificationCode = await strapi
           .service("api::verification-code.verification-code")
-          .generateCode(user.email, "email_verification");
+          .createVerificationCode({
+            userId: user.id,
+            type: "email_verification",
+            ipAddress: ctx.request.ip,
+            userAgent: ctx.request.get("User-Agent"),
+          });
+        if (!verificationCode)
+          throw new Error("Verification code generation failed");
 
-        // Get security information  
+        // Get security information
         const securityInfo = getSecurityInfo(ctx);
 
         const emailSubject = "Welcome to GBrain Ventures - Verify Your Email";
@@ -1066,7 +1109,7 @@ module.exports = {
                 <p>Thank you for joining GBrain Ventures mobile app! To complete your registration and secure your account, please verify your email address using the verification code below:</p>
                 
                 <div class="code-box">
-                  ${verificationCode}
+                  ${verificationCode.code}
                 </div>
                 
                 <div class="info-box">
@@ -1195,7 +1238,12 @@ module.exports = {
       // Generate and send new verification code
       const verificationCode = await strapi
         .service("api::verification-code.verification-code")
-        .generateCode(user.email, "email_verification");
+        .createVerificationCode({
+          userId: user.id,
+          type: "email_verification",
+          ipAddress: ctx.request.ip,
+          userAgent: ctx.request.get("User-Agent"),
+        });
 
       const emailSubject = "GBrain Ventures - New Verification Code";
 
@@ -1234,7 +1282,7 @@ module.exports = {
               <p>Here's your new email verification code:</p>
               
               <div class="code-box">
-                ${verificationCode}
+                ${verificationCode.code}
               </div>
               
               <p><strong>⚠️ Important:</strong> This verification code expires in 10 minutes.</p>
@@ -1312,17 +1360,22 @@ module.exports = {
       // Generate verification code for password reset
       const resetCode = await strapi
         .service("api::verification-code.verification-code")
-        .generateCode(user.email, "password_reset");
+        .createVerificationCode({
+          userId: user.id,
+          type: "password_reset",
+          ipAddress: ctx.request.ip,
+          userAgent: ctx.request.get("User-Agent"),
+        });
 
       // Get security information
       const securityInfo = getSecurityInfo(ctx);
 
       // Send security notification with reset code
       await sendSecurityNotificationEmail(
-        user, 
-        securityInfo, 
-        "Password Reset Request", 
-        { code: resetCode }
+        user,
+        securityInfo,
+        "Password Reset Request",
+        { code: resetCode.code }
       );
 
       ctx.send({
@@ -1365,11 +1418,16 @@ module.exports = {
       }
 
       // Verify the code without marking it as used
-      const isValid = await strapi
+      const result = await strapi
         .service("api::verification-code.verification-code")
-        .validateCodeWithoutMarking(normalizedEmail, code, "password_reset");
+        .verifyCodeWithoutMarking({
+          userId: user.id,
+          code,
+          type: "password_reset",
+          ipAddress: ctx.request.ip,
+        });
 
-      if (!isValid) {
+      if (!result.success) {
         return ctx.badRequest("Invalid or expired verification code", {
           errorCode: "INVALID_CODE",
         });
@@ -1437,11 +1495,16 @@ module.exports = {
       }
 
       // Verify and mark code as used
-      const isValid = await strapi
+      const result = await strapi
         .service("api::verification-code.verification-code")
-        .validateCode(normalizedEmail, code, "password_reset");
+        .verifySubmittedCode({
+          userId: user.id,
+          code,
+          type: "password_reset",
+          ipAddress: ctx.request.ip,
+        });
 
-      if (!isValid) {
+      if (!result.success) {
         return ctx.badRequest("Invalid or expired verification code", {
           errorCode: "INVALID_CODE",
         });
@@ -1462,8 +1525,15 @@ module.exports = {
 
       // Get security information and send notification
       const securityInfo = getSecurityInfo(ctx);
-      sendSecurityNotificationEmail(user, securityInfo, "Password Reset Successful").catch(error => {
-        strapi.log.error("Failed to send password reset success notification:", error);
+      sendSecurityNotificationEmail(
+        user,
+        securityInfo,
+        "Password Reset Successful"
+      ).catch((error) => {
+        strapi.log.error(
+          "Failed to send password reset success notification:",
+          error
+        );
       });
 
       ctx.send({
@@ -1527,16 +1597,21 @@ module.exports = {
       // Generate verification code for PIN reset
       const resetCode = await strapi
         .service("api::verification-code.verification-code")
-        .generateCode(user.email, "pin_reset");
+        .createVerificationCode({
+          userId: user.id,
+          type: "pin_reset",
+          ipAddress: ctx.request.ip,
+          userAgent: ctx.request.get("User-Agent"),
+        });
 
       // Get security information
       const securityInfo = getSecurityInfo(ctx);
 
       // Send security notification with PIN reset code
       await sendSecurityNotificationEmail(
-        user, 
-        securityInfo, 
-        "Transaction PIN Reset Request", 
+        user,
+        securityInfo,
+        "Transaction PIN Reset Request",
         { code: resetCode }
       );
 
@@ -1580,11 +1655,16 @@ module.exports = {
       }
 
       // Verify the code without marking it as used
-      const isValid = await strapi
+      const result = await strapi
         .service("api::verification-code.verification-code")
-        .validateCodeWithoutMarking(normalizedEmail, code, "pin_reset");
+        .verifyCodeWithoutMarking({
+          userId: user.id,
+          code,
+          type: "pin_reset",
+          ipAddress: ctx.request.ip,
+        });
 
-      if (!isValid) {
+      if (!result.success) {
         return ctx.badRequest("Invalid or expired verification code", {
           errorCode: "INVALID_CODE",
         });
@@ -1643,11 +1723,16 @@ module.exports = {
       }
 
       // Verify and mark code as used
-      const isValid = await strapi
+      const result = await strapi
         .service("api::verification-code.verification-code")
-        .validateCode(normalizedEmail, code, "pin_reset");
+        .verifySubmittedCode({
+          userId: user.id,
+          code,
+          type: "pin_reset",
+          ipAddress: ctx.request.ip,
+        });
 
-      if (!isValid) {
+      if (!result.success) {
         return ctx.badRequest("Invalid or expired verification code", {
           errorCode: "INVALID_CODE",
         });
@@ -1667,8 +1752,15 @@ module.exports = {
 
       // Get security information and send notification
       const securityInfo = getSecurityInfo(ctx);
-      sendSecurityNotificationEmail(user, securityInfo, "Transaction PIN Reset Successful").catch(error => {
-        strapi.log.error("Failed to send PIN reset success notification:", error);
+      sendSecurityNotificationEmail(
+        user,
+        securityInfo,
+        "Transaction PIN Reset Successful"
+      ).catch((error) => {
+        strapi.log.error(
+          "Failed to send PIN reset success notification:",
+          error
+        );
       });
 
       ctx.send({
@@ -1688,9 +1780,10 @@ module.exports = {
    * Mobile Set Transaction PIN - Set transaction PIN for mobile users
    */
   async mobileSetTransactionPin(ctx) {
-    const { transactionPin, confirmPin } = ctx.request.body;
+    const { pin, pinConfirmation } = ctx.request.body;
     const userId = ctx.state.user?.id;
-
+    const transactionPin = pin;
+    const confirmPin = pinConfirmation;
     if (!userId) {
       return ctx.unauthorized("Authentication required", {
         errorCode: "AUTH_REQUIRED",
@@ -1750,8 +1843,15 @@ module.exports = {
 
       // Get security information and send notification
       const securityInfo = getSecurityInfo(ctx);
-      sendSecurityNotificationEmail(user, securityInfo, "Transaction PIN Setup Successful").catch(error => {
-        strapi.log.error("Failed to send PIN setup success notification:", error);
+      sendSecurityNotificationEmail(
+        user,
+        securityInfo,
+        "Transaction PIN Setup Successful"
+      ).catch((error) => {
+        strapi.log.error(
+          "Failed to send PIN setup success notification:",
+          error
+        );
       });
 
       ctx.send({
@@ -1807,11 +1907,16 @@ module.exports = {
       }
 
       // Verify and mark code as used
-      const isValid = await strapi
+      const verificationResult = await strapi
         .service("api::verification-code.verification-code")
-        .validateCode(normalizedEmail, code, "email_verification");
+        .verifySubmittedCode({
+          userId: user.id,
+          code,
+          type: "email_verification",
+          ipAddress: ctx.request.ip,
+        });
 
-      if (!isValid) {
+      if (!verificationResult.success) {
         return ctx.badRequest("Invalid or expired verification code", {
           errorCode: "INVALID_CODE",
         });
@@ -1830,8 +1935,15 @@ module.exports = {
 
       // Get security information and send notification
       const securityInfo = getSecurityInfo(ctx);
-      sendSecurityNotificationEmail(user, securityInfo, "Email Verification Successful").catch(error => {
-        strapi.log.error("Failed to send email verification success notification:", error);
+      sendSecurityNotificationEmail(
+        user,
+        securityInfo,
+        "Email Verification Successful"
+      ).catch((error) => {
+        strapi.log.error(
+          "Failed to send email verification success notification:",
+          error
+        );
       });
 
       ctx.send({
@@ -1845,6 +1957,604 @@ module.exports = {
       ctx.internalServerError({
         error: "Unable to verify email. Please try again.",
         errorCode: "VERIFY_EMAIL_ERROR",
+      });
+    }
+  },
+
+  /**
+   * Enable Biometric Authentication - Allow user to enable biometric login
+   */
+  async enableBiometric(ctx) {
+    const userId = ctx.state.user?.id;
+
+    if (!userId) {
+      return ctx.unauthorized("Authentication required", {
+        errorCode: "AUTH_REQUIRED",
+      });
+    }
+
+    try {
+      // Find user
+      const user = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({ where: { id: userId } });
+
+      if (!user) {
+        return ctx.notFound("User not found", {
+          errorCode: "USER_NOT_FOUND",
+        });
+      }
+
+      if (user.blocked) {
+        return ctx.forbidden("Account is suspended", {
+          errorCode: "ACCOUNT_SUSPENDED",
+        });
+      }
+
+      // Update user to enable biometric
+      await strapi.query("plugin::users-permissions.user").update({
+        where: { id: userId },
+        data: {
+          biometricEnabled: true,
+          biometricEnabledAt: new Date(),
+        },
+      });
+
+      // Get security information and send notification
+      const securityInfo = getSecurityInfo(ctx);
+      sendSecurityNotificationEmail(
+        user,
+        securityInfo,
+        "Biometric Authentication Enabled"
+      ).catch((error) => {
+        strapi.log.error(
+          "Failed to send biometric enable notification:",
+          error
+        );
+      });
+
+      ctx.send({
+        message: "Biometric authentication enabled successfully",
+        biometricEnabled: true,
+      });
+    } catch (error) {
+      strapi.log.error("Enable biometric error:", error);
+      ctx.internalServerError({
+        error: "Unable to enable biometric authentication. Please try again.",
+        errorCode: "ENABLE_BIOMETRIC_ERROR",
+      });
+    }
+  },
+
+  /**
+   * Disable Biometric Authentication - Disable biometric login for user
+   */
+  async disableBiometric(ctx) {
+    const userId = ctx.state.user?.id;
+
+    if (!userId) {
+      return ctx.unauthorized("Authentication required", {
+        errorCode: "AUTH_REQUIRED",
+      });
+    }
+
+    try {
+      // Find user
+      const user = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({ where: { id: userId } });
+
+      if (!user) {
+        return ctx.notFound("User not found", {
+          errorCode: "USER_NOT_FOUND",
+        });
+      }
+
+      if (user.blocked) {
+        return ctx.forbidden("Account is suspended", {
+          errorCode: "ACCOUNT_SUSPENDED",
+        });
+      }
+
+      // Update user to disable biometric
+      await strapi.query("plugin::users-permissions.user").update({
+        where: { id: userId },
+        data: {
+          biometricEnabled: false,
+          biometricDisabledAt: new Date(),
+        },
+      });
+
+      // Get security information and send notification
+      const securityInfo = getSecurityInfo(ctx);
+      sendSecurityNotificationEmail(
+        user,
+        securityInfo,
+        "Biometric Authentication Disabled"
+      ).catch((error) => {
+        strapi.log.error(
+          "Failed to send biometric disable notification:",
+          error
+        );
+      });
+
+      ctx.send({
+        message: "Biometric authentication disabled successfully",
+        biometricEnabled: false,
+      });
+    } catch (error) {
+      strapi.log.error("Disable biometric error:", error);
+      ctx.internalServerError({
+        error: "Unable to disable biometric authentication. Please try again.",
+        errorCode: "DISABLE_BIOMETRIC_ERROR",
+      });
+    }
+  },
+
+  /**
+   * Validate Biometric Authentication - Validate biometric login attempt
+   */
+  async validateBiometric(ctx) {
+    const userId = ctx.state.user?.id;
+
+    if (!userId) {
+      return ctx.unauthorized("Authentication required", {
+        errorCode: "AUTH_REQUIRED",
+      });
+    }
+
+    try {
+      // Find user
+      const user = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({ where: { id: userId } });
+
+      if (!user) {
+        return ctx.notFound("User not found", {
+          errorCode: "USER_NOT_FOUND",
+        });
+      }
+
+      if (user.blocked) {
+        return ctx.forbidden("Account is suspended", {
+          errorCode: "ACCOUNT_SUSPENDED",
+        });
+      }
+
+      if (!user.biometricEnabled) {
+        return ctx.badRequest("Biometric authentication is not enabled", {
+          errorCode: "BIOMETRIC_NOT_ENABLED",
+        });
+      }
+
+      // Generate new JWT token for successful biometric authentication
+      const jwt = getService("jwt").issue({ id: user.id });
+      const sanitizedUser = await sanitizeUser(user, ctx);
+
+      // Get security information and send notification
+      const securityInfo = getSecurityInfo(ctx);
+      sendSecurityNotificationEmail(
+        user,
+        securityInfo,
+        "Biometric Login"
+      ).catch((error) => {
+        strapi.log.error("Failed to send biometric login notification:", error);
+      });
+
+      // Log successful biometric login
+      strapi.log.info(
+        `Biometric login successful for ${user.email} from IP ${securityInfo.ipAddress}`
+      );
+
+      ctx.send({
+        message: "Biometric authentication successful",
+        jwt,
+        user: sanitizedUser,
+      });
+    } catch (error) {
+      strapi.log.error("Validate biometric error:", error);
+      ctx.internalServerError({
+        error: "Unable to validate biometric authentication. Please try again.",
+        errorCode: "VALIDATE_BIOMETRIC_ERROR",
+      });
+    }
+  },
+
+  /**
+   * Get Biometric Status - Check if biometric authentication is enabled for user
+   */
+  async getBiometricStatus(ctx) {
+    const userId = ctx.state.user?.id;
+
+    if (!userId) {
+      return ctx.unauthorized("Authentication required", {
+        errorCode: "AUTH_REQUIRED",
+      });
+    }
+
+    try {
+      // Find user
+      const user = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({ where: { id: userId } });
+
+      if (!user) {
+        return ctx.notFound("User not found", {
+          errorCode: "USER_NOT_FOUND",
+        });
+      }
+
+      ctx.send({
+        biometricEnabled: user.biometricEnabled || false,
+        biometricEnabledAt: user.biometricEnabledAt || null,
+        canEnableBiometric: !user.blocked && user.confirmed,
+      });
+    } catch (error) {
+      strapi.log.error("Get biometric status error:", error);
+      ctx.internalServerError({
+        error: "Unable to get biometric status. Please try again.",
+        errorCode: "GET_BIOMETRIC_STATUS_ERROR",
+      });
+    }
+  },
+
+  /**
+   * Send PIN Change Verification - Send email verification code for PIN change
+   */
+  async sendPinChangeVerification(ctx) {
+    const userId = ctx.state.user?.id;
+
+    if (!userId) {
+      return ctx.unauthorized("Authentication required", {
+        errorCode: "AUTH_REQUIRED",
+      });
+    }
+
+    try {
+      // Find user
+      const user = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({ where: { id: userId } });
+
+      if (!user) {
+        return ctx.notFound("User not found", {
+          errorCode: "USER_NOT_FOUND",
+        });
+      }
+
+      if (user.blocked) {
+        return ctx.forbidden("Account is suspended", {
+          errorCode: "ACCOUNT_SUSPENDED",
+        });
+      }
+
+      if (!user.hasTransactionPin) {
+        return ctx.badRequest("No transaction PIN set for this account", {
+          errorCode: "NO_PIN_SET",
+        });
+      }
+
+      // Generate verification code for PIN change
+      const verificationCode = await strapi
+        .service("api::verification-code.verification-code")
+        .createVerificationCode({
+          userId: user.id,
+          type: "pin_change",
+          ipAddress: ctx.request.ip,
+          userAgent: ctx.request.get("User-Agent"),
+        });
+
+      // Get security information
+      const securityInfo = getSecurityInfo(ctx);
+
+      // Send security notification with PIN change verification code
+      await sendSecurityNotificationEmail(
+        user,
+        securityInfo,
+        "Transaction PIN Change Verification",
+        { code: verificationCode.code }
+      );
+
+      ctx.send({
+        message: "PIN change verification code sent to your email",
+        email: user.email,
+      });
+    } catch (error) {
+      strapi.log.error("Send PIN change verification error:", error);
+      ctx.internalServerError({
+        error: "Unable to send verification code. Please try again.",
+        errorCode: "SEND_PIN_VERIFICATION_ERROR",
+      });
+    }
+  },
+
+  /**
+   * Verify PIN Change Code - Verify the email code for PIN change
+   */
+  async verifyPinChangeCode(ctx) {
+    const { code } = ctx.request.body;
+    const userId = ctx.state.user?.id;
+
+    if (!userId) {
+      return ctx.unauthorized("Authentication required", {
+        errorCode: "AUTH_REQUIRED",
+      });
+    }
+
+    if (!code) {
+      return ctx.badRequest("Verification code is required", {
+        errorCode: "MISSING_CODE",
+      });
+    }
+
+    try {
+      // Verify the code
+      const verifyResult = await strapi
+        .service("api::verification-code.verification-code")
+        .verifySubmittedCode({
+          userId: userId,
+          code: code,
+          type: "pin_change",
+        });
+
+      if (!verifyResult.success) {
+        return ctx.badRequest(
+          verifyResult.error || "Invalid or expired verification code",
+          {
+            errorCode: verifyResult.errorCode || "INVALID_CODE",
+          }
+        );
+      }
+
+      ctx.send({
+        message: "Verification code confirmed",
+        verified: true,
+      });
+    } catch (error) {
+      strapi.log.error("Verify PIN change code error:", error);
+      ctx.internalServerError({
+        error: "Unable to verify code. Please try again.",
+        errorCode: "VERIFY_PIN_CODE_ERROR",
+      });
+    }
+  },
+
+  /**
+   * Change Transaction PIN - Change the user's transaction PIN
+   */
+  async changeTransactionPin(ctx) {
+    const { currentPin, newPin, confirmNewPin } = ctx.request.body;
+    const userId = ctx.state.user?.id;
+
+    if (!userId) {
+      return ctx.unauthorized("Authentication required", {
+        errorCode: "AUTH_REQUIRED",
+      });
+    }
+
+    if (!currentPin || !newPin || !confirmNewPin) {
+      return ctx.badRequest(
+        "Current PIN, new PIN, and confirmation are required",
+        {
+          errorCode: "MISSING_PIN_DATA",
+        }
+      );
+    }
+
+    if (newPin !== confirmNewPin) {
+      return ctx.badRequest("New PIN and confirmation do not match", {
+        errorCode: "PIN_MISMATCH",
+      });
+    }
+
+    if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+      return ctx.badRequest("PIN must be exactly 4 digits", {
+        errorCode: "INVALID_PIN_FORMAT",
+      });
+    }
+
+    try {
+      // Find user
+      const user = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({ where: { id: userId } });
+
+      if (!user) {
+        return ctx.notFound("User not found", {
+          errorCode: "USER_NOT_FOUND",
+        });
+      }
+
+      if (user.blocked) {
+        return ctx.forbidden("Account is suspended", {
+          errorCode: "ACCOUNT_SUSPENDED",
+        });
+      }
+
+      if (!user.hasTransactionPin) {
+        return ctx.badRequest("No transaction PIN set for this account", {
+          errorCode: "NO_PIN_SET",
+        });
+      }
+
+      // Verify current PIN
+      const isCurrentPinValid = await strapi
+        .service("plugin::users-permissions.user")
+        .validatePassword(currentPin, user.transactionPin);
+
+      if (!isCurrentPinValid) {
+        return ctx.badRequest("Current PIN is incorrect", {
+          errorCode: "INVALID_CURRENT_PIN",
+        });
+      }
+
+      // Hash the new PIN
+      const hashedNewPin = await strapi
+        .service("plugin::users-permissions.user")
+        .hashPassword(newPin);
+
+      // Update user with new transaction PIN
+      await strapi.query("plugin::users-permissions.user").update({
+        where: { id: userId },
+        data: {
+          transactionPin: hashedNewPin,
+          updatedAt: new Date(),
+        },
+      });
+
+      // Get security information for notification
+      const securityInfo = getSecurityInfo(ctx);
+
+      // Send security notification about PIN change
+      await sendSecurityNotificationEmail(
+        user,
+        securityInfo,
+        "Transaction PIN Changed Successfully",
+        { action: "PIN Change" }
+      );
+
+      ctx.send({
+        message: "Transaction PIN changed successfully",
+        success: true,
+      });
+    } catch (error) {
+      strapi.log.error("Change transaction PIN error:", error);
+      ctx.internalServerError({
+        error: "Unable to change transaction PIN. Please try again.",
+        errorCode: "CHANGE_PIN_ERROR",
+      });
+    }
+  },
+
+  // Change password
+  async changePassword(ctx) {
+    try {
+      const { currentPassword, newPassword, confirmNewPassword } =
+        ctx.request.body;
+
+      // Validate input
+      if (!currentPassword || !newPassword || !confirmNewPassword) {
+        return ctx.badRequest(
+          "Current password, new password, and confirm password are required",
+          {
+            errorCode: "MISSING_PASSWORD_FIELDS",
+          }
+        );
+      }
+
+      if (newPassword !== confirmNewPassword) {
+        return ctx.badRequest(
+          "New password and confirm password do not match",
+          {
+            errorCode: "PASSWORD_MISMATCH",
+          }
+        );
+      }
+
+      // Password strength validation
+      if (newPassword.length < 8) {
+        return ctx.badRequest(
+          "New password must be at least 8 characters long",
+          {
+            errorCode: "PASSWORD_TOO_SHORT",
+          }
+        );
+      }
+
+      if (
+        !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/.test(
+          newPassword
+        )
+      ) {
+        return ctx.badRequest(
+          "New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+          {
+            errorCode: "PASSWORD_WEAK",
+          }
+        );
+      }
+
+      // Get authenticated user
+      const user = ctx.state.user;
+      if (!user) {
+        return ctx.unauthorized("Authentication required", {
+          errorCode: "AUTH_REQUIRED",
+        });
+      }
+
+      // Verify current password
+      const currentUser = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({
+          where: { id: user.id },
+        });
+
+      if (!currentUser) {
+        return ctx.badRequest("User not found", {
+          errorCode: "USER_NOT_FOUND",
+        });
+      }
+
+      const validPassword = await strapi
+        .service("plugin::users-permissions.user")
+        .validatePassword(currentPassword, currentUser.password);
+
+      if (!validPassword) {
+        return ctx.badRequest("Current password is incorrect", {
+          errorCode: "CURRENT_PASSWORD_INCORRECT",
+        });
+      }
+
+      // Check if new password is different from current password
+      const samePassword = await strapi
+        .service("plugin::users-permissions.user")
+        .validatePassword(newPassword, currentUser.password);
+
+      if (samePassword) {
+        return ctx.badRequest(
+          "New password must be different from current password",
+          {
+            errorCode: "PASSWORD_SAME_AS_CURRENT",
+          }
+        );
+      }
+
+      // Hash the new password
+      const hashedNewPassword = await strapi
+        .service("plugin::users-permissions.user")
+        .hashPassword({
+          password: newPassword,
+        });
+
+      // Update user password
+      await strapi.query("plugin::users-permissions.user").update({
+        where: { id: user.id },
+        data: {
+          password: hashedNewPassword,
+          updatedAt: new Date(),
+        },
+      });
+
+      // Get security information for notification
+      const securityInfo = getSecurityInfo(ctx);
+
+      // Send security notification about password change
+      await sendSecurityNotificationEmail(
+        user,
+        securityInfo,
+        "Password Changed Successfully",
+        { action: "Password Change" }
+      );
+
+      ctx.send({
+        message: "Password changed successfully",
+        success: true,
+      });
+    } catch (error) {
+      strapi.log.error("Change password error:", error);
+      ctx.internalServerError({
+        error: "Unable to change password. Please try again.",
+        errorCode: "CHANGE_PASSWORD_ERROR",
       });
     }
   },

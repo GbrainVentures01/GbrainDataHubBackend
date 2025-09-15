@@ -151,8 +151,7 @@ module.exports = {
     const data = await getService("user").edit({ id }, updateData);
     const sanitizedData = await sanitizeOutput(data, ctx);
 
-    // ctx.send(sanitizedData);
-    ctx.send({ data: { message: "Profile updated Successfully !" } });
+    ctx.send(sanitizedData);
   },
 
   /**
@@ -217,7 +216,15 @@ module.exports = {
    * @return {Object|Array}
    */
   async me(ctx) {
-    const id = ctx.state.params;
+    const user = ctx.state.user;
+
+    if (!user) {
+      return ctx.unauthorized();
+    }
+
+    const sanitizedUser = await sanitizeOutput(user, ctx);
+
+    ctx.body = sanitizedUser;
   },
   async getUserStat(ctx) {
     const id = ctx.state.user.id;

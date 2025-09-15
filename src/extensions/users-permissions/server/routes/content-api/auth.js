@@ -140,6 +140,7 @@ module.exports = [
     handler: "auth.mobileSetTransactionPin",
     config: {
       middlewares: ["plugin::users-permissions.rateLimit"],
+
       prefix: "",
     },
   },
@@ -174,6 +175,81 @@ module.exports = [
     method: "POST",
     path: "/auth/mobile/verify-email",
     handler: "auth.verifyEmailWithCode",
+    config: {
+      middlewares: ["plugin::users-permissions.rateLimit"],
+      prefix: "",
+    },
+  },
+  // Biometric authentication endpoints
+  {
+    method: "POST",
+    path: "/auth/biometric/enable",
+    handler: "auth.enableBiometric",
+    config: {
+      middlewares: ["plugin::users-permissions.rateLimit"],
+      prefix: "",
+    },
+  },
+  {
+    method: "POST",
+    path: "/auth/biometric/disable",
+    handler: "auth.disableBiometric",
+    config: {
+      middlewares: ["plugin::users-permissions.rateLimit"],
+      prefix: "",
+    },
+  },
+  {
+    method: "POST",
+    path: "/auth/biometric/validate",
+    handler: "auth.validateBiometric",
+    config: {
+      middlewares: ["plugin::users-permissions.rateLimit"],
+      prefix: "",
+    },
+  },
+  {
+    method: "GET",
+    path: "/auth/biometric/status",
+    handler: "auth.getBiometricStatus",
+    config: {
+      middlewares: ["plugin::users-permissions.rateLimit"],
+      prefix: "",
+    },
+  },
+  // PIN Change endpoints
+  {
+    method: "POST",
+    path: "/auth/send-pin-change-verification",
+    handler: "auth.sendPinChangeVerification",
+    config: {
+      middlewares: ["plugin::users-permissions.rateLimit"],
+      prefix: "",
+    },
+  },
+  {
+    method: "POST",
+    path: "/auth/verify-pin-change-code",
+    handler: "auth.verifyPinChangeCode",
+    config: {
+      middlewares: ["plugin::users-permissions.rateLimit"],
+      prefix: "",
+    },
+  },
+  {
+    method: "PUT",
+    path: "/auth/change-transaction-pin",
+    handler: "auth.changeTransactionPin",
+    config: {
+      middlewares: ["plugin::users-permissions.rateLimit"],
+      prefix: "",
+    },
+  },
+  // Password Change endpoint
+  {
+    method: "PUT",
+    path: "/auth/change-password",
+    handler: "auth.changePassword",
     config: {
       middlewares: ["plugin::users-permissions.rateLimit"],
       prefix: "",
