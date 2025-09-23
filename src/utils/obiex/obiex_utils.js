@@ -112,6 +112,14 @@ class ObiexAPI {
       network,
     });
   }
+
+  async generateDepositAddress(uniqueUserIdentifier, currency, network) {
+    return await this.makeRequest("addresses/broker", "POST", {
+      uniqueUserIdentifier,
+      currency,
+      network,
+    });
+  }
 }
 
 module.exports = new ObiexAPI();

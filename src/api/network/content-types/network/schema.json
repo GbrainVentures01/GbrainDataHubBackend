@@ -1,0 +1,30 @@
+{
+  "kind": "collectionType",
+  "collectionName": "networks",
+  "info": {
+    "singularName": "network",
+    "pluralName": "networks",
+    "displayName": "Network"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "image": {
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ],
+      "type": "media",
+      "multiple": false,
+      "required": true
+    }
+  }
+}
