@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * airtime-order router.
+ * data-gifting-order router.
  */
 
 const { createCoreRouter } = require("@strapi/strapi").factories;

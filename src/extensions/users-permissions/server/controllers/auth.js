@@ -2371,10 +2371,13 @@ module.exports = {
         });
       }
 
-      if (!user.hasTransactionPin) {
-        return ctx.badRequest("No transaction PIN set for this account", {
-          errorCode: "NO_PIN_SET",
-        });
+      if (!user.hasTransactionPin || !user.transactionPin) {
+        return ctx.badRequest(
+          "No transaction PIN set for this account. Please set up your transaction PIN first.",
+          {
+            errorCode: "NO_PIN_SET",
+          }
+        );
       }
 
       // Verify current PIN

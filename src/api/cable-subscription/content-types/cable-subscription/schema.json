@@ -1,0 +1,15 @@
+{
+  "kind": "collectionType",
+  "collectionName": "cable_subscriptions",
+  "info": {
+    "singularName": "cable-subscription",
+    "pluralName": "cable-subscriptions",
+    "displayName": "Cable Subscription",
+    "description": "Cable and TV subscription content type"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {}
+}

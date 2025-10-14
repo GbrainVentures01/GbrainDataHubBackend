@@ -10,5 +10,10 @@ module.exports = {
       path: "/buy-tv-cables/verify",
       handler: "tvcables-order.verifyDetails",
     },
+    {
+      method: "POST",
+      path: "/buy-tv-cables/mobile",
+      handler: "tvcables-order.mobileBuyCable",
+    },
   ],
 };

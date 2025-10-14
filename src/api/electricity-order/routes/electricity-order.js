@@ -10,5 +10,10 @@ module.exports = {
       path: "/buy-electricity/verify",
       handler: "electricity-order.verifyMeter",
     },
+    {
+      method: "POST",
+      path: "/buy-electricity/mobile",
+      handler: "electricity-order.mobileBuyElectricity",
+    },
   ],
 };

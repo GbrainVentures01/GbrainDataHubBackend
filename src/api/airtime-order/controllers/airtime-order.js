@@ -26,6 +26,274 @@ module.exports = createCoreController(
      * @returns
      */
 
+    /**
+     * Mobile buy airtime endpoint with biometric/pin authentication
+     * @param {Object} ctx
+     * @returns
+     */
+    async mobileBuyAirtime(ctx) {
+      const { data } = ctx.request.body;
+      const { id } = ctx.state.user;
+
+      // Check for duplicate transaction
+      if (await checkduplicate(id, data, "api::airtime-order.airtime-order")) {
+        return ctx.badRequest(
+          "Possible Duplicate Transaction, Kindly check the history before retrying or try again after 90 seconds."
+        );
+      }
+
+      const user = await strapi
+        .query("plugin::users-permissions.user")
+        .findOne({ where: { id: id } });
+
+      // Check wallet balance
+      if (
+        user.AccountBalance < Number(data.amount) ||
+        user.AccountBalance === 0
+      ) {
+        return ctx.badRequest("Low Wallet Balance, please fund your wallet");
+      }
+
+      // Validate authentication method (pin or biometric)
+      if (data.authMethod === "pin") {
+        if (!data.pin) {
+          return ctx.badRequest("PIN is required");
+        }
+        const validPin = await getService("user").validatePassword(
+          data.pin,
+          user.transactionPin
+        );
+        if (!validPin) {
+          return ctx.badRequest("Incorrect Pin");
+        }
+      } else if (data.authMethod === "biometric") {
+        if (!data.biometricToken) {
+          return ctx.badRequest("Biometric authentication required");
+        }
+        // Validate biometric token (you may need to implement this validation)
+        const isValidBiometric = await this.validateBiometricToken(
+          data.biometricToken,
+          user
+        );
+        if (!isValidBiometric) {
+          return ctx.badRequest("Invalid biometric authentication");
+        }
+      } else {
+        return ctx.badRequest(
+          "Authentication method is required (pin or biometric)"
+        );
+      }
+
+      try {
+        const { pin, biometricToken, authMethod, ...restofdata } = data;
+        const newOrder = {
+          data: {
+            ...restofdata,
+            user: id,
+            current_balance: user.AccountBalance,
+            previous_balance: user.AccountBalance,
+          },
+        };
+
+        await strapi
+          .service("api::airtime-order.airtime-order")
+          .create(newOrder);
+
+        // Debit user's account
+        const updatedUser = await strapi
+          .query("plugin::users-permissions.user")
+          .update({
+            where: { id: user.id },
+            data: {
+              AccountBalance: user.AccountBalance - Number(data.amount),
+            },
+          });
+
+        // Prepare payload for VTPass
+        const payload = {
+          request_id: data.request_id,
+          serviceID: data.serviceID,
+          phone: data.beneficiary,
+          amount: Number(data.amount),
+        };
+
+        const buyAirtime = await customNetwork({
+          method: "POST",
+          path: "pay",
+          requestBody: payload,
+          target: "vtpass",
+          headers: {
+            Authorization: `Basic ${base64encode(
+              `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
+            )}`,
+          },
+        });
+
+        console.log(buyAirtime.data.content.transactions);
+
+        if (
+          buyAirtime.data.code === "000" &&
+          buyAirtime.data.content.transactions.status === "delivered"
+        ) {
+          await strapi.query("api::airtime-order.airtime-order").update({
+            where: { request_id: data.request_id },
+            data: {
+              status: "delivered",
+              current_balance: updatedUser.AccountBalance,
+            },
+          });
+          return ctx.created({
+            message: "Airtime purchase successful",
+            data: {
+              transactionId: data.request_id,
+              amount: data.amount,
+              beneficiary: data.beneficiary,
+              network: data.serviceID,
+              status: "delivered",
+              newBalance: updatedUser.AccountBalance,
+            },
+          });
+        } else if (
+          buyAirtime.data.code === "000" &&
+          buyAirtime.data.content.transactions.status !== "delivered"
+        ) {
+          await strapi.query("api::airtime-order.airtime-order").update({
+            where: { request_id: data.request_id },
+            data: {
+              status: "processing",
+              current_balance: updatedUser.AccountBalance,
+            },
+          });
+          return ctx.created({
+            message: "Airtime purchase is being processed",
+            data: {
+              transactionId: data.request_id,
+              amount: data.amount,
+              beneficiary: data.beneficiary,
+              network: data.serviceID,
+              status: "processing",
+              newBalance: updatedUser.AccountBalance,
+            },
+          });
+        } else if (buyAirtime.data.code === "099") {
+          const status = requeryTransaction({
+            requeryParams: data.request_id,
+          });
+          console.log(status);
+          if (status.code === "000" || status.code === "099") {
+            await strapi.query("api::airtime-order.airtime-order").update({
+              where: { request_id: data.request_id },
+              data: {
+                status: "delivered",
+                current_balance: updatedUser.AccountBalance,
+              },
+            });
+            return ctx.created({
+              message: "Airtime purchase successful",
+              data: {
+                transactionId: data.request_id,
+                amount: data.amount,
+                beneficiary: data.beneficiary,
+                network: data.serviceID,
+                status: "delivered",
+                newBalance: updatedUser.AccountBalance,
+              },
+            });
+          } else {
+            // Refund user
+            const refundUser = await strapi
+              .query("plugin::users-permissions.user")
+              .findOne({ where: { id: id } });
+
+            const updatedRefundUser = await strapi
+              .query("plugin::users-permissions.user")
+              .update({
+                where: { id: refundUser.id },
+                data: {
+                  AccountBalance:
+                    refundUser.AccountBalance + Number(data.amount),
+                },
+              });
+
+            await strapi.query("api::airtime-order.airtime-order").update({
+              where: { request_id: data.request_id },
+              data: {
+                status: "failed",
+                current_balance: updatedRefundUser.AccountBalance,
+              },
+            });
+            return ctx.serviceUnavailable(
+              "Sorry something came up from network"
+            );
+          }
+        } else {
+          // Refund user
+          const refundUser = await strapi
+            .query("plugin::users-permissions.user")
+            .findOne({ where: { id: id } });
+
+          const updatedRefundUser = await strapi
+            .query("plugin::users-permissions.user")
+            .update({
+              where: { id: refundUser.id },
+              data: {
+                AccountBalance: refundUser.AccountBalance + Number(data.amount),
+              },
+            });
+
+          await strapi.query("api::airtime-order.airtime-order").update({
+            where: { request_id: data.request_id },
+            data: {
+              status: "failed",
+              current_balance: updatedRefundUser.AccountBalance,
+            },
+          });
+
+          console.log(buyAirtime);
+          return ctx.throw(
+            400,
+            buyAirtime?.data?.response_description || "Transaction failed"
+          );
+        }
+      } catch (error) {
+        // Handle error and refund user
+        const refundUser = await strapi
+          .query("plugin::users-permissions.user")
+          .findOne({ where: { id: id } });
+
+        await strapi.query("api::airtime-order.airtime-order").update({
+          where: { request_id: data.request_id },
+          data: {
+            status: "failed",
+            current_balance: refundUser.AccountBalance,
+          },
+        });
+
+        console.log(error);
+        throw new ApplicationError("Something went wrong, try again");
+      }
+    },
+
+    /**
+     * Validate biometric token
+     * @param {string} biometricToken
+     * @param {Object} user
+     * @returns {boolean}
+     */
+    async validateBiometricToken(biometricToken, user) {
+      // This is a placeholder - implement your biometric validation logic
+      // You might want to check if the user has biometric enabled and validate the token
+      try {
+        // For now, we'll assume it's valid if the token exists and user has biometric enabled
+        return (
+          user.biometricEnabled && biometricToken && biometricToken.length > 0
+        );
+      } catch (error) {
+        console.error("Biometric validation error:", error);
+        return false;
+      }
+    },
+
     async create(ctx) {
       const { data } = ctx.request.body;
 

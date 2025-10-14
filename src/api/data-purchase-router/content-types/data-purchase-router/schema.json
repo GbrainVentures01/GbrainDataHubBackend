@@ -1,0 +1,15 @@
+{
+  "kind": "collectionType",
+  "collectionName": "data_purchase_routers",
+  "info": {
+    "singularName": "data-purchase-router",
+    "pluralName": "data-purchase-routers",
+    "displayName": "Data Purchase Router",
+    "description": "Router for handling data purchases across different plan types"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {}
+}
