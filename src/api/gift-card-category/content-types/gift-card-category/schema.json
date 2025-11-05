@@ -27,6 +27,12 @@
     "rate": {
       "type": "float",
       "required": true
+    },
+    "gift_card_collection": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::gift-card-collection.gift-card-collection",
+      "inversedBy": "gift_card_categories"
     }
   }
 }

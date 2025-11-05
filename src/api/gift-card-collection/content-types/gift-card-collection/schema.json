@@ -30,7 +30,8 @@
     "gift_card_categories": {
       "type": "relation",
       "relation": "oneToMany",
-      "target": "api::gift-card-category.gift-card-category"
+      "target": "api::gift-card-category.gift-card-category",
+      "mappedBy": "gift_card_collection"
     },
     "rate": {
       "type": "float"
