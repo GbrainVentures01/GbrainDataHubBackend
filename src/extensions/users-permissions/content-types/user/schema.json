@@ -59,7 +59,6 @@
     },
     "transactionPin": {
       "type": "password",
-
       "configurable": false,
       "private": true
     },
@@ -223,6 +222,12 @@
       "relation": "oneToMany",
       "target": "api::verification-code.verification-code",
       "mappedBy": "user"
+    },
+    "gift_card_orders": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::gift-card-order.gift-card-order",
+      "mappedBy": "users_permissions_users_detail"
     }
   }
 }

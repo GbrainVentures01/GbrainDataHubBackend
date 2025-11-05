@@ -1,0 +1,32 @@
+{
+  "kind": "collectionType",
+  "collectionName": "gift_card_categories",
+  "info": {
+    "singularName": "gift-card-category",
+    "pluralName": "gift-card-categories",
+    "displayName": "Gift Card Category",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "image": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "rate": {
+      "type": "float",
+      "required": true
+    }
+  }
+}

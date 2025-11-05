@@ -1,0 +1,39 @@
+{
+  "kind": "collectionType",
+  "collectionName": "gift_card_collections",
+  "info": {
+    "singularName": "gift-card-collection",
+    "pluralName": "gift-card-collections",
+    "displayName": "Gift Card Collection",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "description": {
+      "type": "text"
+    },
+    "gift_card_categories": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::gift-card-category.gift-card-category"
+    },
+    "rate": {
+      "type": "float"
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "kind": "collectionType",
+  "collectionName": "gift_card_orders",
+  "info": {
+    "singularName": "gift-card-order",
+    "pluralName": "gift-card-orders",
+    "displayName": "Gift Card Order",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "amount": {
+      "type": "biginteger",
+      "required": true
+    },
+    "gift_card_collection": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::gift-card-collection.gift-card-collection"
+    },
+    "users_permissions_users_detail": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "gift_card_orders"
+    },
+    "card_images": {
+      "type": "media",
+      "multiple": true,
+      "required": true,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "gift_card_category": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::gift-card-category.gift-card-category"
+    },
+    "comments": {
+      "type": "text"
+    }
+  }
+}
