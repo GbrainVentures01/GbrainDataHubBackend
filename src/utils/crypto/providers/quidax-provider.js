@@ -24,9 +24,9 @@ class QuidaxProvider extends BaseCryptoProvider {
   }
 
   onRequest(requestConfig) {
-    // Quidax uses Bearer token authentication
-    if (this.apiKey) {
-      requestConfig.headers["Authorization"] = `Bearer ${this.apiKey}`;
+    // Quidax uses Bearer token authentication with secret key
+    if (this.apiSecret) {
+      requestConfig.headers["Authorization"] = `Bearer ${this.apiSecret}`;
     }
 
     return requestConfig;
