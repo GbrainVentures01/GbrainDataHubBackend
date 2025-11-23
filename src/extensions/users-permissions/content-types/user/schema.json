@@ -217,6 +217,13 @@
       "type": "float",
       "default": 0
     },
+    "quidax_user_id": {
+      "type": "string",
+      "unique": true
+    },
+    "quidax_sn": {
+      "type": "string"
+    },
     "verificationCodes": {
       "type": "relation",
       "relation": "oneToMany",

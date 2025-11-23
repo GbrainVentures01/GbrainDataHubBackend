@@ -1,0 +1,28 @@
+{
+  "kind": "collectionType",
+  "collectionName": "quidax_webhooks",
+  "info": {
+    "singularName": "quidax-webhook",
+    "pluralName": "quidax-webhooks",
+    "displayName": "Quidax Webhook",
+    "description": "Store Quidax webhook events"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "event": {
+      "type": "string",
+      "required": true
+    },
+    "payload": {
+      "type": "json",
+      "required": true
+    },
+    "processed": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

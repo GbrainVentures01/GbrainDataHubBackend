@@ -77,25 +77,30 @@ module.exports = createCoreService(
     },
 
     /**
-     * Sync crypto tokens and networks from OBIEX API
-     * This service fetches supported tokens from OBIEX and updates the local database
+     * Sync crypto tokens and networks from active crypto provider API
+     * This service fetches supported tokens from the active provider and updates the local database
      */
-    async syncTokensFromObiex() {
+    async syncTokensFromProvider() {
       try {
-        const obiexAPI = require("../../../utils/obiex/obiex_utils");
+        const cryptoProviderFactory = require("../../../utils/crypto/crypto-provider-factory");
+        const provider = cryptoProviderFactory.getActiveProvider();
 
-        console.log("🔄 Starting OBIEX token synchronization...");
+        console.log(
+          `🔄 Starting ${provider.getProviderName()} token synchronization...`
+        );
 
-        // Fetch supported tokens from OBIEX
-        const obiexResponse = await obiexAPI.getSupportedTokens();
-        const obiexTokens = obiexResponse?.data || {};
+        // Fetch supported tokens from active provider
+        const providerResponse = await provider.getSupportedTokens();
+        const providerTokens = providerResponse?.data || {};
 
-        if (!obiexTokens || Object.keys(obiexTokens).length === 0) {
-          throw new Error("No tokens received from OBIEX API");
+        if (!providerTokens || Object.keys(providerTokens).length === 0) {
+          throw new Error(
+            `No tokens received from ${provider.getProviderName()} API`
+          );
         }
 
         console.log(
-          `📋 Found ${Object.keys(obiexTokens).length} tokens from OBIEX`
+          `📋 Found ${Object.keys(providerTokens).length} tokens from ${provider.getProviderName()}`
         );
 
         let syncStats = {
@@ -107,8 +112,10 @@ module.exports = createCoreService(
           errors: [],
         };
 
-        // Process each token from OBIEX
-        for (const [currencyCode, tokenData] of Object.entries(obiexTokens)) {
+        // Process each token from provider
+        for (const [currencyCode, tokenData] of Object.entries(
+          providerTokens
+        )) {
           try {
             syncStats.tokensProcessed++;
 
