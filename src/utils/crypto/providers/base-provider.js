@@ -75,8 +75,23 @@ class BaseCryptoProvider {
   }
 
   /**
+   * Setup user account on the provider platform
+   * This method handles provider-specific account setup (e.g., sub-accounts for Quidax)
+   * @param {Object} userData - User data from Strapi
+   * @param {number} userData.id - User ID
+   * @param {string} userData.email - User email
+   * @param {string} userData.username - Username
+   * @param {string} [userData.quidax_user_id] - Existing Quidax user ID (if any)
+   * @param {string} [userData.quidax_sn] - Existing Quidax SN (if any)
+   * @returns {Promise<Object>} - Account setup result with user identifier and metadata
+   */
+  async setupUserAccount(userData) {
+    throw new Error("Method 'setupUserAccount()' must be implemented");
+  }
+
+  /**
    * Generate deposit address for a user
-   * @param {string} uniqueUserIdentifier - Unique user identifier
+   * @param {string} uniqueUserIdentifier - Unique user identifier (from setupUserAccount)
    * @param {string} currency - Currency code
    * @param {string} network - Network name
    * @returns {Promise<Object>} - Deposit address details

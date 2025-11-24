@@ -132,15 +132,68 @@ class QuidaxProvider extends BaseCryptoProvider {
     };
   }
 
+  async setupUserAccount(userData) {
+    // Check if user already has Quidax sub-account
+    if (userData.quidax_user_id) {
+      console.log(
+        `✅ User ${userData.id} already has Quidax sub-account: ${userData.quidax_user_id}`
+      );
+
+      return {
+        success: true,
+        userIdentifier: userData.quidax_user_id,
+        needsUpdate: false,
+        updateData: {},
+        isNewAccount: false,
+      };
+    }
+
+    // Create new Quidax sub-account
+    console.log(
+      `📝 User ${userData.id} doesn't have Quidax sub-account. Creating one...`
+    );
+
+    // Extract first and last name from username or email
+    const nameParts = (userData.username || userData.email.split("@")[0]).split(
+      " "
+    );
+    const firstName = nameParts[0] || "User";
+    const lastName = nameParts[1] || nameParts[0];
+
+    try {
+      const subAccountResult = await this.createSubAccount({
+        email: userData.email,
+        first_name: firstName,
+        last_name: lastName,
+      });
+
+      console.log(
+        `✅ Quidax sub-account created for user ${userData.id}: ${subAccountResult.data.quidax_user_id}`
+      );
+
+      return {
+        success: true,
+        userIdentifier: subAccountResult.data.quidax_user_id,
+        needsUpdate: true,
+        updateData: {
+          quidax_user_id: subAccountResult.data.quidax_user_id,
+          quidax_sn: subAccountResult.data.quidax_sn,
+        },
+        isNewAccount: true,
+      };
+    } catch (error) {
+      console.error(
+        `❌ Failed to create Quidax sub-account for user ${userData.id}:`,
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  }
+
   async generateDepositAddress(uniqueUserIdentifier, currency, network) {
-    // For Quidax, we need to ensure sub-account exists first
-    // This method is called from the controller which will handle the user flow
-    // Here we just generate the address for an existing user_id
-    
-    // Extract user_id if it was stored (format: quidax_user_id)
-    // Otherwise, this should be called after createSubAccount
-    const userId = uniqueUserIdentifier.replace('quidax_', '');
-    
+    // For Quidax, uniqueUserIdentifier is the quidax_user_id
+    const userId = uniqueUserIdentifier;
+
     const response = await this.makeRequest(
       `users/${userId}/wallets/${currency.toLowerCase()}/address`,
       "POST"

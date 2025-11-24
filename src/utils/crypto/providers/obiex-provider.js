@@ -118,6 +118,23 @@ class ObiexProvider extends BaseCryptoProvider {
     });
   }
 
+  async setupUserAccount(userData) {
+    // Obiex doesn't require sub-account creation
+    // Simply return a unique identifier for the user
+    const uniqueUserIdentifier = `user_${userData.id}`;
+
+    console.log(
+      `✅ Obiex user setup for user ${userData.id}: ${uniqueUserIdentifier}`
+    );
+
+    return {
+      success: true,
+      userIdentifier: uniqueUserIdentifier,
+      needsUpdate: false, // No database fields need updating
+      updateData: {}, // No data to save
+    };
+  }
+
   async generateDepositAddress(uniqueUserIdentifier, currency, network) {
     return await this.makeRequest("addresses/broker", "POST", {
       uniqueUserIdentifier,

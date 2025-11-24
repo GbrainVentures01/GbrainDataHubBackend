@@ -39,9 +39,9 @@ module.exports = createCoreController("api::crypto.crypto", ({ strapi }) => ({
       // Get user details
       const user = await strapi
         .query("plugin::users-permissions.user")
-        .findOne({ 
+        .findOne({
           where: { id: userId },
-          select: ['id', 'email', 'username', 'quidax_user_id', 'quidax_sn']
+          select: ["id", "email", "username", "quidax_user_id", "quidax_sn"],
         });
 
       if (!user) {
@@ -54,93 +54,40 @@ module.exports = createCoreController("api::crypto.crypto", ({ strapi }) => ({
         `🔄 Generating deposit address using ${provider.getProviderName()}`
       );
 
-      let depositAddressResponse;
+      // Setup user account on the provider (creates sub-account if needed)
+      const accountSetup = await provider.setupUserAccount(user);
 
-      // Handle Quidax-specific flow
-      if (provider.getProviderName() === "Quidax") {
-        // Check if user has Quidax sub-account
-        if (!user.quidax_user_id) {
-          console.log(
-            `📝 User ${userId} doesn't have Quidax sub-account. Creating one...`
-          );
+      if (!accountSetup.success) {
+        throw new ApplicationError("Failed to setup crypto account");
+      }
 
-          // Extract first and last name from username or email
-          const nameParts = (user.username || user.email.split('@')[0]).split(' ');
-          const firstName = nameParts[0] || 'User';
-          const lastName = nameParts[1] || nameParts[0];
+      // Update user record if needed (e.g., save quidax_user_id)
+      if (accountSetup.needsUpdate && accountSetup.updateData) {
+        await strapi.query("plugin::users-permissions.user").update({
+          where: { id: userId },
+          data: accountSetup.updateData,
+        });
 
-          // Create Quidax sub-account
-          try {
-            const subAccountResult = await provider.createSubAccount({
-              email: user.email,
-              first_name: firstName,
-              last_name: lastName,
-            });
-
-            // Update user with Quidax details
-            await strapi.query("plugin::users-permissions.user").update({
-              where: { id: userId },
-              data: {
-                quidax_user_id: subAccountResult.data.quidax_user_id,
-                quidax_sn: subAccountResult.data.quidax_sn,
-              },
-            });
-
-            console.log(
-              `✅ Quidax sub-account created and saved for user ${userId}`
-            );
-
-            // Generate wallet address for the new sub-account
-            const walletResult = await provider.getOrCreateWalletAddress(
-              subAccountResult.data.quidax_user_id,
-              currency
-            );
-
-            depositAddressResponse = {
-              data: {
-                ...walletResult.data,
-                is_new_account: true,
-              },
-            };
-          } catch (error) {
-            console.error("Failed to create Quidax sub-account:", error);
-            throw new ApplicationError(
-              "Failed to create crypto account. Please try again."
-            );
-          }
-        } else {
-          // User already has Quidax sub-account, just get/create wallet address
-          console.log(
-            `✅ User ${userId} already has Quidax sub-account: ${user.quidax_user_id}`
-          );
-
-          const walletResult = await provider.getOrCreateWalletAddress(
-            user.quidax_user_id,
-            currency
-          );
-
-          depositAddressResponse = {
-            data: {
-              ...walletResult.data,
-              is_new_account: false,
-            },
-          };
-        }
-      } else {
-        // For Obiex and other providers, use standard flow
-        const uniqueUserIdentifier = `user_${userId}`;
-        depositAddressResponse = await provider.generateDepositAddress(
-          uniqueUserIdentifier,
-          currency,
-          network
+        console.log(
+          `✅ User ${userId} updated with provider account details`
         );
       }
+
+      // Generate wallet address using the user identifier from account setup
+      const depositAddressResponse = await provider.generateDepositAddress(
+        accountSetup.userIdentifier,
+        currency,
+        network
+      );
 
       // Return the response from provider
       return ctx.send({
         message: "Deposit address generated successfully",
         provider: provider.getProviderName(),
-        data: depositAddressResponse.data,
+        data: {
+          ...depositAddressResponse.data,
+          is_new_account: accountSetup.isNewAccount || false,
+        },
       });
     } catch (error) {
       console.error("Crypto deposit address generation error:", error);
