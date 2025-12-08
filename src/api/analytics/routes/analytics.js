@@ -5,8 +5,8 @@ module.exports = {
       path: '/analytics/dashboard',
       handler: 'analytics.getDashboardStats',
       config: {
-        auth: false,
-        policies: ['admin::isAuthenticatedAdmin'],
+   policies: [],
+        middlewares: [],
       },
     },
     {
@@ -14,8 +14,8 @@ module.exports = {
       path: '/analytics/services/stats',
       handler: 'analytics.getServiceStats',
       config: {
-        auth: false,
-        policies: ['admin::isAuthenticatedAdmin'],
+   policies: [],
+        middlewares: [],
       },
     },
     {
@@ -23,8 +23,8 @@ module.exports = {
       path: '/analytics/revenue',
       handler: 'analytics.getRevenueStats',
       config: {
-        auth: false,
-        policies: ['admin::isAuthenticatedAdmin'],
+     policies: [],
+        middlewares: [],
       },
     },
     {
@@ -32,8 +32,8 @@ module.exports = {
       path: '/analytics/transactions',
       handler: 'analytics.getTransactions',
       config: {
-        auth: false,
-        policies: ['admin::isAuthenticatedAdmin'],
+      policies: [],
+        middlewares: [],
       },
     },
     {
@@ -41,8 +41,8 @@ module.exports = {
       path: '/analytics/webhook-logs',
       handler: 'analytics.getWebhookLogs',
       config: {
-        auth: false,
-        policies: ['admin::isAuthenticatedAdmin'],
+       policies: [],
+        middlewares: [],
       },
     },
   ],
