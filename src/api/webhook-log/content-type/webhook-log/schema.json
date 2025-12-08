@@ -1,0 +1,71 @@
+{
+  "kind": "collectionType",
+  "collectionName": "webhook_logs",
+  "info": {
+    "singularName": "webhook-log",
+    "pluralName": "webhook-logs",
+    "displayName": "Webhook Log"
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true,
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "provider": {
+      "type": "enumeration",
+      "enum": ["obiex", "quidax", "monnify", "flutterwave", "vtpass", "datahouse", "ogdams"],
+      "required": true,
+      "maxLength": 50
+    },
+    "event_type": {
+      "type": "string",
+      "required": true,
+      "maxLength": 100,
+      "example": "wallet.address.generated"
+    },
+    "payload": {
+      "type": "json",
+      "required": true,
+      "description": "Full webhook payload received"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["received", "processing", "processed", "failed"],
+      "default": "received",
+      "required": true
+    },
+    "transaction_id": {
+      "type": "string",
+      "maxLength": 255,
+      "description": "Transaction ID from provider"
+    },
+    "reference_id": {
+      "type": "string",
+      "maxLength": 255,
+      "description": "Internal reference ID (order ID, etc)"
+    },
+    "error_message": {
+      "type": "text",
+      "description": "Error details if processing failed"
+    },
+    "error_code": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "ip_address": {
+      "type": "string",
+      "maxLength": 45
+    },
+    "user_agent": {
+      "type": "string"
+    },
+    "processed_at": {
+      "type": "datetime"
+    },
+    "retry_count": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

@@ -5,7 +5,7 @@
     "singularName": "account-funding",
     "pluralName": "account-fundings",
     "displayName": "Account Funding",
-    "description": ""
+    "description": "Tracks all account funding transactions (bank transfers, card payments, crypto deposits)"
   },
   "options": {
     "draftAndPublish": false
@@ -14,45 +14,127 @@
   "attributes": {
     "TRX_Name": {
       "type": "string",
-      "required": true
+      "required": true,
+      "description": "Transaction name/description"
     },
     "tx_ref": {
       "type": "string",
-      "required": true
+      "required": true,
+      "description": "Transaction reference ID"
     },
     "amount": {
       "type": "decimal",
-      "required": true
+      "precision": 18,
+      "scale": 8,
+      "required": true,
+      "description": "Amount in transaction currency"
     },
     "customer": {
       "type": "email",
-      "required": true
+      "required": true,
+      "description": "Customer email address"
     },
     "status": {
       "type": "enumeration",
       "enum": [
         "Pending",
         "Success",
-        "Failed"
+        "Failed",
+        "Confirming",
+        "Completed"
       ],
       "required": true,
-      "default": "Pending"
+      "default": "Pending",
+      "description": "Transaction status"
     },
     "previous_balance": {
-      "type": "decimal"
+      "type": "decimal",
+      "precision": 18,
+      "scale": 2,
+      "description": "Balance before transaction"
     },
     "current_balance": {
-      "type": "decimal"
+      "type": "decimal",
+      "precision": 18,
+      "scale": 2,
+      "description": "Balance after transaction"
     },
     "transaction_id": {
       "type": "string",
-      "required": false
+      "required": false,
+      "description": "Provider transaction ID (gateway/crypto provider)"
     },
     "user": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
       "inversedBy": "account_fundings"
+    },
+    "funding_type": {
+      "type": "enumeration",
+      "enum": [
+        "bank_transfer",
+        "card_payment",
+        "crypto_deposit",
+        "wallet_deposit",
+        "referral_bonus",
+        "other"
+      ],
+      "required": true,
+      "default": "bank_transfer",
+      "description": "Type of funding source"
+    },
+    "provider": {
+      "type": "string",
+      "maxLength": 50,
+      "description": "Payment provider (e.g., flutterwave, monnify, obiex, quidax)"
+    },
+    "currency": {
+      "type": "string",
+      "maxLength": 10,
+      "description": "Currency code (NGN, USD, BTC, ETH, etc.)"
+    },
+    "network": {
+      "type": "string",
+      "maxLength": 50,
+      "description": "Blockchain network for crypto (Bitcoin, Ethereum, TRC20, etc.)"
+    },
+    "wallet_address": {
+      "type": "string",
+      "maxLength": 255,
+      "description": "Wallet address for crypto deposits"
+    },
+    "destination_tag": {
+      "type": "string",
+      "maxLength": 255,
+      "description": "Destination tag or memo for crypto (e.g., XRP)"
+    },
+    "tx_hash": {
+      "type": "string",
+      "maxLength": 255,
+      "description": "Blockchain transaction hash"
+    },
+    "confirmations": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of blockchain confirmations"
+    },
+    "required_confirmations": {
+      "type": "integer",
+      "default": 1,
+      "description": "Required confirmations for completion"
+    },
+    "received_at": {
+      "type": "datetime",
+      "description": "When crypto deposit was received"
+    },
+    "completed_at": {
+      "type": "datetime",
+      "description": "When transaction was completed"
+    },
+    "notes": {
+      "type": "text",
+      "description": "Internal notes or error messages"
     }
   }
 }

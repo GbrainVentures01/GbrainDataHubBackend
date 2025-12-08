@@ -1,0 +1,104 @@
+{
+  "kind": "collectionType",
+  "collectionName": "optimized_transaction_histories",
+  "info": {
+    "singularName": "optimized-transaction-history",
+    "pluralName": "optimized-transaction-histories",
+    "displayName": "Optimized Transaction History"
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true,
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "service": {
+      "type": "enumeration",
+      "enum": ["airtime", "data", "cable", "electricity", "education", "crypto", "gift_card", "account_funding", "sell_airtime"],
+      "required": true
+    },
+    "service_subtype": {
+      "type": "string",
+      "maxLength": 50,
+      "description": "More specific service type (e.g., 'data_gifting', 'sme_data', 'exam_pin')"
+    },
+    "transaction_type": {
+      "type": "enumeration",
+      "enum": ["purchase", "deposit", "withdrawal", "refund", "reversal"],
+      "default": "purchase",
+      "required": true
+    },
+    "reference_id": {
+      "type": "string",
+      "maxLength": 255,
+      "required": true,
+      "description": "Primary key from source table (e.g., airtime_order_id)"
+    },
+    "reference_table": {
+      "type": "string",
+      "maxLength": 100,
+      "required": true,
+      "description": "Source table name"
+    },
+    "amount": {
+      "type": "decimal",
+      "precision": 18,
+      "scale": 2,
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "processing", "completed", "failed", "cancelled", "refunded"],
+      "default": "pending",
+      "required": true
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Human-readable transaction description"
+    },
+    "network": {
+      "type": "string",
+      "maxLength": 50,
+      "description": "Network name (e.g., 'MTN', 'TRC20', 'ERC20')"
+    },
+    "beneficiary": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Phone number, email, wallet address, or recipient identifier"
+    },
+    "previous_balance": {
+      "type": "decimal",
+      "precision": 18,
+      "scale": 2
+    },
+    "current_balance": {
+      "type": "decimal",
+      "precision": 18,
+      "scale": 2
+    },
+    "metadata": {
+      "type": "json",
+      "description": "Service-specific data (currency for crypto, network for data, etc)"
+    },
+    "provider": {
+      "type": "string",
+      "maxLength": 50,
+      "description": "External provider name if applicable"
+    },
+    "provider_reference": {
+      "type": "string",
+      "maxLength": 255,
+      "description": "Provider transaction ID"
+    },
+    "notes": {
+      "type": "text"
+    }
+  }
+}

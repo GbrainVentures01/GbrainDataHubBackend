@@ -1,0 +1,92 @@
+{
+  "kind": "collectionType",
+  "collectionName": "service_stats",
+  "info": {
+    "singularName": "service-stat",
+    "pluralName": "service-stats",
+    "displayName": "Service Stat (Daily Aggregated)"
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true,
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "service": {
+      "type": "enumeration",
+      "enum": ["airtime", "data", "cable", "electricity", "education", "crypto", "gift_card", "sell_airtime"],
+      "required": true
+    },
+    "service_subtype": {
+      "type": "string",
+      "maxLength": 50,
+      "description": "e.g., 'data_gifting', 'sme_data', 'exam_pin'"
+    },
+    "stat_date": {
+      "type": "date",
+      "required": true,
+      "description": "Date for which stats are aggregated"
+    },
+    "network": {
+      "type": "string",
+      "maxLength": 50,
+      "description": "Network filter (e.g., 'MTN', 'Airtel')"
+    },
+    "total_transactions": {
+      "type": "integer",
+      "default": 0
+    },
+    "total_amount": {
+      "type": "decimal",
+      "precision": 18,
+      "scale": 2,
+      "default": 0
+    },
+    "successful_transactions": {
+      "type": "integer",
+      "default": 0
+    },
+    "successful_amount": {
+      "type": "decimal",
+      "precision": 18,
+      "scale": 2,
+      "default": 0
+    },
+    "failed_transactions": {
+      "type": "integer",
+      "default": 0
+    },
+    "failed_amount": {
+      "type": "decimal",
+      "precision": 18,
+      "scale": 2,
+      "default": 0
+    },
+    "pending_transactions": {
+      "type": "integer",
+      "default": 0
+    },
+    "pending_amount": {
+      "type": "decimal",
+      "precision": 18,
+      "scale": 2,
+      "default": 0
+    },
+    "average_amount": {
+      "type": "decimal",
+      "precision": 18,
+      "scale": 2,
+      "default": 0
+    },
+    "unique_users": {
+      "type": "integer",
+      "default": 0
+    },
+    "success_rate": {
+      "type": "decimal",
+      "precision": 5,
+      "scale": 2,
+      "description": "Percentage (0-100)"
+    }
+  }
+}
