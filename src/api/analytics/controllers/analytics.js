@@ -182,17 +182,17 @@ module.exports = {
       });
 
       // Get total active users and recent transactions in parallel
-      const [totalUsers, recentAirtime, recentData, recentCable, recentElectricity] = await Promise.all([
+      const [totalUsers, recentAirtime, recentData, recentCable, recentElectricity, recentCrypto, recentGiftCard, recentAccountFunding] = await Promise.all([
         strapi.db.query('plugin::users-permissions.user').count(),
         strapi.db.query('api::airtime-order.airtime-order').findMany({
           where: whereDate,
-          limit: 3,
+          limit: 2,
           orderBy: { createdAt: 'desc' },
           populate: ['user'],
         }).catch(() => []),
         strapi.db.query('api::sme-data-order.sme-data-order').findMany({
           where: whereDate,
-          limit: 3,
+          limit: 2,
           orderBy: { createdAt: 'desc' },
           populate: ['user'],
         }).catch(() => []),
@@ -208,14 +208,35 @@ module.exports = {
           orderBy: { createdAt: 'desc' },
           populate: ['user'],
         }).catch(() => []),
+        strapi.db.query('api::crypto.crypto').findMany({
+          where: whereDate,
+          limit: 2,
+          orderBy: { createdAt: 'desc' },
+          populate: ['user'],
+        }).catch(() => []),
+        strapi.db.query('api::gift-card-order.gift-card-order').findMany({
+          where: whereDate,
+          limit: 2,
+          orderBy: { createdAt: 'desc' },
+          populate: ['user'],
+        }).catch(() => []),
+        strapi.db.query('api::account-funding.account-funding').findMany({
+          where: whereDate,
+          limit: 2,
+          orderBy: { createdAt: 'desc' },
+          populate: ['user'],
+        }).catch(() => []),
       ]);
 
       // Combine and sort recent transactions
       const recentTransactions = [
         ...recentAirtime.map(t => ({ ...t, service: 'airtime', amount: t.amount })),
         ...recentData.map(t => ({ ...t, service: 'data', amount: t.amount })),
-        ...recentCable.map(t => ({ ...t, service: 'cable', amount: t.amount || t.amount_to_pay })),
+        ...recentCable.map(t => ({ ...t, service: 'cable', amount: t.amount || t.sub_amount })),
         ...recentElectricity.map(t => ({ ...t, service: 'electricity', amount: t.amount || t.amount_to_pay })),
+        ...recentCrypto.map(t => ({ ...t, service: 'crypto', amount: t.amount || t.usd_amount })),
+        ...recentGiftCard.map(t => ({ ...t, service: 'gift_card', amount: t.price || t.total_amount })),
+        ...recentAccountFunding.map(t => ({ ...t, service: 'account_funding', amount: t.amount })),
       ]
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 10);
@@ -224,6 +245,34 @@ module.exports = {
       const successRate = aggregated.total_transactions > 0
         ? ((aggregated.successful_transactions / aggregated.total_transactions) * 100).toFixed(2)
         : 0;
+
+      // Get chart data for time series
+      // const knex = strapi.db.connection;
+      // const chartData = await knex.raw(`
+      //   SELECT 
+      //     DATE(created_at) as date,
+      //     COUNT(*) as transactions,
+      //     SUM(COALESCE(amount, 0)) as revenue
+      //   FROM (
+      //     SELECT created_at, amount FROM airtime_orders WHERE created_at >= ? AND created_at <= ?
+      //     UNION ALL
+      //     SELECT created_at, amount FROM sme_data_orders WHERE created_at >= ? AND created_at <= ?
+      //     UNION ALL
+      //     SELECT created_at, amount FROM cg_data_orders WHERE created_at >= ? AND created_at <= ?
+      //     UNION ALL
+      //     SELECT created_at, amount FROM cable_subscriptions WHERE created_at >= ? AND created_at <= ?
+      //     UNION ALL
+      //     SELECT created_at, amount FROM account_fundings WHERE created_at >= ? AND created_at <= ?
+      //   ) as all_transactions
+      //   GROUP BY DATE(created_at)
+      //   ORDER BY date ASC
+      // `, [fromDate, toDate, fromDate, toDate, fromDate, toDate, fromDate, toDate, fromDate, toDate]);
+
+      // const formattedChartData = (chartData.rows || []).map(row => ({
+      //   date: row.date,
+      //   transactions: parseInt(row.transactions) || 0,
+      //   revenue: parseFloat(row.revenue) || 0,
+      // }));
 
       ctx.send({
         success: true,
@@ -237,6 +286,7 @@ module.exports = {
           successRate: parseFloat(successRate),
           totalUsers,
           byService: aggregated.by_service,
+          // chartData: formattedChartData,
           recentTransactions: recentTransactions.map(t => ({
             id: t.id,
             service: t.service,
@@ -250,6 +300,240 @@ module.exports = {
       });
     } catch (error) {
       console.error('Dashboard stats error:', error);
+      ctx.send({
+        success: false,
+        error: error.message,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  },
+
+  /**
+   * Get chart data for analytics dashboard
+   * Supports filters: today, this_week, this_month, custom
+   */
+  async getChartData(ctx) {
+    try {
+      const { filter = 'this_month', dateFrom, dateTo, groupBy = 'day' } = ctx.query;
+      
+      let fromDate, toDate;
+      const now = new Date();
+      
+      switch(filter) {
+        case 'today':
+          fromDate = new Date(now.setHours(0, 0, 0, 0)).toISOString();
+          toDate = new Date(now.setHours(23, 59, 59, 999)).toISOString();
+          break;
+        case 'this_week':
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          startOfWeek.setHours(0, 0, 0, 0);
+          fromDate = startOfWeek.toISOString();
+          toDate = new Date().toISOString();
+          break;
+        case 'this_month':
+          fromDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+          toDate = new Date().toISOString();
+          break;
+        case 'custom':
+          if (!dateFrom || !dateTo) {
+            return ctx.badRequest('dateFrom and dateTo are required for custom filter');
+          }
+          fromDate = new Date(dateFrom).toISOString();
+          toDate = new Date(dateTo).toISOString();
+          break;
+        default:
+          fromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+          toDate = new Date().toISOString();
+      }
+
+      const knex = strapi.db.connection;
+      
+      // Helper to get time series data for a table
+      const getTableTimeSeries = async (tableName, amountCol, statusCol) => {
+        try {
+          const hasTable = await knex.schema.hasTable(tableName);
+          if (!hasTable) return [];
+
+          const hasAmount = await knex.schema.hasColumn(tableName, amountCol);
+          const hasStatus = await knex.schema.hasColumn(tableName, statusCol);
+
+          if (!hasAmount && !hasStatus) return [];
+
+          const result = await knex(tableName)
+            .select(knex.raw('DATE(created_at) as date'))
+            .count('* as count')
+            .modify(qb => {
+              if (hasAmount) {
+                qb.sum(knex.raw(`COALESCE(${amountCol}, 0) as amount`));
+              }
+              if (hasStatus) {
+                qb.sum(knex.raw(`CASE WHEN ${statusCol} IN ('completed', 'successful', 'success') THEN 1 ELSE 0 END as successful`));
+                qb.sum(knex.raw(`CASE WHEN ${statusCol} IN ('failed', 'failure') THEN 1 ELSE 0 END as failed`));
+              }
+            })
+            .where('created_at', '>=', fromDate)
+            .where('created_at', '<=', toDate)
+            .groupByRaw('DATE(created_at)')
+            .orderBy('date', 'asc');
+
+          return result.map(row => ({
+            date: row.date,
+            count: parseInt(row.count) || 0,
+            amount: parseFloat(row.amount) || 0,
+            successful: parseInt(row.successful) || 0,
+            failed: parseInt(row.failed) || 0,
+          }));
+        } catch (error) {
+          console.error(`Error fetching time series for ${tableName}:`, error.message);
+          return [];
+        }
+      };
+
+      // Get time series data from all tables
+      const [
+        airtimeTS,
+        smeDataTS,
+        cgDataTS,
+        dataGiftingTS,
+        mtnCouponTS,
+        mtnSme1TS,
+        mtnSme2TS,
+        cableTS,
+        accountFundingTS,
+        cryptoTS,
+        giftCardTS,
+      ] = await Promise.all([
+        getTableTimeSeries('airtime_orders', 'amount', 'status'),
+        getTableTimeSeries('sme_data_orders', 'amount', 'status'),
+        getTableTimeSeries('cg_data_orders', 'amount', 'status'),
+        getTableTimeSeries('data_gifting_orders', 'amount', 'status'),
+        getTableTimeSeries('mtn_coupon_data_orders', 'amount', 'status'),
+        getTableTimeSeries('mtn_sme_1_data_orders', 'amount', 'status'),
+        getTableTimeSeries('mtn_sme_2_data_orders', 'amount', 'status'),
+        getTableTimeSeries('cable_subscriptions', 'amount', 'status'),
+        getTableTimeSeries('account_fundings', 'amount', 'status'),
+        getTableTimeSeries('cryptos', 'amount', 'status'),
+        getTableTimeSeries('gift_card_orders', 'price', 'order_status'),
+      ]);
+
+      // Merge all time series data by date
+      const timeSeriesMap = {};
+      const allTimeSeries = [
+        ...airtimeTS, ...smeDataTS, ...cgDataTS, ...dataGiftingTS,
+        ...mtnCouponTS, ...mtnSme1TS, ...mtnSme2TS,
+        ...cableTS, ...accountFundingTS, ...cryptoTS, ...giftCardTS
+      ];
+
+      allTimeSeries.forEach(item => {
+        const dateKey = item.date.toISOString ? item.date.toISOString().split('T')[0] : item.date;
+        if (!timeSeriesMap[dateKey]) {
+          timeSeriesMap[dateKey] = {
+            date: dateKey,
+            transactions: 0,
+            revenue: 0,
+            successful: 0,
+            failed: 0,
+          };
+        }
+        timeSeriesMap[dateKey].transactions += item.count;
+        timeSeriesMap[dateKey].revenue += item.amount;
+        timeSeriesMap[dateKey].successful += item.successful;
+        timeSeriesMap[dateKey].failed += item.failed;
+      });
+
+      const timeSeries = Object.values(timeSeriesMap).sort((a, b) => 
+        new Date(a.date) - new Date(b.date)
+      );
+
+      // Helper to get service breakdown
+      const getServiceBreakdown = async (tableName, serviceName, amountCol) => {
+        try {
+          const hasTable = await knex.schema.hasTable(tableName);
+          if (!hasTable) return { service: serviceName, count: 0, revenue: 0 };
+
+          const hasAmount = await knex.schema.hasColumn(tableName, amountCol);
+
+          const result = await knex(tableName)
+            .count('* as count')
+            .modify(qb => {
+              if (hasAmount) {
+                qb.sum(knex.raw(`COALESCE(${amountCol}, 0) as revenue`));
+              } else {
+                qb.select(knex.raw('0 as revenue'));
+              }
+            })
+            .where('created_at', '>=', fromDate)
+            .where('created_at', '<=', toDate)
+            .first();
+
+          return {
+            service: serviceName,
+            count: parseInt(result.count) || 0,
+            revenue: parseFloat(result.revenue) || 0,
+          };
+        } catch (error) {
+          console.error(`Error fetching breakdown for ${tableName}:`, error.message);
+          return { service: serviceName, count: 0, revenue: 0 };
+        }
+      };
+
+      // Get service breakdown from all tables
+      const [
+        airtimeBD,
+        smeDataBD,
+        cgDataBD,
+        dataGiftingBD,
+        mtnCouponBD,
+        mtnSme1BD,
+        mtnSme2BD,
+        cableBD,
+        accountFundingBD,
+        cryptoBD,
+        giftCardBD,
+      ] = await Promise.all([
+        getServiceBreakdown('airtime_orders', 'airtime', 'amount'),
+        getServiceBreakdown('sme_data_orders', 'data', 'amount'),
+        getServiceBreakdown('cg_data_orders', 'data', 'amount'),
+        getServiceBreakdown('data_gifting_orders', 'data', 'amount'),
+        getServiceBreakdown('mtn_coupon_data_orders', 'data', 'amount'),
+        getServiceBreakdown('mtn_sme_1_data_orders', 'data', 'amount'),
+        getServiceBreakdown('mtn_sme_2_data_orders', 'data', 'amount'),
+        getServiceBreakdown('cable_subscriptions', 'cable', 'amount'),
+        getServiceBreakdown('account_fundings', 'account_funding', 'amount'),
+        getServiceBreakdown('cryptos', 'crypto', 'amount'),
+        getServiceBreakdown('gift_card_orders', 'gift_card', 'price'),
+      ]);
+
+      // Aggregate by service
+      const serviceMap = {};
+      const allBreakdowns = [
+        airtimeBD, smeDataBD, cgDataBD, dataGiftingBD,
+        mtnCouponBD, mtnSme1BD, mtnSme2BD,
+        cableBD, accountFundingBD, cryptoBD, giftCardBD
+      ];
+
+      allBreakdowns.forEach(item => {
+        if (!serviceMap[item.service]) {
+          serviceMap[item.service] = { service: item.service, count: 0, revenue: 0 };
+        }
+        serviceMap[item.service].count += item.count;
+        serviceMap[item.service].revenue += item.revenue;
+      });
+
+      const serviceBreakdown = Object.values(serviceMap);
+
+      ctx.send({
+        success: true,
+        filter,
+        dateRange: { from: fromDate, to: toDate },
+        data: {
+          timeSeries,
+          serviceBreakdown,
+        },
+      });
+    } catch (error) {
+      console.error('Chart data error:', error);
       ctx.send({
         success: false,
         error: error.message,

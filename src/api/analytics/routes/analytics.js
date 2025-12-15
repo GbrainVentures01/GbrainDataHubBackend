@@ -11,6 +11,15 @@ module.exports = {
     },
     {
       method: 'GET',
+      path: '/analytics/chart-data',
+      handler: 'api::analytics.analytics.getChartData',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: 'GET',
       path: '/analytics/services/stats',
       handler: 'api::analytics.analytics.getServiceStats',
       config: {
