@@ -24,20 +24,130 @@ module.exports = {
   async getDashboardStats(ctx) {
     try {
       const { dateFrom, dateTo } = ctx.query;
-      const from = dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      const to = dateTo || new Date().toISOString().split('T')[0];
+      const fromDate = dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const toDate = dateTo || new Date().toISOString();
 
-      // Get stats for all services
-      const serviceStats = await strapi.db.query('api::service-stat.service-stat').findMany({
-        where: {
-          stat_date: {
-            $gte: from,
-            $lte: to,
-          },
+      const whereDate = {
+        createdAt: {
+          $gte: fromDate,
+          $lte: toDate,
         },
-      });
-console.log('Service stats fetched:', serviceStats.length);
-      // Aggregate by service
+      };
+
+      // Helper to get stats for a service using raw SQL aggregation
+      const getServiceStats = async (tableName, serviceName, amountColumn = 'amount', statusColumn = 'status') => {
+        try {
+          const knex = strapi.db.connection;
+          
+          // Check if table exists
+          const tableExists = await knex.schema.hasTable(tableName);
+          if (!tableExists) {
+            return {
+              service: serviceName,
+              total: 0,
+              amount: 0,
+              successful: 0,
+              failed: 0,
+              pending: 0,
+            };
+          }
+
+          // Check if columns exist
+          const hasAmountColumn = await knex.schema.hasColumn(tableName, amountColumn);
+          const hasStatusColumn = await knex.schema.hasColumn(tableName, statusColumn);
+
+          // Build query based on available columns
+          const query = knex(tableName)
+            .where('created_at', '>=', fromDate)
+            .where('created_at', '<=', toDate);
+
+          const selectFields = [knex.raw('COUNT(*) as total')];
+          
+          if (hasAmountColumn) {
+            selectFields.push(knex.raw(`SUM(COALESCE(${amountColumn}, 0)) as total_amount`));
+          } else {
+            selectFields.push(knex.raw('0 as total_amount'));
+          }
+
+          if (hasStatusColumn) {
+            selectFields.push(
+              knex.raw(`COUNT(CASE WHEN ${statusColumn} IN (?, ?, ?) THEN 1 END) as successful`, ['completed', 'successful', 'success']),
+              knex.raw(`COUNT(CASE WHEN ${statusColumn} IN (?, ?) THEN 1 END) as failed`, ['failed', 'failure']),
+              knex.raw(`COUNT(CASE WHEN ${statusColumn} IN (?, ?) THEN 1 END) as pending`, ['pending', 'processing'])
+            );
+          } else {
+            selectFields.push(
+              knex.raw('0 as successful'),
+              knex.raw('0 as failed'),
+              knex.raw('0 as pending')
+            );
+          }
+
+          const stats = await query.select(...selectFields).first();
+
+          return {
+            service: serviceName,
+            total: parseInt(stats.total) || 0,
+            amount: parseFloat(stats.total_amount) || 0,
+            successful: parseInt(stats.successful) || 0,
+            failed: parseInt(stats.failed) || 0,
+            pending: parseInt(stats.pending) || 0,
+          };
+        } catch (error) {
+          console.error(`Error fetching stats for ${tableName}:`, error.message);
+          return {
+            service: serviceName,
+            total: 0,
+            amount: 0,
+            successful: 0,
+            failed: 0,
+            pending: 0,
+          };
+        }
+      };
+
+      // Get stats from all tables in parallel
+      const [
+        airtimeStats,
+        smeDataStats,
+        cgDataStats,
+        dataGiftingStats,
+        mtnCouponStats,
+        mtnSme1Stats,
+        mtnSme2Stats,
+        accountFundingStats,
+        cableStats,
+        cryptoStats,
+        giftCardStats,
+      ] = await Promise.all([
+        getServiceStats('airtime_orders', 'airtime', 'amount', 'status'),
+        getServiceStats('sme_data_orders', 'data', 'amount', 'status'),
+        getServiceStats('cg_data_orders', 'data', 'amount', 'status'),
+        getServiceStats('data_gifting_orders', 'data', 'amount', 'status'),
+        getServiceStats('mtn_coupon_data_orders', 'data', 'amount', 'status'),
+        getServiceStats('mtn_sme_1_data_orders', 'data', 'amount', 'status'),
+        getServiceStats('mtn_sme_2_data_orders', 'data', 'amount', 'status'),
+        getServiceStats('account_fundings', 'account_funding', 'amount', 'status'),
+        getServiceStats('cable_subscriptions', 'cable', 'amount', 'status'),
+        getServiceStats('cryptos', 'crypto', 'amount', 'status'),
+        getServiceStats('gift_card_orders', 'gift_card', 'price', 'order_status'),
+      ]);
+
+      const allStats = [
+        airtimeStats,
+        smeDataStats,
+        cgDataStats,
+        dataGiftingStats,
+        mtnCouponStats,
+        mtnSme1Stats,
+        mtnSme2Stats,
+        accountFundingStats,
+        cableStats,
+        cryptoStats,
+        giftCardStats,
+      ];
+
+      // Aggregate totals
       const aggregated = {
         total_transactions: 0,
         total_amount: 0,
@@ -48,13 +158,14 @@ console.log('Service stats fetched:', serviceStats.length);
         by_service: {},
       };
 
-      serviceStats.forEach(stat => {
-        aggregated.total_transactions += stat.total_transactions;
-        aggregated.total_amount += parseFloat(stat.total_amount);
-        aggregated.successful_transactions += stat.successful_transactions;
-        aggregated.failed_transactions += stat.failed_transactions;
-        aggregated.pending_transactions += stat.pending_transactions;
+      allStats.forEach(stat => {
+        aggregated.total_transactions += stat.total;
+        aggregated.total_amount += stat.amount;
+        aggregated.successful_transactions += stat.successful;
+        aggregated.failed_transactions += stat.failed;
+        aggregated.pending_transactions += stat.pending;
 
+        // Aggregate by service (combine data orders)
         if (!aggregated.by_service[stat.service]) {
           aggregated.by_service[stat.service] = {
             transactions: 0,
@@ -64,21 +175,50 @@ console.log('Service stats fetched:', serviceStats.length);
           };
         }
 
-        aggregated.by_service[stat.service].transactions += stat.total_transactions;
-        aggregated.by_service[stat.service].amount += parseFloat(stat.total_amount);
-        aggregated.by_service[stat.service].successful += stat.successful_transactions;
-        aggregated.by_service[stat.service].failed += stat.failed_transactions;
+        aggregated.by_service[stat.service].transactions += stat.total;
+        aggregated.by_service[stat.service].amount += stat.amount;
+        aggregated.by_service[stat.service].successful += stat.successful;
+        aggregated.by_service[stat.service].failed += stat.failed;
       });
 
-      // Get total active users
-      const totalUsers = await strapi.db.query('plugin::users-permissions.user').count();
+      // Get total active users and recent transactions in parallel
+      const [totalUsers, recentAirtime, recentData, recentCable, recentElectricity] = await Promise.all([
+        strapi.db.query('plugin::users-permissions.user').count(),
+        strapi.db.query('api::airtime-order.airtime-order').findMany({
+          where: whereDate,
+          limit: 3,
+          orderBy: { createdAt: 'desc' },
+          populate: ['user'],
+        }).catch(() => []),
+        strapi.db.query('api::sme-data-order.sme-data-order').findMany({
+          where: whereDate,
+          limit: 3,
+          orderBy: { createdAt: 'desc' },
+          populate: ['user'],
+        }).catch(() => []),
+        strapi.db.query('api::cable-subscription.cable-subscription').findMany({
+          where: whereDate,
+          limit: 2,
+          orderBy: { createdAt: 'desc' },
+          populate: ['user'],
+        }).catch(() => []),
+        strapi.db.query('api::electricity-order.electricity-order').findMany({
+          where: whereDate,
+          limit: 2,
+          orderBy: { createdAt: 'desc' },
+          populate: ['user'],
+        }).catch(() => []),
+      ]);
 
-      // Get recent transactions
-      const recentTransactions = await strapi.db.query('api::optimized-transaction-history.optimized-transaction-history').findMany({
-        limit: 10,
-        orderBy: { createdAt: 'desc' },
-        populate: ['user'],
-      });
+      // Combine and sort recent transactions
+      const recentTransactions = [
+        ...recentAirtime.map(t => ({ ...t, service: 'airtime', amount: t.amount })),
+        ...recentData.map(t => ({ ...t, service: 'data', amount: t.amount })),
+        ...recentCable.map(t => ({ ...t, service: 'cable', amount: t.amount || t.amount_to_pay })),
+        ...recentElectricity.map(t => ({ ...t, service: 'electricity', amount: t.amount || t.amount_to_pay })),
+      ]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 10);
 
       // Calculate success rate
       const successRate = aggregated.total_transactions > 0
@@ -88,9 +228,9 @@ console.log('Service stats fetched:', serviceStats.length);
       ctx.send({
         success: true,
         data: {
-          dateRange: { from, to },
+          dateRange: { from: fromDate, to: toDate },
           totalTransactions: aggregated.total_transactions,
-          totalAmount: parseFloat(aggregated.total_amount).toFixed(2),
+          totalAmount: aggregated.total_amount.toFixed(2),
           successfulTransactions: aggregated.successful_transactions,
           failedTransactions: aggregated.failed_transactions,
           pendingTransactions: aggregated.pending_transactions,
@@ -100,9 +240,10 @@ console.log('Service stats fetched:', serviceStats.length);
           recentTransactions: recentTransactions.map(t => ({
             id: t.id,
             service: t.service,
-            user: t.user?.email,
-            amount: t.amount,
+            user: t.user?.email || t.user?.username,
+            amount: parseFloat(t.amount || 0),
             status: t.status,
+            beneficiary: t.beneficiary || t.phone_number || t.meter_number,
             createdAt: t.createdAt,
           })),
         },
