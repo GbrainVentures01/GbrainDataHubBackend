@@ -3,7 +3,7 @@ module.exports = {
     {
       method: 'GET',
       path: '/analytics/dashboard',
-      handler: 'analytics.getDashboardStats',
+      handler: 'api::analytics.analytics.getDashboardStats',
       config: {
    policies: [],
         middlewares: [],
@@ -12,7 +12,7 @@ module.exports = {
     {
       method: 'GET',
       path: '/analytics/services/stats',
-      handler: 'analytics.getServiceStats',
+      handler: 'api::analytics.analytics.getServiceStats',
       config: {
    policies: [],
         middlewares: [],
@@ -21,7 +21,7 @@ module.exports = {
     {
       method: 'GET',
       path: '/analytics/revenue',
-      handler: 'analytics.getRevenueStats',
+      handler: 'api::analytics.analytics.getRevenueStats',
       config: {
      policies: [],
         middlewares: [],
@@ -30,7 +30,7 @@ module.exports = {
     {
       method: 'GET',
       path: '/analytics/transactions',
-      handler: 'analytics.getTransactions',
+      handler: 'api::analytics.analytics.getTransactions',
       config: {
       policies: [],
         middlewares: [],
@@ -39,7 +39,7 @@ module.exports = {
     {
       method: 'GET',
       path: '/analytics/webhook-logs',
-      handler: 'analytics.getWebhookLogs',
+      handler: 'api::analytics.analytics.getWebhookLogs',
       config: {
        policies: [],
         middlewares: [],
