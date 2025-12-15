@@ -1,6 +1,5 @@
 'use strict';
 
-const { createCoreController } = require('@strapi/strapi/lib/factories');
 /**
  * analytics controller
  * 
@@ -14,9 +13,7 @@ const { createCoreController } = require('@strapi/strapi/lib/factories');
 
 const { ApplicationError } = require('@strapi/utils/lib/errors');
 
-module.exports = createCoreController(
-  'api::analytics.analytics',
-  ({ strapi }) => ({
+module.exports = {
   async index(ctx) {
     ctx.send({ message: 'Analytics API' });
   },
@@ -346,5 +343,4 @@ module.exports = createCoreController(
       throw new ApplicationError('Failed to fetch webhook logs');
     }
   },
-} )
-);
+};
