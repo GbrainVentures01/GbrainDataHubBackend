@@ -24,8 +24,8 @@ module.exports = {
   async getDashboardStats(ctx) {
     try {
       const { dateFrom, dateTo } = ctx.query;
-      const from = dateFrom ? new Date(dateFrom) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const to = dateTo ? new Date(dateTo) : new Date();
+      const from = dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const to = dateTo || new Date().toISOString().split('T')[0];
 
       // Get stats for all services
       const serviceStats = await strapi.db.query('api::service-stat.service-stat').findMany({
@@ -36,7 +36,7 @@ module.exports = {
           },
         },
       });
-
+console.log('Service stats fetched:', serviceStats.length);
       // Aggregate by service
       const aggregated = {
         total_transactions: 0,
@@ -109,7 +109,11 @@ module.exports = {
       });
     } catch (error) {
       console.error('Dashboard stats error:', error);
-      throw new ApplicationError('Failed to fetch dashboard statistics');
+      ctx.send({
+        success: false,
+        error: error.message,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
   },
 
@@ -120,8 +124,8 @@ module.exports = {
     try {
       const { service, dateFrom, dateTo, network, page = 1, pageSize = 25 } = ctx.query;
 
-      const from = dateFrom ? new Date(dateFrom) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const to = dateTo ? new Date(dateTo) : new Date();
+      const from = dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const to = dateTo || new Date().toISOString().split('T')[0];
 
       const where = {
         stat_date: {
@@ -165,8 +169,8 @@ module.exports = {
     try {
       const { dateFrom, dateTo, groupBy = 'service' } = ctx.query;
 
-      const from = dateFrom ? new Date(dateFrom) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const to = dateTo ? new Date(dateTo) : new Date();
+      const from = dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const to = dateTo || new Date().toISOString().split('T')[0];
 
       const stats = await strapi.db.query('api::service-stat.service-stat').findMany({
         where: {
@@ -232,8 +236,8 @@ module.exports = {
     try {
       const { service, status, network, userId, dateFrom, dateTo, page = 1, pageSize = 25, search } = ctx.query;
 
-      const from = dateFrom ? new Date(dateFrom) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const to = dateTo ? new Date(dateTo) : new Date();
+      const from = dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const to = dateTo || new Date().toISOString();
 
       const where = {
         createdAt: {
