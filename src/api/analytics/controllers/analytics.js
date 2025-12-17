@@ -1073,15 +1073,18 @@ module.exports = {
 
       const allStats = await Promise.all(unionQueries);
       
-      // Aggregate all stats
-      const overallStats = allStats.reduce((acc, stat) => ({
-        total_transactions: (parseInt(acc.total_transactions) || 0) + (parseInt(stat.total_transactions) || 0),
-        total_revenue: (parseFloat(acc.total_revenue) || 0) + (parseFloat(stat.total_revenue) || 0),
-        average_amount: (parseFloat(acc.average_amount) || 0) + (parseFloat(stat.average_amount) || 0),
-        successful: (parseInt(acc.successful) || 0) + (parseInt(stat.successful) || 0),
-        failed: (parseInt(acc.failed) || 0) + (parseInt(stat.failed) || 0),
-        pending: (parseInt(acc.pending) || 0) + (parseInt(stat.pending) || 0),
-      }), {});
+      // Aggregate all stats (each query returns an array with one row)
+      const overallStats = allStats.reduce((acc, statArray) => {
+        const stat = statArray[0]; // Get the first (and only) row
+        return {
+          total_transactions: (parseInt(acc.total_transactions) || 0) + (parseInt(stat.total_transactions) || 0),
+          total_revenue: (parseFloat(acc.total_revenue) || 0) + (parseFloat(stat.total_revenue) || 0),
+          average_amount: (parseFloat(acc.average_amount) || 0) + (parseFloat(stat.average_amount) || 0),
+          successful: (parseInt(acc.successful) || 0) + (parseInt(stat.successful) || 0),
+          failed: (parseInt(acc.failed) || 0) + (parseInt(stat.failed) || 0),
+          pending: (parseInt(acc.pending) || 0) + (parseInt(stat.pending) || 0),
+        };
+      }, {});
 
       const totalTransactions = parseInt(overallStats.total_transactions) || 0;
       const successfulTransactions = parseInt(overallStats.successful) || 0;
@@ -1089,11 +1092,7 @@ module.exports = {
         ? overallStats.average_amount / allStats.length 
         : 0;
 
-      console.log('Data Stats Debug:', {
-        totalTransactions,
-        successfulTransactions,
-        overallStats
-      });
+   
 
       const successRate = totalTransactions > 0 
         ? parseFloat(((successfulTransactions / totalTransactions) * 100).toFixed(1))
