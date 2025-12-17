@@ -990,20 +990,24 @@ module.exports = {
         fromDate = new Date(dateFrom);
         toDate = new Date(dateTo);
       } else {
-        toDate = now;
+        toDate = new Date(); // Create a new date object for toDate
         switch (filter) {
           case 'today':
-            fromDate = new Date(now.setHours(0, 0, 0, 0));
+            fromDate = new Date();
+            fromDate.setHours(0, 0, 0, 0);
             break;
           case 'week':
-            fromDate = new Date(now.setDate(now.getDate() - 7));
+            fromDate = new Date();
+            fromDate.setDate(fromDate.getDate() - 7);
             break;
           case 'year':
-            fromDate = new Date(now.setFullYear(now.getFullYear() - 1));
+            fromDate = new Date();
+            fromDate.setFullYear(fromDate.getFullYear() - 1);
             break;
           case 'month':
           default:
-            fromDate = new Date(now.setMonth(now.getMonth() - 1));
+            fromDate = new Date();
+            fromDate.setMonth(fromDate.getMonth() - 1);
         }
       }
 
