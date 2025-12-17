@@ -21,6 +21,110 @@ module.exports = createCoreController(
   "api::airtime-order.airtime-order",
   ({ strapi }) => ({
     /**
+     * Get all airtime transactions with search, filter, and sort
+     * @param {Object} ctx
+     * @returns
+     */
+    async find(ctx) {
+      try {
+        const { 
+          search = '', 
+          status, 
+          network, 
+          sortBy = 'createdAt', 
+          sortOrder = 'desc',
+          page = 1,
+          pageSize = 20
+        } = ctx.query;
+
+        const knex = strapi.db.connection;
+        
+        // Build query
+        let query = knex('airtime_orders').select(
+          'id',
+          'beneficiary',
+          'network',
+          'amount',
+          'status',
+          'request_id',
+          'service_id as serviceID',
+          'created_at as createdAt',
+          'updated_at as updatedAt'
+        );
+
+        // Apply search filter
+        if (search) {
+          query = query.where((builder) => {
+            builder
+              .where('beneficiary', 'like', `%${search}%`)
+              .orWhere('id', 'like', `%${search}%`)
+              .orWhere('request_id', 'like', `%${search}%`);
+          });
+        }
+
+        // Apply status filter
+        if (status && status !== 'all') {
+          query = query.where('status', status);
+        }
+
+        // Apply network filter
+        if (network && network !== 'all') {
+          query = query.where('network', network);
+        }
+
+        // Get total count for pagination (clone query before adding select fields)
+        const countQuery = knex('airtime_orders');
+        
+        // Apply same filters to count query
+        if (search) {
+          countQuery.where((builder) => {
+            builder
+              .where('beneficiary', 'like', `%${search}%`)
+              .orWhere('id', 'like', `%${search}%`)
+              .orWhere('request_id', 'like', `%${search}%`);
+          });
+        }
+        if (status && status !== 'all') {
+          countQuery.where('status', status);
+        }
+        if (network && network !== 'all') {
+          countQuery.where('network', network);
+        }
+        
+        const [{ count }] = await countQuery.count('* as count');
+        const totalCount = parseInt(count);
+
+        // Apply sorting
+        const sortField = sortBy === 'createdAt' ? 'created_at' : sortBy;
+        query = query.orderBy(sortField, sortOrder);
+
+        // Apply pagination
+        const offset = (parseInt(page) - 1) * parseInt(pageSize);
+        query = query.limit(parseInt(pageSize)).offset(offset);
+
+        // Execute query
+        const transactions = await query;
+
+        ctx.send({
+          success: true,
+          data: transactions,
+          pagination: {
+            page: parseInt(page),
+            pageSize: parseInt(pageSize),
+            pageCount: Math.ceil(totalCount / parseInt(pageSize)),
+            total: totalCount,
+          },
+        });
+      } catch (error) {
+        console.error('Airtime transactions fetch error:', error);
+        ctx.send({
+          success: false,
+          error: error.message,
+        }, 500);
+      }
+    },
+
+    /**
      * return all orders as long as they belong to the current logged in user
      * @param {Object} ctx
      * @returns
