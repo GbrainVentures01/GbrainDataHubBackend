@@ -1267,13 +1267,13 @@ module.exports = {
           'updated_at as updatedAt'
         );
 
-        // Apply search filter
+        // Apply search filter (case-insensitive)
         if (search) {
           query = query.where((builder) => {
             builder
-              .where('beneficiary', 'like', `%${search}%`)
-              .orWhere('id', 'like', `%${search}%`)
-              .orWhere(refColumn, 'like', `%${search}%`);
+              .whereRaw('LOWER(beneficiary) LIKE ?', [`%${search.toLowerCase()}%`])
+              .orWhere('id', '=', search)
+              .orWhereRaw(`LOWER(??) LIKE ?`, [refColumn, `%${search.toLowerCase()}%`]);
           });
         }
 
@@ -1282,9 +1282,9 @@ module.exports = {
           query = query.where('status', status);
         }
 
-        // Apply network filter
+        // Apply network filter (case-insensitive)
         if (network && network !== 'all') {
-          query = query.where('network', network);
+          query = query.whereRaw('LOWER(network) = ?', [network.toLowerCase()]);
         }
 
         return query;
