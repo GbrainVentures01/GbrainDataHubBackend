@@ -910,7 +910,7 @@ module.exports = {
         .where('created_at', '<=', toDate)
         .select(
           'id',
-          'phone_number',
+          'beneficiary',
           'network',
           'amount',
           'status',
@@ -921,7 +921,7 @@ module.exports = {
 
       const formattedRecentTransactions = recentTransactions.map(tx => {
         // Mask phone number for privacy
-        let maskedPhone = tx.phone_number || 'N/A';
+        let maskedPhone = tx.beneficiary || 'N/A';
         if (maskedPhone.length > 4) {
           maskedPhone = maskedPhone.slice(0, 4) + '****' + maskedPhone.slice(-2);
         }
