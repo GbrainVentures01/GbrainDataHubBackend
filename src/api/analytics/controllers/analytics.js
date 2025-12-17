@@ -772,4 +772,196 @@ module.exports = {
       throw new ApplicationError('Failed to fetch webhook logs');
     }
   },
+
+  /**
+   * Get airtime analytics
+   * Returns comprehensive statistics for airtime transactions
+   */
+  async getAirtimeAnalytics(ctx) {
+    try {
+      const { filter = 'month', dateFrom, dateTo } = ctx.query;
+      
+      // Calculate date range based on filter
+      let fromDate, toDate;
+      const now = new Date();
+      
+      switch(filter) {
+        case 'today':
+          fromDate = new Date(now.setHours(0, 0, 0, 0)).toISOString();
+          toDate = new Date(now.setHours(23, 59, 59, 999)).toISOString();
+          break;
+        case 'week':
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          startOfWeek.setHours(0, 0, 0, 0);
+          fromDate = startOfWeek.toISOString();
+          toDate = new Date().toISOString();
+          break;
+        case 'month':
+          fromDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+          toDate = new Date().toISOString();
+          break;
+        case 'year':
+          fromDate = new Date(now.getFullYear(), 0, 1).toISOString();
+          toDate = new Date().toISOString();
+          break;
+        case 'custom':
+          if (!dateFrom || !dateTo) {
+            return ctx.badRequest('dateFrom and dateTo are required for custom filter');
+          }
+          fromDate = new Date(dateFrom).toISOString();
+          toDate = new Date(dateTo).toISOString();
+          break;
+        default:
+          fromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+          toDate = new Date().toISOString();
+      }
+
+      const knex = strapi.db.connection;
+
+      // Check if table exists
+      const tableExists = await knex.schema.hasTable('airtime_orders');
+      if (!tableExists) {
+        return ctx.send({
+          success: true,
+          filter,
+          dateRange: { from: fromDate, to: toDate },
+          data: {
+            stats: {
+              totalTransactions: 0,
+              totalRevenue: 0,
+              successRate: 0,
+              pendingTransactions: 0,
+              failedTransactions: 0,
+              averageAmount: 0,
+              topNetwork: null,
+            },
+            networkBreakdown: [],
+            dailyTrend: [],
+            recentTransactions: [],
+          },
+        });
+      }
+
+      // Get overall stats
+      const overallStats = await knex('airtime_orders')
+        .where('created_at', '>=', fromDate)
+        .where('created_at', '<=', toDate)
+        .select(
+          knex.raw('COUNT(*) as total_transactions'),
+          knex.raw('SUM(COALESCE(amount, 0)) as total_revenue'),
+          knex.raw('AVG(COALESCE(amount, 0)) as average_amount'),
+          knex.raw('COUNT(CASE WHEN status IN (?, ?, ?) THEN 1 END) as successful', ['completed', 'successful', 'success']),
+          knex.raw('COUNT(CASE WHEN status IN (?, ?) THEN 1 END) as failed', ['failed', 'failure']),
+          knex.raw('COUNT(CASE WHEN status IN (?, ?) THEN 1 END) as pending', ['pending', 'processing'])
+        )
+        .first();
+
+      const totalTransactions = parseInt(overallStats.total_transactions) || 0;
+      const successfulTransactions = parseInt(overallStats.successful) || 0;
+      const successRate = totalTransactions > 0 
+        ? ((successfulTransactions / totalTransactions) * 100).toFixed(1)
+        : 0;
+
+      // Get network breakdown
+      const networkBreakdown = await knex('airtime_orders')
+        .where('created_at', '>=', fromDate)
+        .where('created_at', '<=', toDate)
+        .select(
+          'network',
+          knex.raw('COUNT(*) as transactions'),
+          knex.raw('SUM(COALESCE(amount, 0)) as revenue')
+        )
+        .groupBy('network')
+        .orderBy('transactions', 'desc');
+
+      const formattedNetworkBreakdown = networkBreakdown.map(row => ({
+        network: row.network || 'Unknown',
+        transactions: parseInt(row.transactions) || 0,
+        revenue: parseFloat(row.revenue) || 0,
+      }));
+
+      // Get top network
+      const topNetwork = formattedNetworkBreakdown.length > 0 
+        ? formattedNetworkBreakdown[0].network 
+        : null;
+
+      // Get daily trend data
+      const dailyTrend = await knex('airtime_orders')
+        .where('created_at', '>=', fromDate)
+        .where('created_at', '<=', toDate)
+        .select(
+          knex.raw('DATE(created_at) as date'),
+          knex.raw('COUNT(*) as transactions'),
+          knex.raw('SUM(COALESCE(amount, 0)) as revenue')
+        )
+        .groupBy(knex.raw('DATE(created_at)'))
+        .orderBy('date', 'asc');
+
+      const formattedDailyTrend = dailyTrend.map(row => ({
+        date: row.date,
+        transactions: parseInt(row.transactions) || 0,
+        revenue: parseFloat(row.revenue) || 0,
+      }));
+
+      // Get recent transactions
+      const recentTransactions = await knex('airtime_orders')
+        .where('created_at', '>=', fromDate)
+        .where('created_at', '<=', toDate)
+        .select(
+          'id',
+          'phone_number',
+          'network',
+          'amount',
+          'status',
+          'created_at'
+        )
+        .orderBy('created_at', 'desc')
+        .limit(10);
+
+      const formattedRecentTransactions = recentTransactions.map(tx => {
+        // Mask phone number for privacy
+        let maskedPhone = tx.phone_number || 'N/A';
+        if (maskedPhone.length > 4) {
+          maskedPhone = maskedPhone.slice(0, 4) + '****' + maskedPhone.slice(-2);
+        }
+
+        return {
+          id: tx.id,
+          phone: maskedPhone,
+          network: tx.network || 'Unknown',
+          amount: parseFloat(tx.amount) || 0,
+          status: tx.status || 'pending',
+          time: tx.created_at,
+        };
+      });
+
+      ctx.send({
+        success: true,
+        filter,
+        dateRange: { from: fromDate, to: toDate },
+        data: {
+          stats: {
+            totalTransactions,
+            totalRevenue: parseFloat(overallStats.total_revenue) || 0,
+            successRate: parseFloat(successRate),
+            pendingTransactions: parseInt(overallStats.pending) || 0,
+            failedTransactions: parseInt(overallStats.failed) || 0,
+            averageAmount: parseFloat(overallStats.average_amount) || 0,
+            topNetwork,
+          },
+          networkBreakdown: formattedNetworkBreakdown,
+          dailyTrend: formattedDailyTrend,
+          recentTransactions: formattedRecentTransactions,
+        },
+      });
+    } catch (error) {
+      console.error('Airtime analytics error:', error);
+      ctx.send({
+        success: false,
+        error: error.message,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  },
 };

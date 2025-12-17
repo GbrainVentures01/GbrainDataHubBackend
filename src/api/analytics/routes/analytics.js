@@ -54,5 +54,14 @@ module.exports = {
         middlewares: [],
       },
     },
+    {
+      method: 'GET',
+      path: '/analytics/airtime',
+      handler: 'api::analytics.analytics.getAirtimeAnalytics',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };
