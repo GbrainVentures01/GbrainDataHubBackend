@@ -972,4 +972,361 @@ module.exports = {
       });
     }
   },
+
+  /**
+   * Get data analytics with network breakdown and trends
+   * Aggregates all data order types (SME, Data Gifting, MTN SME 1, MTN Coupon, CG)
+   */
+  async getDataAnalytics(ctx) {
+    try {
+      const { filter = 'month', dateFrom, dateTo } = ctx.query;
+      const knex = strapi.db.connection;
+
+      // Calculate date range
+      const now = new Date();
+      let fromDate, toDate;
+
+      if (filter === 'custom' && dateFrom && dateTo) {
+        fromDate = new Date(dateFrom);
+        toDate = new Date(dateTo);
+      } else {
+        toDate = now;
+        switch (filter) {
+          case 'today':
+            fromDate = new Date(now.setHours(0, 0, 0, 0));
+            break;
+          case 'week':
+            fromDate = new Date(now.setDate(now.getDate() - 7));
+            break;
+          case 'year':
+            fromDate = new Date(now.setFullYear(now.getFullYear() - 1));
+            break;
+          case 'month':
+          default:
+            fromDate = new Date(now.setMonth(now.getMonth() - 1));
+        }
+      }
+
+      // Data order tables to aggregate
+      const dataTables = [
+        'sme_data_orders',
+        'data_gifting_orders',
+        'mtn_sme_1_data_orders',
+        'mtn_coupon_data_orders',
+        'cg_data_orders'
+      ];
+
+      // Check if tables have any data
+      let hasData = false;
+      for (const table of dataTables) {
+        const count = await knex(table)
+          .where('created_at', '>=', fromDate)
+          .where('created_at', '<=', toDate)
+          .count('* as count')
+          .first();
+        if (parseInt(count.count) > 0) {
+          hasData = true;
+          break;
+        }
+      }
+
+      if (!hasData) {
+        return ctx.send({
+          success: true,
+          filter,
+          dateRange: { from: fromDate, to: toDate },
+          data: {
+            stats: {
+              totalTransactions: 0,
+              totalRevenue: 0,
+              successRate: 0,
+              pendingTransactions: 0,
+              failedTransactions: 0,
+              averageAmount: 0,
+              topNetwork: null,
+            },
+            networkBreakdown: [],
+            dailyTrend: [],
+            recentTransactions: [],
+          },
+        });
+      }
+
+      // Build UNION query for all stats
+      const unionQueries = dataTables.map(table => 
+        knex(table)
+          .where('created_at', '>=', fromDate)
+          .where('created_at', '<=', toDate)
+          .select(
+            knex.raw('COUNT(*) as total_transactions'),
+            knex.raw('SUM(COALESCE(amount, 0)) as total_revenue'),
+            knex.raw('AVG(COALESCE(amount, 0)) as average_amount'),
+            knex.raw('COUNT(CASE WHEN status IN (?, ?, ?, ?) THEN 1 END) as successful', ['delivered', 'completed', 'successful', 'success']),
+            knex.raw('COUNT(CASE WHEN status IN (?, ?) THEN 1 END) as failed', ['failed', 'failure']),
+            knex.raw('COUNT(CASE WHEN status IN (?, ?) THEN 1 END) as pending', ['pending', 'processing'])
+          )
+      );
+
+      const allStats = await Promise.all(unionQueries);
+      
+      // Aggregate all stats
+      const overallStats = allStats.reduce((acc, stat) => ({
+        total_transactions: (parseInt(acc.total_transactions) || 0) + (parseInt(stat.total_transactions) || 0),
+        total_revenue: (parseFloat(acc.total_revenue) || 0) + (parseFloat(stat.total_revenue) || 0),
+        average_amount: (parseFloat(acc.average_amount) || 0) + (parseFloat(stat.average_amount) || 0),
+        successful: (parseInt(acc.successful) || 0) + (parseInt(stat.successful) || 0),
+        failed: (parseInt(acc.failed) || 0) + (parseInt(stat.failed) || 0),
+        pending: (parseInt(acc.pending) || 0) + (parseInt(stat.pending) || 0),
+      }), {});
+
+      const totalTransactions = parseInt(overallStats.total_transactions) || 0;
+      const successfulTransactions = parseInt(overallStats.successful) || 0;
+      const averageAmount = allStats.length > 0 
+        ? overallStats.average_amount / allStats.length 
+        : 0;
+
+      console.log('Data Stats Debug:', {
+        totalTransactions,
+        successfulTransactions,
+        overallStats
+      });
+
+      const successRate = totalTransactions > 0 
+        ? parseFloat(((successfulTransactions / totalTransactions) * 100).toFixed(1))
+        : 0;
+
+      // Get network breakdown from all tables
+      const networkBreakdownQueries = dataTables.map(table =>
+        knex(table)
+          .where('created_at', '>=', fromDate)
+          .where('created_at', '<=', toDate)
+          .select(
+            'network',
+            knex.raw('COUNT(*) as transactions'),
+            knex.raw('SUM(COALESCE(amount, 0)) as revenue')
+          )
+          .groupBy('network')
+      );
+
+      const allNetworkBreakdowns = await Promise.all(networkBreakdownQueries);
+      const networkMap = {};
+
+      allNetworkBreakdowns.flat().forEach(row => {
+        const network = row.network || 'Unknown';
+        if (!networkMap[network]) {
+          networkMap[network] = { network, transactions: 0, revenue: 0 };
+        }
+        networkMap[network].transactions += parseInt(row.transactions) || 0;
+        networkMap[network].revenue += parseFloat(row.revenue) || 0;
+      });
+
+      const networkBreakdown = Object.values(networkMap)
+        .sort((a, b) => b.transactions - a.transactions);
+
+      const topNetwork = networkBreakdown[0]?.network || null;
+
+      // Get daily trend from all tables
+      const dailyTrendQueries = dataTables.map(table =>
+        knex(table)
+          .where('created_at', '>=', fromDate)
+          .where('created_at', '<=', toDate)
+          .select(
+            knex.raw('DATE(created_at) as date'),
+            knex.raw('COUNT(*) as transactions'),
+            knex.raw('SUM(COALESCE(amount, 0)) as revenue')
+          )
+          .groupBy(knex.raw('DATE(created_at)'))
+          .orderBy('date', 'asc')
+      );
+
+      const allDailyTrends = await Promise.all(dailyTrendQueries);
+      const dailyMap = {};
+
+      allDailyTrends.flat().forEach(row => {
+        const date = row.date;
+        if (!dailyMap[date]) {
+          dailyMap[date] = { date, transactions: 0, revenue: 0 };
+        }
+        dailyMap[date].transactions += parseInt(row.transactions) || 0;
+        dailyMap[date].revenue += parseFloat(row.revenue) || 0;
+      });
+
+      const dailyTrend = Object.values(dailyMap)
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      // Get recent transactions from all tables
+      const recentTransactionsQueries = dataTables.map(table =>
+        knex(table)
+          .where('created_at', '>=', fromDate)
+          .where('created_at', '<=', toDate)
+          .select(
+            'id',
+            'beneficiary',
+            'network',
+            'amount',
+            'status',
+            'created_at',
+            knex.raw(`'${table}' as source_table`)
+          )
+          .orderBy('created_at', 'desc')
+          .limit(3) // Get top 3 from each table
+      );
+
+      const allRecentTransactions = await Promise.all(recentTransactionsQueries);
+      const recentTransactions = allRecentTransactions
+        .flat()
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 10); // Get top 10 overall
+
+      const formattedRecentTransactions = recentTransactions.map(tx => {
+        let maskedPhone = tx.beneficiary || 'N/A';
+        if (maskedPhone.length > 4) {
+          maskedPhone = maskedPhone.slice(0, 4) + '****' + maskedPhone.slice(-2);
+        }
+
+        return {
+          id: tx.id,
+          phone: maskedPhone,
+          network: tx.network || 'Unknown',
+          amount: parseFloat(tx.amount) || 0,
+          status: tx.status || 'pending',
+          time: tx.created_at,
+        };
+      });
+
+      ctx.send({
+        success: true,
+        filter,
+        dateRange: { from: fromDate, to: toDate },
+        data: {
+          stats: {
+            totalTransactions,
+            totalRevenue: parseFloat(overallStats.total_revenue) || 0,
+            successRate: parseFloat(successRate),
+            pendingTransactions: parseInt(overallStats.pending) || 0,
+            failedTransactions: parseInt(overallStats.failed) || 0,
+            averageAmount: parseFloat(averageAmount) || 0,
+            topNetwork,
+          },
+          networkBreakdown,
+          dailyTrend,
+          recentTransactions: formattedRecentTransactions,
+        },
+      });
+    } catch (error) {
+      console.error('Data analytics error:', error);
+      ctx.send({
+        success: false,
+        error: error.message,
+      }, 500);
+    }
+  },
+
+  /**
+   * Get all data transactions from all data order tables with search, filter, and sort
+   * Aggregates: SME Data, Data Gifting, MTN SME 1, MTN Coupon, CG Data
+   */
+  async getDataTransactions(ctx) {
+    try {
+      const { 
+        search = '', 
+        status, 
+        network, 
+        sortBy = 'createdAt', 
+        sortOrder = 'desc',
+        page = 1,
+        pageSize = 20
+      } = ctx.query;
+
+      const knex = strapi.db.connection;
+      
+      // Data order tables to aggregate with their request_id column names
+      const dataTables = [
+        { table: 'sme_data_orders', type: 'SME Data', refColumn: 'ref' },
+        { table: 'data_gifting_orders', type: 'Data Gifting', refColumn: 'request_id' },
+        { table: 'mtn_sme_1_data_orders', type: 'MTN SME 1', refColumn: 'ref' },
+        { table: 'mtn_coupon_data_orders', type: 'MTN Coupon', refColumn: 'ref' },
+        { table: 'cg_data_orders', type: 'CG Data', refColumn: 'request_id' }
+      ];
+
+      // Build union query for all tables
+      const queries = dataTables.map(({ table, type, refColumn }) => {
+        let query = knex(table).select(
+          'id',
+          'beneficiary',
+          'network',
+          'amount',
+          'status',
+          knex.raw(`?? as request_id`, [refColumn]),
+          knex.raw('? as service_type', [type]),
+          knex.raw('? as source_table', [table]),
+          'created_at as createdAt',
+          'updated_at as updatedAt'
+        );
+
+        // Apply search filter
+        if (search) {
+          query = query.where((builder) => {
+            builder
+              .where('beneficiary', 'like', `%${search}%`)
+              .orWhere('id', 'like', `%${search}%`)
+              .orWhere(refColumn, 'like', `%${search}%`);
+          });
+        }
+
+        // Apply status filter
+        if (status && status !== 'all') {
+          query = query.where('status', status);
+        }
+
+        // Apply network filter
+        if (network && network !== 'all') {
+          query = query.where('network', network);
+        }
+
+        return query;
+      });
+
+      // Union all queries
+      let unionQuery = queries[0];
+      for (let i = 1; i < queries.length; i++) {
+        unionQuery = unionQuery.union(queries[i]);
+      }
+
+      // Wrap union in subquery for counting
+      const countResult = await knex.from(knex.raw(`(${unionQuery.toString()}) as combined`))
+        .count('* as count')
+        .first();
+      const totalCount = parseInt(countResult.count);
+
+      // Apply sorting to union
+      const sortField = sortBy === 'createdAt' ? 'createdAt' : sortBy;
+      const sortedQuery = knex.from(knex.raw(`(${unionQuery.toString()}) as combined`))
+        .select('*')
+        .orderBy(sortField, sortOrder);
+
+      // Apply pagination
+      const offset = (parseInt(page) - 1) * parseInt(pageSize);
+      const transactions = await sortedQuery
+        .limit(parseInt(pageSize))
+        .offset(offset);
+
+      ctx.send({
+        success: true,
+        data: transactions,
+        pagination: {
+          page: parseInt(page),
+          pageSize: parseInt(pageSize),
+          pageCount: Math.ceil(totalCount / parseInt(pageSize)),
+          total: totalCount,
+        },
+      });
+    } catch (error) {
+      console.error('Data transactions fetch error:', error);
+      ctx.send({
+        success: false,
+        error: error.message,
+      }, 500);
+    }
+  },
 };
