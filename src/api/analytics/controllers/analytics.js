@@ -851,7 +851,7 @@ module.exports = {
           knex.raw('COUNT(*) as total_transactions'),
           knex.raw('SUM(COALESCE(amount, 0)) as total_revenue'),
           knex.raw('AVG(COALESCE(amount, 0)) as average_amount'),
-          knex.raw('COUNT(CASE WHEN status IN (?, ?, ?) THEN 1 END) as successful', ['completed', 'successful', 'success']),
+          knex.raw('COUNT(CASE WHEN status IN (?, ?, ?, ?) THEN 1 END) as successful', ['delivered', 'completed', 'successful', 'success']),
           knex.raw('COUNT(CASE WHEN status IN (?, ?) THEN 1 END) as failed', ['failed', 'failure']),
           knex.raw('COUNT(CASE WHEN status IN (?, ?) THEN 1 END) as pending', ['pending', 'processing'])
         )
@@ -859,8 +859,16 @@ module.exports = {
 
       const totalTransactions = parseInt(overallStats.total_transactions) || 0;
       const successfulTransactions = parseInt(overallStats.successful) || 0;
+      
+      // Log for debugging
+      console.log('Airtime Stats Debug:', {
+        totalTransactions,
+        successfulTransactions,
+        overallStats
+      });
+      
       const successRate = totalTransactions > 0 
-        ? ((successfulTransactions / totalTransactions) * 100).toFixed(1)
+        ? parseFloat(((successfulTransactions / totalTransactions) * 100).toFixed(1))
         : 0;
 
       // Get network breakdown
