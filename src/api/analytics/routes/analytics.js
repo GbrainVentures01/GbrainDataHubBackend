@@ -81,5 +81,23 @@ module.exports = {
         middlewares: [],
       },
     },
+    {
+      method: 'GET',
+      path: '/analytics/tv-cables',
+      handler: 'api::analytics.analytics.getTvCablesAnalytics',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/analytics/tv-cables-transactions',
+      handler: 'api::analytics.analytics.getTvCablesTransactions',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };

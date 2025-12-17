@@ -1332,4 +1332,245 @@ module.exports = {
       }, 500);
     }
   },
+
+  /**
+   * Get TV & Cables analytics with subscription type breakdown and trends
+   */
+  async getTvCablesAnalytics(ctx) {
+    try {
+      const { filter = 'month', dateFrom, dateTo } = ctx.query;
+      const knex = strapi.db.connection;
+
+      // Calculate date range
+      const now = new Date();
+      let fromDate, toDate;
+
+      if (filter === 'custom' && dateFrom && dateTo) {
+        fromDate = new Date(dateFrom);
+        toDate = new Date(dateTo);
+      } else {
+        toDate = new Date();
+        switch (filter) {
+          case 'today':
+            fromDate = new Date();
+            fromDate.setHours(0, 0, 0, 0);
+            break;
+          case 'week':
+            fromDate = new Date();
+            fromDate.setDate(fromDate.getDate() - 7);
+            break;
+          case 'year':
+            fromDate = new Date();
+            fromDate.setFullYear(fromDate.getFullYear() - 1);
+            break;
+          case 'month':
+          default:
+            fromDate = new Date();
+            fromDate.setMonth(fromDate.getMonth() - 1);
+        }
+      }
+
+      const table = 'tvcables-orders';
+
+      // Get overall stats
+      const statsResult = await knex(table)
+        .where('created_at', '>=', fromDate)
+        .where('created_at', '<=', toDate)
+        .select(
+          knex.raw('COUNT(*) as total_transactions'),
+          knex.raw('SUM(CAST(amount AS DECIMAL)) as total_revenue'),
+          knex.raw('AVG(CAST(amount AS DECIMAL)) as average_amount'),
+          knex.raw('COUNT(CASE WHEN status = ? THEN 1 END) as successful', ['delivered']),
+          knex.raw('COUNT(CASE WHEN status = ? THEN 1 END) as failed', ['failed']),
+          knex.raw('COUNT(CASE WHEN status = ? THEN 1 END) as pending', ['pending'])
+        )
+        .first();
+
+      const totalTransactions = parseInt(statsResult.total_transactions) || 0;
+      const successfulTransactions = parseInt(statsResult.successful) || 0;
+      const successRate = totalTransactions > 0 
+        ? parseFloat(((successfulTransactions / totalTransactions) * 100).toFixed(1))
+        : 0;
+
+      // Get subscription type breakdown
+      const subscriptionBreakdown = await knex(table)
+        .where('created_at', '>=', fromDate)
+        .where('created_at', '<=', toDate)
+        .select(
+          'subscription_type',
+          knex.raw('COUNT(*) as transactions'),
+          knex.raw('SUM(CAST(amount AS DECIMAL)) as revenue')
+        )
+        .groupBy('subscription_type')
+        .orderBy('transactions', 'desc');
+
+      const topSubscription = subscriptionBreakdown[0]?.subscription_type || null;
+
+      // Get daily trend
+      const dailyTrend = await knex(table)
+        .where('created_at', '>=', fromDate)
+        .where('created_at', '<=', toDate)
+        .select(
+          knex.raw('DATE(created_at) as date'),
+          knex.raw('COUNT(*) as transactions'),
+          knex.raw('SUM(CAST(amount AS DECIMAL)) as revenue')
+        )
+        .groupBy(knex.raw('DATE(created_at)'))
+        .orderBy('date', 'asc');
+
+      // Get recent transactions
+      const recentTransactions = await knex(table)
+        .where('created_at', '>=', fromDate)
+        .where('created_at', '<=', toDate)
+        .select('id', 'phone', 'subscription_type', 'amount', 'status', 'created_at')
+        .orderBy('created_at', 'desc')
+        .limit(10);
+
+      const formattedRecentTransactions = recentTransactions.map(tx => {
+        let maskedPhone = tx.phone || 'N/A';
+        if (maskedPhone.length > 4) {
+          maskedPhone = maskedPhone.slice(0, 4) + '****' + maskedPhone.slice(-2);
+        }
+
+        return {
+          id: tx.id,
+          phone: maskedPhone,
+          subscription: tx.subscription_type || 'Unknown',
+          amount: parseFloat(tx.amount) || 0,
+          status: tx.status || 'pending',
+          time: tx.created_at,
+        };
+      });
+
+      ctx.send({
+        success: true,
+        filter,
+        dateRange: { from: fromDate, to: toDate },
+        data: {
+          stats: {
+            totalTransactions,
+            totalRevenue: parseFloat(statsResult.total_revenue) || 0,
+            successRate: parseFloat(successRate),
+            pendingTransactions: parseInt(statsResult.pending) || 0,
+            failedTransactions: parseInt(statsResult.failed) || 0,
+            averageAmount: parseFloat(statsResult.average_amount) || 0,
+            topSubscription,
+          },
+          subscriptionBreakdown,
+          dailyTrend,
+          recentTransactions: formattedRecentTransactions,
+        },
+      });
+    } catch (error) {
+      console.error('TV & Cables analytics error:', error);
+      ctx.send({
+        success: false,
+        error: error.message,
+      }, 500);
+    }
+  },
+
+  /**
+   * Get all TV & Cables transactions with search, filter, and sort
+   */
+  async getTvCablesTransactions(ctx) {
+    try {
+      const { 
+        search = '', 
+        status, 
+        subscription, 
+        sortBy = 'createdAt', 
+        sortOrder = 'desc',
+        page = 1,
+        pageSize = 20
+      } = ctx.query;
+
+      const knex = strapi.db.connection;
+      const table = 'tvcables-orders';
+
+      // Build query
+      let query = knex(table).select(
+        'id',
+        'phone',
+        'billers_code as billersCode',
+        'subscription_type',
+        'amount',
+        'status',
+        'request_id',
+        'service_id as serviceID',
+        'variation_code',
+        'created_at as createdAt',
+        'updated_at as updatedAt'
+      );
+
+      // Apply search filter (case-insensitive)
+      if (search) {
+        query = query.where((builder) => {
+          builder
+            .whereRaw('LOWER(phone) LIKE ?', [`%${search.toLowerCase()}%`])
+            .orWhere('id', '=', search)
+            .orWhereRaw('LOWER(request_id) LIKE ?', [`%${search.toLowerCase()}%`])
+            .orWhereRaw('LOWER(billers_code) LIKE ?', [`%${search.toLowerCase()}%`]);
+        });
+      }
+
+      // Apply status filter
+      if (status && status !== 'all') {
+        query = query.where('status', status);
+      }
+
+      // Apply subscription type filter (case-insensitive)
+      if (subscription && subscription !== 'all') {
+        query = query.whereRaw('LOWER(subscription_type) = ?', [subscription.toLowerCase()]);
+      }
+
+      // Get total count
+      const countQuery = knex(table);
+      if (search) {
+        countQuery.where((builder) => {
+          builder
+            .whereRaw('LOWER(phone) LIKE ?', [`%${search.toLowerCase()}%`])
+            .orWhere('id', '=', search)
+            .orWhereRaw('LOWER(request_id) LIKE ?', [`%${search.toLowerCase()}%`])
+            .orWhereRaw('LOWER(billers_code) LIKE ?', [`%${search.toLowerCase()}%`]);
+        });
+      }
+      if (status && status !== 'all') {
+        countQuery.where('status', status);
+      }
+      if (subscription && subscription !== 'all') {
+        countQuery.whereRaw('LOWER(subscription_type) = ?', [subscription.toLowerCase()]);
+      }
+
+      const countResult = await countQuery.count('* as count').first();
+      const totalCount = parseInt(countResult.count);
+
+      // Apply sorting
+      const sortField = sortBy === 'createdAt' ? 'created_at' : sortBy;
+      query = query.orderBy(sortField, sortOrder);
+
+      // Apply pagination
+      const offset = (parseInt(page) - 1) * parseInt(pageSize);
+      const transactions = await query
+        .limit(parseInt(pageSize))
+        .offset(offset);
+
+      ctx.send({
+        success: true,
+        data: transactions,
+        pagination: {
+          page: parseInt(page),
+          pageSize: parseInt(pageSize),
+          pageCount: Math.ceil(totalCount / parseInt(pageSize)),
+          total: totalCount,
+        },
+      });
+    } catch (error) {
+      console.error('TV & Cables transactions fetch error:', error);
+      ctx.send({
+        success: false,
+        error: error.message,
+      }, 500);
+    }
+  },
 };
