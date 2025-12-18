@@ -135,5 +135,23 @@ module.exports = {
         middlewares: [],
       },
     },
+    {
+      method: 'GET',
+      path: '/analytics/users',
+      handler: 'api::analytics.analytics.getUserAnalytics',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/analytics/users-list',
+      handler: 'api::analytics.analytics.getUsersList',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };

@@ -2052,4 +2052,285 @@ module.exports = {
       }, 500);
     }
   },
+
+  // User Analytics
+  async getUserAnalytics(ctx) {
+    try {
+      const { dateFrom, dateTo } = ctx.query;
+
+      // Build date filter
+      let dateFilter = '';
+      const params = [];
+      if (dateFrom && dateTo) {
+        dateFilter = 'WHERE u.created_at BETWEEN $1 AND $2';
+        params.push(dateFrom, dateTo);
+      } else if (dateFrom) {
+        dateFilter = 'WHERE u.created_at >= $1';
+        params.push(dateFrom);
+      } else if (dateTo) {
+        dateFilter = 'WHERE u.created_at <= $1';
+        params.push(dateTo);
+      }
+
+      // Total users count
+      const totalResult = await strapi.db.connection.raw(`
+        SELECT COUNT(*)::integer as total
+        FROM up_users u
+        ${dateFilter}
+      `, params);
+      const totalUsers = totalResult.rows[0]?.total || 0;
+
+      // Active users (users with transactions in the last 30 days)
+      const activeResult = await strapi.db.connection.raw(`
+        SELECT COUNT(DISTINCT user_id)::integer as active
+        FROM (
+          SELECT user_id FROM airtime_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+          UNION
+          SELECT user_id FROM data_gifting_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+          UNION
+          SELECT user_id FROM tvcables_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+          UNION
+          SELECT user_id FROM electricity_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+          UNION
+          SELECT user_id FROM exam_pin_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+        ) as active_users
+      `);
+      const activeUsers = activeResult.rows[0]?.active || 0;
+
+      // Blocked users
+      const blockedResult = await strapi.db.connection.raw(`
+        SELECT COUNT(*)::integer as blocked
+        FROM up_users u
+        WHERE u.blocked = true
+        ${dateFilter ? dateFilter.replace('WHERE', 'AND') : ''}
+      `, params);
+      const blockedUsers = blockedResult.rows[0]?.blocked || 0;
+
+      // Users with transaction pin
+      const pinResult = await strapi.db.connection.raw(`
+        SELECT COUNT(*)::integer as with_pin
+        FROM up_users u
+        WHERE u."hasTransactionPin" = true
+        ${dateFilter ? dateFilter.replace('WHERE', 'AND') : ''}
+      `, params);
+      const usersWithPin = pinResult.rows[0]?.with_pin || 0;
+
+      // Users with biometric enabled
+      const biometricResult = await strapi.db.connection.raw(`
+        SELECT COUNT(*)::integer as with_biometric
+        FROM up_users u
+        WHERE u."biometricEnabled" = true
+        ${dateFilter ? dateFilter.replace('WHERE', 'AND') : ''}
+      `, params);
+      const usersWithBiometric = biometricResult.rows[0]?.with_biometric || 0;
+
+      // New users today
+      const todayResult = await strapi.db.connection.raw(`
+        SELECT COUNT(*)::integer as today
+        FROM up_users u
+        WHERE DATE(u.created_at) = CURRENT_DATE
+      `);
+      const newUsersToday = todayResult.rows[0]?.today || 0;
+
+      // User growth over time (daily for last 30 days)
+      const growthResult = await strapi.db.connection.raw(`
+        SELECT 
+          DATE(created_at) as date,
+          COUNT(*)::integer as count
+        FROM up_users
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+      `);
+
+      // Total account balance across all users
+      const balanceResult = await strapi.db.connection.raw(`
+        SELECT 
+          COALESCE(SUM(CAST("AccountBalance" AS DECIMAL)), 0) as total_balance
+        FROM up_users
+        ${dateFilter}
+      `, params);
+      const totalBalance = parseFloat(balanceResult.rows[0]?.total_balance || 0);
+
+      // Recent user registrations
+      const recentResult = await strapi.db.connection.raw(`
+        SELECT 
+          id,
+          username,
+          email,
+          phone_number,
+          first_name,
+          last_name,
+          created_at,
+          blocked,
+          confirmed,
+          "hasTransactionPin",
+          "AccountBalance"
+        FROM up_users
+        ${dateFilter}
+        ORDER BY created_at DESC
+        LIMIT 10
+      `, params);
+
+      return ctx.send({
+        success: true,
+        data: {
+          totalUsers,
+          activeUsers,
+          blockedUsers,
+          usersWithPin,
+          usersWithBiometric,
+          newUsersToday,
+          totalBalance,
+          userGrowth: growthResult.rows,
+          recentUsers: recentResult.rows.map(user => ({
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            phone: user.phone_number,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            balance: parseFloat(user.AccountBalance || 0),
+            hasPin: user.hasTransactionPin,
+            blocked: user.blocked,
+            confirmed: user.confirmed,
+            createdAt: user.created_at,
+          })),
+        },
+      }, 200);
+    } catch (error) {
+      strapi.log.error('Error in getUserAnalytics:', error);
+      return ctx.send({
+        success: false,
+        error: error.message,
+      }, 500);
+    }
+  },
+
+  // Get Users List with filters
+  async getUsersList(ctx) {
+    try {
+      const { 
+        search = '', 
+        status = 'all', 
+        hasPin = 'all',
+        sortBy = 'createdAt', 
+        sortOrder = 'desc',
+        page = 1, 
+        pageSize = 20 
+      } = ctx.query;
+
+      const offset = (page - 1) * pageSize;
+      const params = [];
+      let paramIndex = 1;
+
+      // Build WHERE clause
+      let whereConditions = [];
+      
+      // Search filter
+      if (search) {
+        whereConditions.push(`(
+          u.username ILIKE $${paramIndex} OR 
+          u.email ILIKE $${paramIndex} OR 
+          u.phone_number ILIKE $${paramIndex} OR
+          u.first_name ILIKE $${paramIndex} OR
+          u.last_name ILIKE $${paramIndex} OR
+          CAST(u.id AS TEXT) ILIKE $${paramIndex}
+        )`);
+        params.push(`%${search}%`);
+        paramIndex++;
+      }
+
+      // Status filter
+      if (status === 'active') {
+        whereConditions.push('u.blocked = false AND u.confirmed = true');
+      } else if (status === 'blocked') {
+        whereConditions.push('u.blocked = true');
+      } else if (status === 'unconfirmed') {
+        whereConditions.push('u.confirmed = false');
+      }
+
+      // Transaction pin filter
+      if (hasPin === 'true') {
+        whereConditions.push('u."hasTransactionPin" = true');
+      } else if (hasPin === 'false') {
+        whereConditions.push('u."hasTransactionPin" = false');
+      }
+
+      const whereClause = whereConditions.length > 0 
+        ? `WHERE ${whereConditions.join(' AND ')}` 
+        : '';
+
+      // Sort mapping
+      const sortColumns = {
+        createdAt: 'u.created_at',
+        username: 'u.username',
+        email: 'u.email',
+        balance: 'u."AccountBalance"',
+      };
+      const sortColumn = sortColumns[sortBy] || 'u.created_at';
+      const sortDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+      // Get total count
+      const countResult = await strapi.db.connection.raw(`
+        SELECT COUNT(*)::integer as total
+        FROM up_users u
+        ${whereClause}
+      `, params);
+      const total = countResult.rows[0]?.total || 0;
+
+      // Get users
+      const usersResult = await strapi.db.connection.raw(`
+        SELECT 
+          u.id,
+          u.username,
+          u.email,
+          u.phone_number,
+          u.first_name,
+          u.last_name,
+          u."AccountBalance",
+          u.blocked,
+          u.confirmed,
+          u."hasTransactionPin",
+          u."biometricEnabled",
+          u.created_at,
+          u.updated_at
+        FROM up_users u
+        ${whereClause}
+        ORDER BY ${sortColumn} ${sortDirection}
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `, [...params, parseInt(pageSize), offset]);
+
+      return ctx.send({
+        success: true,
+        data: usersResult.rows.map(user => ({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          phone: user.phone_number,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          balance: parseFloat(user.AccountBalance || 0),
+          blocked: user.blocked,
+          confirmed: user.confirmed,
+          hasPin: user.hasTransactionPin,
+          biometricEnabled: user.biometricEnabled,
+          createdAt: user.created_at,
+          updatedAt: user.updated_at,
+        })),
+        pagination: {
+          page: parseInt(page),
+          pageSize: parseInt(pageSize),
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      }, 200);
+    } catch (error) {
+      strapi.log.error('Error in getUsersList:', error);
+      return ctx.send({
+        success: false,
+        error: error.message,
+      }, 500);
+    }
+  },
 };
