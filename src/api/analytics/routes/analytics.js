@@ -117,5 +117,23 @@ module.exports = {
         middlewares: [],
       },
     },
+    {
+      method: 'GET',
+      path: '/analytics/education',
+      handler: 'api::analytics.analytics.getEducationAnalytics',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/analytics/education-transactions',
+      handler: 'api::analytics.analytics.getEducationTransactions',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };

@@ -1814,4 +1814,242 @@ module.exports = {
       }, 500);
     }
   },
+
+  /**
+   * Get Education (Exam Pins) analytics with exam type breakdown and trends
+   */
+  async getEducationAnalytics(ctx) {
+    try {
+      const { filter = 'month', dateFrom, dateTo } = ctx.query;
+      const knex = strapi.db.connection;
+
+      // Calculate date range
+      const now = new Date();
+      let fromDate, toDate;
+
+      if (filter === 'custom' && dateFrom && dateTo) {
+        fromDate = new Date(dateFrom);
+        toDate = new Date(dateTo);
+      } else {
+        toDate = new Date();
+        switch (filter) {
+          case 'today':
+            fromDate = new Date();
+            fromDate.setHours(0, 0, 0, 0);
+            break;
+          case 'week':
+            fromDate = new Date();
+            fromDate.setDate(fromDate.getDate() - 7);
+            break;
+          case 'year':
+            fromDate = new Date();
+            fromDate.setFullYear(fromDate.getFullYear() - 1);
+            break;
+          case 'month':
+          default:
+            fromDate = new Date();
+            fromDate.setMonth(fromDate.getMonth() - 1);
+        }
+      }
+
+      const table = 'exam-pin-orders';
+
+      // Get overall stats
+      const statsResult = await knex(table)
+        .where('created_at', '>=', fromDate)
+        .where('created_at', '<=', toDate)
+        .select(
+          knex.raw('COUNT(*) as total_transactions'),
+          knex.raw('SUM(CAST(amount AS DECIMAL)) as total_revenue'),
+          knex.raw('AVG(CAST(amount AS DECIMAL)) as average_amount'),
+          knex.raw('COUNT(CASE WHEN status = ? THEN 1 END) as successful', ['sucessful']),
+          knex.raw('COUNT(CASE WHEN status = ? THEN 1 END) as failed', ['failed']),
+          knex.raw('COUNT(CASE WHEN status = ? THEN 1 END) as pending', ['pending'])
+        )
+        .first();
+
+      const totalTransactions = parseInt(statsResult.total_transactions) || 0;
+      const successfulTransactions = parseInt(statsResult.successful) || 0;
+      const successRate = totalTransactions > 0 
+        ? parseFloat(((successfulTransactions / totalTransactions) * 100).toFixed(1))
+        : 0;
+
+      // Get exam type breakdown (by service_id which contains exam types like WAEC, JAMB, NECO)
+      const examTypeBreakdown = await knex(table)
+        .where('created_at', '>=', fromDate)
+        .where('created_at', '<=', toDate)
+        .select(
+          'service_id as variation_code',
+          knex.raw('COUNT(*) as transactions'),
+          knex.raw('SUM(CAST(amount AS DECIMAL)) as revenue')
+        )
+        .groupBy('service_id')
+        .orderBy('transactions', 'desc');
+
+      const topExamType = examTypeBreakdown[0]?.variation_code || null;
+
+      // Get daily trend
+      const dailyTrend = await knex(table)
+        .where('created_at', '>=', fromDate)
+        .where('created_at', '<=', toDate)
+        .select(
+          knex.raw('DATE(created_at) as date'),
+          knex.raw('COUNT(*) as transactions'),
+          knex.raw('SUM(CAST(amount AS DECIMAL)) as revenue')
+        )
+        .groupBy(knex.raw('DATE(created_at)'))
+        .orderBy('date', 'asc');
+
+      // Get recent transactions
+      const recentTransactions = await knex(table)
+        .where('created_at', '>=', fromDate)
+        .where('created_at', '<=', toDate)
+        .select('id', 'phone', 'service_id', 'amount', 'status', 'created_at')
+        .orderBy('created_at', 'desc')
+        .limit(10);
+
+      const formattedRecentTransactions = recentTransactions.map(tx => {
+        let maskedPhone = tx.phone || 'N/A';
+        if (maskedPhone.length > 4) {
+          maskedPhone = maskedPhone.slice(0, 4) + '****' + maskedPhone.slice(-2);
+        }
+
+        return {
+          id: tx.id,
+          phone: maskedPhone,
+          examType: tx.service_id || 'Unknown',
+          amount: parseFloat(tx.amount) || 0,
+          status: tx.status || 'pending',
+          time: tx.created_at,
+        };
+      });
+
+      ctx.send({
+        success: true,
+        filter,
+        dateRange: { from: fromDate, to: toDate },
+        data: {
+          stats: {
+            totalTransactions,
+            totalRevenue: parseFloat(statsResult.total_revenue) || 0,
+            successRate: parseFloat(successRate),
+            pendingTransactions: parseInt(statsResult.pending) || 0,
+            failedTransactions: parseInt(statsResult.failed) || 0,
+            averageAmount: parseFloat(statsResult.average_amount) || 0,
+            topExamType,
+          },
+          examTypeBreakdown,
+          dailyTrend,
+          recentTransactions: formattedRecentTransactions,
+        },
+      });
+    } catch (error) {
+      console.error('Education analytics error:', error);
+      ctx.send({
+        success: false,
+        error: error.message,
+      }, 500);
+    }
+  },
+
+  /**
+   * Get all Education (Exam Pins) transactions with search, filter, and sort
+   */
+  async getEducationTransactions(ctx) {
+    try {
+      const { 
+        search = '', 
+        status, 
+        examType, 
+        sortBy = 'createdAt', 
+        sortOrder = 'desc',
+        page = 1,
+        pageSize = 20
+      } = ctx.query;
+
+      const knex = strapi.db.connection;
+      const table = 'exam-pin-orders';
+
+      // Build query
+      let query = knex(table).select(
+        'id',
+        'phone',
+        'service_id as variation_code',
+        'amount',
+        'status',
+        'request_id',
+        'service_id as serviceID',
+        'purchased_pin',
+        'created_at as createdAt',
+        'updated_at as updatedAt'
+      );
+
+      // Apply search filter (case-insensitive)
+      if (search) {
+        query = query.where((builder) => {
+          builder
+            .whereRaw('LOWER(phone) LIKE ?', [`%${search.toLowerCase()}%`])
+            .orWhere('id', '=', search)
+            .orWhereRaw('LOWER(request_id) LIKE ?', [`%${search.toLowerCase()}%`]);
+        });
+      }
+
+      // Apply status filter
+      if (status && status !== 'all') {
+        query = query.where('status', status);
+      }
+
+      // Apply exam type filter (case-insensitive partial match) - use service_id for exam type
+      if (examType && examType !== 'all') {
+        query = query.whereRaw('LOWER(service_id) LIKE ?', [`%${examType.toLowerCase()}%`]);
+      }
+
+      // Get total count
+      const countQuery = knex(table);
+      if (search) {
+        countQuery.where((builder) => {
+          builder
+            .whereRaw('LOWER(phone) LIKE ?', [`%${search.toLowerCase()}%`])
+            .orWhere('id', '=', search)
+            .orWhereRaw('LOWER(request_id) LIKE ?', [`%${search.toLowerCase()}%`]);
+        });
+      }
+      if (status && status !== 'all') {
+        countQuery.where('status', status);
+      }
+      if (examType && examType !== 'all') {
+        countQuery.whereRaw('LOWER(service_id) LIKE ?', [`%${examType.toLowerCase()}%`]);
+      }
+
+      const countResult = await countQuery.count('* as count').first();
+      const totalCount = parseInt(countResult.count);
+
+      // Apply sorting
+      const sortField = sortBy === 'createdAt' ? 'created_at' : sortBy;
+      query = query.orderBy(sortField, sortOrder);
+
+      // Apply pagination
+      const offset = (parseInt(page) - 1) * parseInt(pageSize);
+      const transactions = await query
+        .limit(parseInt(pageSize))
+        .offset(offset);
+
+      ctx.send({
+        success: true,
+        data: transactions,
+        pagination: {
+          page: parseInt(page),
+          pageSize: parseInt(pageSize),
+          pageCount: Math.ceil(totalCount / parseInt(pageSize)),
+          total: totalCount,
+        },
+      });
+    } catch (error) {
+      console.error('Education transactions fetch error:', error);
+      ctx.send({
+        success: false,
+        error: error.message,
+      }, 500);
+    }
+  },
 };
