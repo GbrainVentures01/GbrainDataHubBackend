@@ -1633,16 +1633,16 @@ module.exports = {
         ? parseFloat(((successfulTransactions / totalTransactions) * 100).toFixed(1))
         : 0;
 
-      // Get provider breakdown (by serviceID which contains actual provider code like AEDC, EKEDC)
+      // Get provider breakdown (by service_id which contains actual provider code like AEDC, EKEDC)
       const providerBreakdown = await knex(table)
         .where('created_at', '>=', fromDate)
         .where('created_at', '<=', toDate)
         .select(
-          knex.raw('COALESCE("serviceID", service_id) as variation_code'),
+          'service_id as variation_code',
           knex.raw('COUNT(*) as transactions'),
           knex.raw('SUM(CAST(amount AS DECIMAL)) as revenue')
         )
-        .groupBy(knex.raw('COALESCE("serviceID", service_id)'))
+        .groupBy('service_id')
         .orderBy('transactions', 'desc');
 
       const topProvider = providerBreakdown[0]?.variation_code || null;
@@ -1663,7 +1663,7 @@ module.exports = {
       const recentTransactions = await knex(table)
         .where('created_at', '>=', fromDate)
         .where('created_at', '<=', toDate)
-        .select('id', 'phone', knex.raw('COALESCE("serviceID", service_id) as service_id'), 'amount', 'status', 'created_at')
+        .select('id', 'phone', 'service_id', 'amount', 'status', 'created_at')
         .orderBy('created_at', 'desc')
         .limit(10);
 
@@ -1733,12 +1733,12 @@ module.exports = {
       let query = knex(table).select(
         'id',
         'phone',
-        knex.raw('COALESCE("billersCode", billers_code) as "billersCode"'),
-        knex.raw('COALESCE("serviceID", service_id) as "variation_code"'),
+        'billers_code as billersCode',
+        'service_id as variation_code',
         'amount',
         'status',
         'request_id',
-        knex.raw('COALESCE("serviceID", service_id) as "serviceID"'),
+        'service_id as serviceID',
         'purchased_token',
         'created_at as createdAt',
         'updated_at as updatedAt'
@@ -1751,7 +1751,7 @@ module.exports = {
             .whereRaw('LOWER(phone) LIKE ?', [`%${search.toLowerCase()}%`])
             .orWhere('id', '=', search)
             .orWhereRaw('LOWER(request_id) LIKE ?', [`%${search.toLowerCase()}%`])
-            .orWhereRaw('LOWER(COALESCE("billersCode", billers_code)) LIKE ?', [`%${search.toLowerCase()}%`]);
+            .orWhereRaw('LOWER(billers_code) LIKE ?', [`%${search.toLowerCase()}%`]);
         });
       }
 
@@ -1760,9 +1760,9 @@ module.exports = {
         query = query.where('status', status);
       }
 
-      // Apply provider filter (case-insensitive partial match) - use serviceID for actual provider
+      // Apply provider filter (case-insensitive partial match) - use service_id for actual provider
       if (provider && provider !== 'all') {
-        query = query.whereRaw('LOWER(COALESCE("serviceID", service_id)) LIKE ?', [`%${provider.toLowerCase()}%`]);
+        query = query.whereRaw('LOWER(service_id) LIKE ?', [`%${provider.toLowerCase()}%`]);
       }
 
       // Get total count
@@ -1773,14 +1773,14 @@ module.exports = {
             .whereRaw('LOWER(phone) LIKE ?', [`%${search.toLowerCase()}%`])
             .orWhere('id', '=', search)
             .orWhereRaw('LOWER(request_id) LIKE ?', [`%${search.toLowerCase()}%`])
-            .orWhereRaw('LOWER(COALESCE("billersCode", billers_code)) LIKE ?', [`%${search.toLowerCase()}%`]);
+            .orWhereRaw('LOWER(billers_code) LIKE ?', [`%${search.toLowerCase()}%`]);
         });
       }
       if (status && status !== 'all') {
         countQuery.where('status', status);
       }
       if (provider && provider !== 'all') {
-        countQuery.whereRaw('LOWER(COALESCE("serviceID", service_id)) LIKE ?', [`%${provider.toLowerCase()}%`]);
+        countQuery.whereRaw('LOWER(service_id) LIKE ?', [`%${provider.toLowerCase()}%`]);
       }
 
       const countResult = await countQuery.count('* as count').first();
