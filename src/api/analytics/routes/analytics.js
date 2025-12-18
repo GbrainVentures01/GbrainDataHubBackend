@@ -99,5 +99,23 @@ module.exports = {
         middlewares: [],
       },
     },
+    {
+      method: 'GET',
+      path: '/analytics/electricity',
+      handler: 'api::analytics.analytics.getElectricityAnalytics',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/analytics/electricity-transactions',
+      handler: 'api::analytics.analytics.getElectricityTransactions',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };
