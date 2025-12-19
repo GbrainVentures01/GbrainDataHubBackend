@@ -365,7 +365,7 @@ module.exports = {
             .count('* as count')
             .modify(qb => {
               if (hasAmount) {
-                qb.sum(knex.raw(`COALESCE(${amountCol}, 0) as amount`));
+                qb.sum(knex.raw(`COALESCE(${amountCol}, 0)) as amount`));
               }
               if (hasStatus) {
                 qb.sum(knex.raw(`CASE WHEN ${statusCol} IN ('completed', 'successful', 'success') THEN 1 ELSE 0 END as successful`));
@@ -458,7 +458,7 @@ module.exports = {
             .count('* as count')
             .modify(qb => {
               if (hasAmount) {
-                qb.sum(knex.raw(`COALESCE(${amountCol}, 0) as revenue`));
+                qb.sum(knex.raw(`COALESCE(${amountCol}, 0)) as revenue`));
               } else {
                 qb.select(knex.raw('0 as revenue'));
               }
@@ -2280,6 +2280,7 @@ module.exports = {
       const total = countResult.rows[0]?.total || 0;
 
       // Get users
+      const limitParams = [...params, parseInt(pageSize), offset];
       const usersResult = await strapi.db.connection.raw(`
         SELECT 
           u.id,
@@ -2299,7 +2300,7 @@ module.exports = {
         ${whereClause}
         ORDER BY ${sortColumn} ${sortDirection}
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-      `, [...params, parseInt(pageSize), offset]);
+      `, limitParams);
 
       return ctx.send({
         success: true,
