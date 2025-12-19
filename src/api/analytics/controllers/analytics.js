@@ -2281,6 +2281,8 @@ module.exports = {
 
       // Get users
       const limitParams = [...params, parseInt(pageSize), offset];
+      const limitIndex = params.length + 1;
+      const offsetIndex = params.length + 2;
       const usersResult = await strapi.db.connection.raw(`
         SELECT 
           u.id,
@@ -2299,7 +2301,7 @@ module.exports = {
         FROM up_users u
         ${whereClause}
         ORDER BY ${sortColumn} ${sortDirection}
-        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+        LIMIT $${limitIndex} OFFSET $${offsetIndex}
       `, limitParams);
 
       return ctx.send({
