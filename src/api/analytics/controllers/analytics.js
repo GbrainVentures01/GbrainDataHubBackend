@@ -2089,11 +2089,11 @@ module.exports = {
           UNION
           SELECT beneficiary as phone FROM data_gifting_orders WHERE created_at >= NOW() - INTERVAL '30 days'
           UNION
-          SELECT smart_card_number as phone FROM tvcables_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+          SELECT smart_card_number as phone FROM "tvcables-orders" WHERE created_at >= NOW() - INTERVAL '30 days'
           UNION
           SELECT phone FROM electricity_orders WHERE created_at >= NOW() - INTERVAL '30 days'
           UNION
-          SELECT phone FROM exam_pin_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+          SELECT phone FROM "exam-pin-orders" WHERE created_at >= NOW() - INTERVAL '30 days'
         ) as active_users
       `);
       const activeUsers = activeResult.rows[0]?.active || 0;
