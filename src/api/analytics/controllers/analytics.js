@@ -2221,7 +2221,9 @@ module.exports = {
         pageSize = 20 
       } = ctx.query;
 
-      const offset = (page - 1) * pageSize;
+      const pageNum = parseInt(page) || 1;
+      const pageSizeNum = parseInt(pageSize) || 20;
+      const offset = (pageNum - 1) * pageSizeNum;
       const params = [];
       let paramIndex = 1;
 
@@ -2267,7 +2269,7 @@ module.exports = {
         createdAt: 'u.created_at',
         username: 'u.username',
         email: 'u.email',
-        balance: 'u."AccountBalance"',
+        balance: 'u.account_balance',
       };
       const sortColumn = sortColumns[sortBy] || 'u.created_at';
       const sortDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
@@ -2280,30 +2282,60 @@ module.exports = {
       `, params);
       const total = countResult.rows[0]?.total || 0;
 
-      // Get users
-      const limitParams = [...params, parseInt(pageSize), offset];
-      const limitIndex = params.length + 1;
-      const offsetIndex = params.length + 2;
-      const usersResult = await strapi.db.connection.raw(`
-        SELECT 
-          u.id,
-          u.username,
-          u.email,
-          u.phone_number,
-          u.first_name,
-          u.last_name,
-          u.account_balance,
-          u.blocked,
-          u.confirmed,
-          u.transaction_pin,
-          u.biometric_enabled,
-          u.created_at,
-          u.updated_at
-        FROM up_users u
-        ${whereClause}
-        ORDER BY ${sortColumn} ${sortDirection}
-        LIMIT $${limitIndex} OFFSET $${offsetIndex}
-      `, limitParams);
+      // Get users - build query dynamically
+      const limitValue = pageSizeNum;
+      const offsetValue = offset;
+      
+      // If there are WHERE params, we need to use them plus LIMIT/OFFSET
+      // Otherwise, just use LIMIT/OFFSET directly in the query string
+      let usersResult;
+      if (params.length > 0) {
+        // Has WHERE parameters
+        const allParams = [...params, limitValue, offsetValue];
+        const limitIndex = params.length + 1;
+        const offsetIndex = params.length + 2;
+        usersResult = await strapi.db.connection.raw(`
+          SELECT 
+            u.id,
+            u.username,
+            u.email,
+            u.phone_number,
+            u.first_name,
+            u.last_name,
+            u.account_balance,
+            u.blocked,
+            u.confirmed,
+            u.transaction_pin,
+            u.biometric_enabled,
+            u.created_at,
+            u.updated_at
+          FROM up_users u
+          ${whereClause}
+          ORDER BY ${sortColumn} ${sortDirection}
+          LIMIT $${limitIndex} OFFSET $${offsetIndex}
+        `, allParams);
+      } else {
+        // No WHERE parameters, use LIMIT/OFFSET directly
+        usersResult = await strapi.db.connection.raw(`
+          SELECT 
+            u.id,
+            u.username,
+            u.email,
+            u.phone_number,
+            u.first_name,
+            u.last_name,
+            u.account_balance,
+            u.blocked,
+            u.confirmed,
+            u.transaction_pin,
+            u.biometric_enabled,
+            u.created_at,
+            u.updated_at
+          FROM up_users u
+          ORDER BY ${sortColumn} ${sortDirection}
+          LIMIT ${limitValue} OFFSET ${offsetValue}
+        `);
+      }
 
       return ctx.send({
         success: true,
@@ -2323,10 +2355,10 @@ module.exports = {
           updatedAt: user.updated_at,
         })),
         pagination: {
-          page: parseInt(page),
-          pageSize: parseInt(pageSize),
+          page: pageNum,
+          pageSize: pageSizeNum,
           total,
-          totalPages: Math.ceil(total / pageSize),
+          totalPages: Math.ceil(total / pageSizeNum),
         },
       }, 200);
     } catch (error) {
