@@ -2089,9 +2089,9 @@ module.exports = {
           UNION
           SELECT beneficiary as phone FROM data_gifting_orders WHERE created_at >= NOW() - INTERVAL '30 days'
           UNION
-          SELECT smart_card_number as phone FROM "tvcables-orders" WHERE created_at >= NOW() - INTERVAL '30 days'
+          SELECT phone FROM "tvcables-orders" WHERE created_at >= NOW() - INTERVAL '30 days'
           UNION
-          SELECT phone FROM electricity_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+          SELECT phone FROM "electricity-orders" WHERE created_at >= NOW() - INTERVAL '30 days'
           UNION
           SELECT phone FROM "exam-pin-orders" WHERE created_at >= NOW() - INTERVAL '30 days'
         ) as active_users
@@ -2111,7 +2111,7 @@ module.exports = {
       const pinResult = await strapi.db.connection.raw(`
         SELECT COUNT(*)::integer as with_pin
         FROM up_users u
-        WHERE u."hasTransactionPin" = true
+        WHERE u.transaction_pin IS NOT NULL
         ${dateFilter ? dateFilter.replace('WHERE', 'AND') : ''}
       `, params);
       const usersWithPin = pinResult.rows[0]?.with_pin || 0;
@@ -2120,7 +2120,7 @@ module.exports = {
       const biometricResult = await strapi.db.connection.raw(`
         SELECT COUNT(*)::integer as with_biometric
         FROM up_users u
-        WHERE u."biometricEnabled" = true
+        WHERE u.biometric_enabled = true
         ${dateFilter ? dateFilter.replace('WHERE', 'AND') : ''}
       `, params);
       const usersWithBiometric = biometricResult.rows[0]?.with_biometric || 0;
@@ -2147,7 +2147,7 @@ module.exports = {
       // Total account balance across all users
       const balanceResult = await strapi.db.connection.raw(`
         SELECT 
-          COALESCE(SUM(CAST("AccountBalance" AS DECIMAL)), 0) as total_balance
+          COALESCE(SUM(CAST(account_balance AS DECIMAL)), 0) as total_balance
         FROM up_users
         ${dateFilter}
       `, params);
@@ -2165,8 +2165,8 @@ module.exports = {
           created_at,
           blocked,
           confirmed,
-          "hasTransactionPin",
-          "AccountBalance"
+          transaction_pin,
+          account_balance
         FROM up_users
         ${dateFilter}
         ORDER BY created_at DESC
@@ -2191,8 +2191,8 @@ module.exports = {
             phone: user.phone_number,
             firstName: user.first_name,
             lastName: user.last_name,
-            balance: parseFloat(user.AccountBalance || 0),
-            hasPin: user.hasTransactionPin,
+            balance: parseFloat(user.account_balance || 0),
+            hasPin: user.transaction_pin !== null,
             blocked: user.blocked,
             confirmed: user.confirmed,
             createdAt: user.created_at,
@@ -2253,9 +2253,9 @@ module.exports = {
 
       // Transaction pin filter
       if (hasPin === 'true') {
-        whereConditions.push('u."hasTransactionPin" = true');
+        whereConditions.push('u.transaction_pin IS NOT NULL');
       } else if (hasPin === 'false') {
-        whereConditions.push('u."hasTransactionPin" = false');
+        whereConditions.push('u.transaction_pin IS NULL');
       }
 
       const whereClause = whereConditions.length > 0 
@@ -2292,11 +2292,11 @@ module.exports = {
           u.phone_number,
           u.first_name,
           u.last_name,
-          u."AccountBalance",
+          u.account_balance,
           u.blocked,
           u.confirmed,
-          u."hasTransactionPin",
-          u."biometricEnabled",
+          u.transaction_pin,
+          u.biometric_enabled,
           u.created_at,
           u.updated_at
         FROM up_users u
@@ -2314,11 +2314,11 @@ module.exports = {
           phone: user.phone_number,
           firstName: user.first_name,
           lastName: user.last_name,
-          balance: parseFloat(user.AccountBalance || 0),
+          balance: parseFloat(user.account_balance || 0),
           blocked: user.blocked,
           confirmed: user.confirmed,
-          hasPin: user.hasTransactionPin,
-          biometricEnabled: user.biometricEnabled,
+          hasPin: user.transaction_pin !== null,
+          biometricEnabled: user.biometric_enabled,
           createdAt: user.created_at,
           updatedAt: user.updated_at,
         })),
