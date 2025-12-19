@@ -2080,19 +2080,19 @@ module.exports = {
       `, params);
       const totalUsers = totalResult.rows[0]?.total || 0;
 
-      // Active users (users with transactions in the last 30 days)
+      // Active users (users with transactions in the last 30 days based on phone numbers)
       const activeResult = await strapi.db.connection.raw(`
-        SELECT COUNT(DISTINCT user_id)::integer as active
+        SELECT COUNT(DISTINCT phone)::integer as active
         FROM (
-          SELECT user_id FROM airtime_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+          SELECT phone FROM airtime_orders WHERE created_at >= NOW() - INTERVAL '30 days'
           UNION
-          SELECT user_id FROM data_gifting_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+          SELECT phone FROM data_gifting_orders WHERE created_at >= NOW() - INTERVAL '30 days'
           UNION
-          SELECT user_id FROM tvcables_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+          SELECT phone FROM tvcables_orders WHERE created_at >= NOW() - INTERVAL '30 days'
           UNION
-          SELECT user_id FROM electricity_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+          SELECT phone FROM electricity_orders WHERE created_at >= NOW() - INTERVAL '30 days'
           UNION
-          SELECT user_id FROM exam_pin_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+          SELECT phone FROM exam_pin_orders WHERE created_at >= NOW() - INTERVAL '30 days'
         ) as active_users
       `);
       const activeUsers = activeResult.rows[0]?.active || 0;
