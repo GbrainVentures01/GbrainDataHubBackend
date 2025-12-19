@@ -2085,7 +2085,7 @@ module.exports = {
       const activeResult = await strapi.db.connection.raw(`
         SELECT COUNT(DISTINCT phone)::integer as active
         FROM (
-          SELECT phone FROM airtime_orders WHERE created_at >= NOW() - INTERVAL '30 days'
+          SELECT beneficiary as phone FROM airtime_orders WHERE created_at >= NOW() - INTERVAL '30 days'
           UNION
           SELECT beneficiary as phone FROM data_gifting_orders WHERE created_at >= NOW() - INTERVAL '30 days'
           UNION
