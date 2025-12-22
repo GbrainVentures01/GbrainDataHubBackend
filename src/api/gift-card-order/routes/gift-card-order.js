@@ -15,7 +15,8 @@ const customRouter = (innerRouter, extraRoutes = []) => {
       return innerRouter.prefix;
     },
     get routes() {
-      if (!routes) routes = innerRouter.routes.concat(extraRoutes);
+      // Put custom routes BEFORE default routes so they match first
+      if (!routes) routes = extraRoutes.concat(innerRouter.routes);
       return routes;
     },
   };
