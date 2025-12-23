@@ -1,0 +1,39 @@
+
+{
+  "kind": "collectionType",
+  "collectionName": "payment_methods",
+  "info": {
+    "singularName": "payment-method",
+    "pluralName": "payment-methods",
+    "displayName": "Payment Method",
+    "description": "User payment methods for withdrawals"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "accountNumber": {
+      "type": "string",
+      "required": true
+    },
+    "accountName": {
+      "type": "string",
+      "required": true
+    },
+    "bank": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::bank.bank"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "isPrimary": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

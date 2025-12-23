@@ -2,6 +2,7 @@
 
 const { default: axios } = require("axios");
 const { base64encode, base64decode } = require("nodejs-base64");
+const { seedBanks } = require("./utils/seed-banks");
 
 module.exports = {
   /**
@@ -19,5 +20,8 @@ module.exports = {
    * This gives you an opportunity to set up your data model,
    * run jobs, or perform some special logic.
    */
-  bootstrap(/*{ strapi }*/) {},
+  async bootstrap({ strapi }) {
+    // Seed Nigerian banks
+    await seedBanks();
+  },
 };
