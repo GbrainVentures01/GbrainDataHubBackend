@@ -120,8 +120,14 @@ module.exports = createCoreController(
           );
         }
 
+        // Skip cable for now - schema issues with user relation
+        // if (!service || service === 'cable') {
+        //   serviceQueries.push(getTableTransactions('api::cable-subscription.cable-subscription', 'cable', 'amount', 'status', 'users'));
+        // }
+
+        // Use tvcables-order instead
         if (!service || service === 'cable') {
-          serviceQueries.push(getTableTransactions('api::cable-subscription.cable-subscription', 'cable', 'amount', 'status', 'users'));
+          serviceQueries.push(getTableTransactions('api::tvcables-order.tvcables-order', 'cable', 'amount', 'status', 'user'));
         }
 
         if (!service || service === 'electricity') {
@@ -133,13 +139,15 @@ module.exports = createCoreController(
         //   serviceQueries.push(getTableTransactions('api::education-pin.education-pin', 'education', 'amount', 'status', 'user'));
         // }
 
-        if (!service || service === 'crypto') {
-          serviceQueries.push(getTableTransactions('api::crypto.crypto', 'crypto', 'amount', 'status', 'users'));
-        }
+        // Skip crypto for now - schema issues with user relation
+        // if (!service || service === 'crypto') {
+        //   serviceQueries.push(getTableTransactions('api::crypto.crypto', 'crypto', 'amount', 'status', 'users'));
+        // }
 
-        if (!service || service === 'gift_card') {
-          serviceQueries.push(getTableTransactions('api::gift-card-order.gift-card-order', 'gift_card', 'price', 'order_status', 'users'));
-        }
+        // Skip gift_card for now - schema issues with user relation
+        // if (!service || service === 'gift_card') {
+        //   serviceQueries.push(getTableTransactions('api::gift-card-order.gift-card-order', 'gift_card', 'price', 'order_status', 'users'));
+        // }
 
         if (!service || service === 'account_funding') {
           serviceQueries.push(getTableTransactions('api::account-funding.account-funding', 'account_funding', 'amount', 'status'));
