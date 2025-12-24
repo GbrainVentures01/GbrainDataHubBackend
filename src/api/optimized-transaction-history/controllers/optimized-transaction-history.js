@@ -25,53 +25,51 @@ module.exports = createCoreController(
         const from = dateFrom || new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
         const to = dateTo || new Date().toISOString();
 
-        const knex = strapi.db.connection;
         let allTransactions = [];
 
-        // Helper to get transactions from a table
-        const getTableTransactions = async (tableName, serviceType, amountCol = 'amount', statusCol = 'status') => {
+        // Helper to get transactions from a table using Strapi query API
+        const getTableTransactions = async (apiName, serviceType, amountField = 'amount', statusField = 'status') => {
           try {
-            const hasTable = await knex.schema.hasTable(tableName);
-            if (!hasTable) return [];
-
-            const hasAmount = await knex.schema.hasColumn(tableName, amountCol);
-            const hasStatus = await knex.schema.hasColumn(tableName, statusCol);
-            const hasUser = await knex.schema.hasColumn(tableName, 'user_id');
-
-            if (!hasUser) return [];
-
-            let query = knex(tableName)
-              .where('user_id', userId)
-              .where('created_at', '>=', from)
-              .where('created_at', '<=', to);
+            const where = {
+              user: { id: userId },
+              createdAt: {
+                $gte: from,
+                $lte: to,
+              },
+            };
 
             // Apply status filter
-            if (status && hasStatus) {
-              query = query.where(statusCol, status);
+            if (status) {
+              where[statusField] = status;
             }
 
             // Apply search filter
             if (search) {
-              query = query.where(function() {
-                this.where('phone_number', 'like', `%${search}%`)
-                  .orWhere('beneficiary_phone', 'like', `%${search}%`)
-                  .orWhere('meter_number', 'like', `%${search}%`)
-                  .orWhere('smart_card_number', 'like', `%${search}%`)
-                  .orWhere('order_id', 'like', `%${search}%`)
-                  .orWhere('reference', 'like', `%${search}%`);
-              });
+              where.$or = [
+                { phone_number: { $containsi: search } },
+                { beneficiary_phone: { $containsi: search } },
+                { meter_number: { $containsi: search } },
+                { smart_card_number: { $containsi: search } },
+                { order_id: { $containsi: search } },
+                { reference: { $containsi: search } },
+                { transaction_id: { $containsi: search } },
+              ];
             }
 
-            const results = await query.select('*');
+            const results = await strapi.db.query(apiName).findMany({
+              where,
+              orderBy: { createdAt: 'desc' },
+              limit: 1000, // Get more records before pagination
+            });
 
             return results.map(row => ({
               id: row.id,
               service: serviceType,
               serviceSubtype: row.data_plan || row.package_name || row.product_name || null,
               transactionType: 'purchase',
-              referenceId: row.order_id || row.reference || row.transaction_id || `${tableName}-${row.id}`,
-              amount: hasAmount ? parseFloat(row[amountCol] || 0) : 0,
-              status: hasStatus ? row[statusCol] : 'unknown',
+              referenceId: row.order_id || row.reference || row.transaction_id || `${serviceType}-${row.id}`,
+              amount: row[amountField] ? parseFloat(row[amountField]) : 0,
+              status: row[statusField] || 'unknown',
               description: row.description || `${serviceType} transaction`,
               network: row.network || row.provider || null,
               beneficiary: row.phone_number || row.beneficiary_phone || row.meter_number || row.smart_card_number || null,
@@ -85,62 +83,60 @@ module.exports = createCoreController(
               provider: row.provider || row.api_provider || null,
               providerReference: row.provider_reference || row.api_reference || null,
               notes: null,
-              createdAt: row.created_at,
-              updatedAt: row.updated_at,
+              createdAt: row.createdAt,
+              updatedAt: row.updatedAt,
             }));
           } catch (error) {
-            console.error(`Error fetching transactions from ${tableName}:`, error.message);
+            console.error(`Error fetching transactions from ${apiName}:`, error.message);
             return [];
           }
         };
 
-        // Determine which tables to query based on service filter
+        // Fetch transactions based on service filter
+        const serviceQueries = [];
+
         if (!service || service === 'airtime') {
-          const airtimeTransactions = await getTableTransactions('airtime_orders', 'airtime', 'amount', 'status');
-          allTransactions = allTransactions.concat(airtimeTransactions);
+          serviceQueries.push(getTableTransactions('api::airtime-order.airtime-order', 'airtime', 'amount', 'status'));
         }
 
         if (!service || service === 'data') {
-          const [smeData, cgData, dataGifting, mtnCoupon, mtnSme1, mtnSme2] = await Promise.all([
-            getTableTransactions('sme_data_orders', 'data', 'amount', 'status'),
-            getTableTransactions('cg_data_orders', 'data', 'amount', 'status'),
-            getTableTransactions('data_gifting_orders', 'data', 'amount', 'status'),
-            getTableTransactions('mtn_coupon_data_orders', 'data', 'amount', 'status'),
-            getTableTransactions('mtn_sme_1_data_orders', 'data', 'amount', 'status'),
-            getTableTransactions('mtn_sme_2_data_orders', 'data', 'amount', 'status'),
-          ]);
-          allTransactions = allTransactions.concat(smeData, cgData, dataGifting, mtnCoupon, mtnSme1, mtnSme2);
+          serviceQueries.push(
+            getTableTransactions('api::sme-data-order.sme-data-order', 'data', 'amount', 'status'),
+            getTableTransactions('api::cg-data-order.cg-data-order', 'data', 'amount', 'status'),
+            getTableTransactions('api::data-gifting-order.data-gifting-order', 'data', 'amount', 'status'),
+            getTableTransactions('api::mtn-coupon-data-order.mtn-coupon-data-order', 'data', 'amount', 'status'),
+            getTableTransactions('api::mtn-sme-1-data-order.mtn-sme-1-data-order', 'data', 'amount', 'status'),
+            getTableTransactions('api::mtn-sme-2-data-order.mtn-sme-2-data-order', 'data', 'amount', 'status')
+          );
         }
 
         if (!service || service === 'cable') {
-          const cableTransactions = await getTableTransactions('cable_subscriptions', 'cable', 'amount', 'status');
-          allTransactions = allTransactions.concat(cableTransactions);
+          serviceQueries.push(getTableTransactions('api::cable-subscription.cable-subscription', 'cable', 'amount', 'status'));
         }
 
         if (!service || service === 'electricity') {
-          const electricityTransactions = await getTableTransactions('electricity_bills', 'electricity', 'amount', 'status');
-          allTransactions = allTransactions.concat(electricityTransactions);
+          serviceQueries.push(getTableTransactions('api::electricity-bill.electricity-bill', 'electricity', 'amount', 'status'));
         }
 
         if (!service || service === 'education') {
-          const educationTransactions = await getTableTransactions('education_pins', 'education', 'amount', 'status');
-          allTransactions = allTransactions.concat(educationTransactions);
+          serviceQueries.push(getTableTransactions('api::education-pin.education-pin', 'education', 'amount', 'status'));
         }
 
         if (!service || service === 'crypto') {
-          const cryptoTransactions = await getTableTransactions('cryptos', 'crypto', 'amount', 'status');
-          allTransactions = allTransactions.concat(cryptoTransactions);
+          serviceQueries.push(getTableTransactions('api::crypto.crypto', 'crypto', 'amount', 'status'));
         }
 
         if (!service || service === 'gift_card') {
-          const giftCardTransactions = await getTableTransactions('gift_card_orders', 'gift_card', 'price', 'order_status');
-          allTransactions = allTransactions.concat(giftCardTransactions);
+          serviceQueries.push(getTableTransactions('api::gift-card-order.gift-card-order', 'gift_card', 'price', 'order_status'));
         }
 
         if (!service || service === 'account_funding') {
-          const fundingTransactions = await getTableTransactions('account_fundings', 'account_funding', 'amount', 'status');
-          allTransactions = allTransactions.concat(fundingTransactions);
+          serviceQueries.push(getTableTransactions('api::account-funding.account-funding', 'account_funding', 'amount', 'status'));
         }
+
+        // Execute all queries in parallel
+        const results = await Promise.all(serviceQueries);
+        allTransactions = results.flat();
 
         // Sort transactions
         const validSortFields = ['createdAt', 'amount', 'status', 'service'];
