@@ -222,7 +222,16 @@ module.exports = {
       return ctx.unauthorized();
     }
 
-    const sanitizedUser = await sanitizeOutput(user, ctx);
+    // Fetch user with monnify_bank_details populated
+    const userWithMonnifyDetails = await strapi.entityService.findOne(
+      'plugin::users-permissions.user',
+      user.id,
+      {
+        populate: ['monnify_bank_details'],
+      }
+    );
+
+    const sanitizedUser = await sanitizeOutput(userWithMonnifyDetails, ctx);
 
     ctx.body = sanitizedUser;
   },

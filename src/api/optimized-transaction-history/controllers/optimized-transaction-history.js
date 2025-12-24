@@ -134,20 +134,17 @@ module.exports = createCoreController(
           serviceQueries.push(getTableTransactions('api::electricity-order.electricity-order', 'electricity', 'amount', 'status', 'user'));
         }
 
-        // Skip education for now - no API exists
-        // if (!service || service === 'education') {
-        //   serviceQueries.push(getTableTransactions('api::education-pin.education-pin', 'education', 'amount', 'status', 'user'));
-        // }
+        if (!service || service === 'education') {
+          serviceQueries.push(getTableTransactions('api::exam-pin-order.exam-pin-order', 'education', 'amount', 'status', 'user'));
+        }
 
-        // Skip crypto for now - schema issues with user relation
-        // if (!service || service === 'crypto') {
-        //   serviceQueries.push(getTableTransactions('api::crypto.crypto', 'crypto', 'amount', 'status', 'users'));
-        // }
+        // Crypto deposits are tracked in account-funding table with funding_method='crypto_deposit'
+        // No separate crypto transaction table exists
 
-        // Skip gift_card for now - schema issues with user relation
-        // if (!service || service === 'gift_card') {
-        //   serviceQueries.push(getTableTransactions('api::gift-card-order.gift-card-order', 'gift_card', 'price', 'order_status', 'users'));
-        // }
+        if (!service || service === 'gift_card') {
+          serviceQueries.push(getTableTransactions('api::gift-card-order.gift-card-order', 'gift_card', 'amount', 'status', 'users_permissions_users_detail'));
+        }
+        
 
         if (!service || service === 'account_funding') {
           serviceQueries.push(getTableTransactions('api::account-funding.account-funding', 'account_funding', 'amount', 'status'));
