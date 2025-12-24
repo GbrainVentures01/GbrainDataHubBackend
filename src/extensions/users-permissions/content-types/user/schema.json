@@ -235,6 +235,12 @@
       "relation": "oneToMany",
       "target": "api::gift-card-order.gift-card-order",
       "mappedBy": "users_permissions_users_detail"
+    },
+    "wallet_transactions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::wallet-transaction.wallet-transaction",
+      "mappedBy": "user"
     }
   }
 }
