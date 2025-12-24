@@ -25,6 +25,8 @@ module.exports = createCoreController(
         const from = dateFrom || new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
         const to = dateTo || new Date().toISOString();
 
+        console.log(`[myTransactions] Query params:`, { userId, service, status, dateFrom, dateTo, page, pageSize, search, sortBy, sortOrder });
+
         let allTransactions = [];
 
         // Helper to get transactions from a table using Strapi query API
@@ -38,9 +40,9 @@ module.exports = createCoreController(
               },
             };
 
-            // Apply status filter
+            // Apply status filter (case-insensitive)
             if (status) {
-              where[statusField] = status;
+              where[statusField] = { $eqi: status };
             }
 
             // Apply search filter
@@ -61,6 +63,8 @@ module.exports = createCoreController(
               orderBy: { createdAt: 'desc' },
               limit: 1000, // Get more records before pagination
             });
+
+            console.log(`[myTransactions] ${apiName}: Found ${results.length} records for user ${userId}`);
 
             return results.map(row => ({
               id: row.id,
@@ -137,6 +141,12 @@ module.exports = createCoreController(
         // Execute all queries in parallel
         const results = await Promise.all(serviceQueries);
         allTransactions = results.flat();
+
+        console.log(`[myTransactions] Total transactions found: ${allTransactions.length}`);
+        console.log(`[myTransactions] Service breakdown:`, allTransactions.reduce((acc, t) => {
+          acc[t.service] = (acc[t.service] || 0) + 1;
+          return acc;
+        }, {}));
 
         // Sort transactions
         const validSortFields = ['createdAt', 'amount', 'status', 'service'];
