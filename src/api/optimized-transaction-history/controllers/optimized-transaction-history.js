@@ -30,15 +30,21 @@ module.exports = createCoreController(
         let allTransactions = [];
 
         // Helper to get transactions from a table using Strapi query API
-        const getTableTransactions = async (apiName, serviceType, amountField = 'amount', statusField = 'status') => {
+        const getTableTransactions = async (apiName, serviceType, amountField = 'amount', statusField = 'status', userField = 'user') => {
           try {
             const where = {
-              user: { id: userId },
               createdAt: {
                 $gte: from,
                 $lte: to,
               },
             };
+
+            // Handle different user relation field names
+            if (userField === 'users') {
+              where.users = { id: userId };
+            } else {
+              where.user = { id: userId };
+            }
 
             // Apply status filter (case-insensitive)
             if (status) {
@@ -115,23 +121,24 @@ module.exports = createCoreController(
         }
 
         if (!service || service === 'cable') {
-          serviceQueries.push(getTableTransactions('api::cable-subscription.cable-subscription', 'cable', 'amount', 'status'));
+          serviceQueries.push(getTableTransactions('api::cable-subscription.cable-subscription', 'cable', 'amount', 'status', 'users'));
         }
 
         if (!service || service === 'electricity') {
-          serviceQueries.push(getTableTransactions('api::electricity-bill.electricity-bill', 'electricity', 'amount', 'status'));
+          serviceQueries.push(getTableTransactions('api::electricity-order.electricity-order', 'electricity', 'amount', 'status', 'user'));
         }
 
-        if (!service || service === 'education') {
-          serviceQueries.push(getTableTransactions('api::education-pin.education-pin', 'education', 'amount', 'status'));
-        }
+        // Skip education for now - no API exists
+        // if (!service || service === 'education') {
+        //   serviceQueries.push(getTableTransactions('api::education-pin.education-pin', 'education', 'amount', 'status', 'user'));
+        // }
 
         if (!service || service === 'crypto') {
-          serviceQueries.push(getTableTransactions('api::crypto.crypto', 'crypto', 'amount', 'status'));
+          serviceQueries.push(getTableTransactions('api::crypto.crypto', 'crypto', 'amount', 'status', 'users'));
         }
 
         if (!service || service === 'gift_card') {
-          serviceQueries.push(getTableTransactions('api::gift-card-order.gift-card-order', 'gift_card', 'price', 'order_status'));
+          serviceQueries.push(getTableTransactions('api::gift-card-order.gift-card-order', 'gift_card', 'price', 'order_status', 'users'));
         }
 
         if (!service || service === 'account_funding') {
