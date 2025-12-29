@@ -5,10 +5,6 @@
  * FCM notification endpoints
  */
 
-const defaultRouter = require('@strapi/strapi').factories.createCoreRouter(
-  'api::notification.notification'
-);
-
 const customRoutes = [
   {
     method: 'POST',
@@ -66,20 +62,6 @@ const customRoutes = [
   },
 ];
 
-const customRouter = (innerRouter, extraRoutes = []) => {
-  let routes;
-
-  return {
-    get prefix() {
-      return innerRouter.prefix;
-    },
-    get routes() {
-      if (!routes) {
-        routes = extraRoutes.concat(innerRouter.routes);
-      }
-      return routes;
-    },
-  };
+module.exports = {
+  routes: customRoutes,
 };
-
-module.exports = customRouter(defaultRouter, customRoutes);
