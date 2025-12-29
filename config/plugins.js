@@ -7,8 +7,8 @@ module.exports = ({ env }) => ({
         secretApiKey: env("MAILJET_SECRET_KEY"),
       },
       settings: {
-        defaultFrom: "admin@gbrainventures.com",
-        defaultFromName: "Gbrain Corporate Ventures",
+        defaultFrom: "admin@fendur.com",
+        defaultFromName: "Fendur",
       },
     },
     // ...US East (N. Virginia) us-east-1

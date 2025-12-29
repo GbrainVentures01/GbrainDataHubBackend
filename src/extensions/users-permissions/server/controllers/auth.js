@@ -93,7 +93,7 @@ const sendSecurityNotificationEmail = async (
   action,
   additionalInfo = {}
 ) => {
-  const emailSubject = `Security Alert: ${action} - GBrain Ventures`;
+  const emailSubject = `Security Alert: ${action} - Fendur`;
 
   const emailHtml = `
     <!DOCTYPE html>
@@ -116,12 +116,12 @@ const sendSecurityNotificationEmail = async (
       <div class="container">
         <div class="header">
           <h1>🔐 Security Alert</h1>
-          <p>GBrain Ventures Account Activity</p>
+          <p>Fendur Account Activity</p>
         </div>
         <div class="content">
           <h2>${action}</h2>
           <p>Hello ${user.username || user.email},</p>
-          <p>We detected a ${action.toLowerCase()} on your GBrain Ventures account. Here are the details:</p>
+          <p>We detected a ${action.toLowerCase()} on your Fendur account. Here are the details:</p>
           
           <table class="info-table">
             <tr>
@@ -193,7 +193,7 @@ const sendSecurityNotificationEmail = async (
           <p>If you have any concerns about your account security, please contact our support team immediately.</p>
         </div>
         <div class="footer">
-          <p>© ${new Date().getFullYear()} GBrain Ventures | Financial Technology Platform</p>
+          <p>© ${new Date().getFullYear()} Fendur | Financial Technology Platform</p>
           <p>This is an automated security notification. Please do not reply to this email.</p>
         </div>
       </div>
@@ -209,7 +209,7 @@ const sendSecurityNotificationEmail = async (
         to: user.email,
         subject: emailSubject,
         html: emailHtml,
-        text: `Security Alert: ${action} detected on your GBrain Ventures account from IP ${
+        text: `Security Alert: ${action} detected on your Fendur account from IP ${
           securityInfo.ipAddress
         } using ${securityInfo.deviceInfo} (${
           securityInfo.browserInfo
@@ -1070,7 +1070,7 @@ module.exports = {
         // Get security information
         const securityInfo = getSecurityInfo(ctx);
 
-        const emailSubject = "Welcome to GBrain Ventures - Verify Your Email";
+        const emailSubject = "Welcome to Fendur - Verify Your Email";
 
         const emailHtml = `
           <!DOCTYPE html>
@@ -1101,12 +1101,12 @@ module.exports = {
           <body>
             <div class="container">
               <div class="header">
-                <h1>🎉 Welcome to GBrain Ventures!</h1>
+                <h1>🎉 Welcome to Fendur!</h1>
                 <p>Mobile App Registration</p>
               </div>
               <div class="content">
                 <h2>Verify Your Email Address</h2>
-                <p>Thank you for joining GBrain Ventures mobile app! To complete your registration and secure your account, please verify your email address using the verification code below:</p>
+                <p>Thank you for joining Fendur! To complete your registration and secure your account, please verify your email address using the verification code below:</p>
                 
                 <div class="code-box">
                   ${verificationCode.code}
@@ -1133,10 +1133,10 @@ module.exports = {
                 
                 <p><strong>⚠️ Important:</strong> This verification code expires in 10 minutes. Enter this code in your mobile app to complete registration.</p>
                 
-                <p><strong>Security Note:</strong> Never share this code with anyone. GBrain Ventures will never ask for your verification code via phone or email.</p>
+                <p><strong>Security Note:</strong> Never share this code with anyone. Fendur will never ask for your verification code via phone or email.</p>
               </div>
               <div class="footer">
-                <p>© ${new Date().getFullYear()} GBrain Ventures | Financial Technology Platform</p>
+                <p>© ${new Date().getFullYear()} Fendur | Financial Technology Platform</p>
                 <p>This is an automated message, please do not reply.</p>
               </div>
             </div>
@@ -1151,7 +1151,7 @@ module.exports = {
             to: user.email,
             subject: emailSubject,
             html: emailHtml,
-            text: `Welcome to GBrain Ventures! Your email verification code is: ${verificationCode}. This code expires in 10 minutes. Registration from IP: ${securityInfo.ipAddress} using ${securityInfo.deviceInfo}.`,
+            text: `Welcome to Fendur! Your email verification code is: ${verificationCode}. This code expires in 10 minutes. Registration from IP: ${securityInfo.ipAddress} using ${securityInfo.deviceInfo}.`,
           });
 
         // Log successful registration
@@ -1245,7 +1245,7 @@ module.exports = {
           userAgent: ctx.request.get("User-Agent"),
         });
 
-      const emailSubject = "GBrain Ventures - New Verification Code";
+      const emailSubject = "Fendur - New Verification Code";
 
       const emailHtml = `
         <!DOCTYPE html>
@@ -1275,7 +1275,7 @@ module.exports = {
           <div class="container">
             <div class="header">
               <h1>📧 New Verification Code</h1>
-              <p>GBrain Ventures</p>
+              <p>Fendur</p>
             </div>
             <div class="content">
               <h2>Your New Verification Code</h2>
@@ -1288,7 +1288,7 @@ module.exports = {
               <p><strong>⚠️ Important:</strong> This verification code expires in 10 minutes.</p>
             </div>
             <div class="footer">
-              <p>© ${new Date().getFullYear()} GBrain Ventures | Financial Technology Platform</p>
+              <p>© ${new Date().getFullYear()} Fendur | Financial Technology Platform</p>
             </div>
           </div>
         </body>
@@ -1302,7 +1302,7 @@ module.exports = {
           to: user.email,
           subject: emailSubject,
           html: emailHtml,
-          text: `Your new GBrain Ventures verification code is: ${verificationCode}. This code expires in 10 minutes.`,
+          text: `Your new Fendur verification code is: ${verificationCode}. This code expires in 10 minutes.`,
         });
 
       ctx.send({
