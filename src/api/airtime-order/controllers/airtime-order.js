@@ -11,6 +11,14 @@ const {
 } = require("../../../extensions/users-permissions/server/utils");
 const checkduplicate = require("../../../utils/checkduplicate");
 
+// ✅ PHASE 1: Import notification triggers
+const {
+  sendPaymentSuccessNotification,
+  sendPaymentFailureNotification,
+  sendTransactionConfirmationNotification,
+  sendLowBalanceAlert,
+} = require("../../../utils/notification-triggers");
+
 /**
  *  data-order controller
  */
@@ -246,6 +254,30 @@ module.exports = createCoreController(
               current_balance: updatedUser.AccountBalance,
             },
           });
+
+          // ✅ PHASE 1: Send payment success notification for mobile
+          try {
+            await sendPaymentSuccessNotification(
+              user,
+              {
+                amount: data.amount,
+                reference: data.request_id,
+              },
+              "airtime"
+            );
+          } catch (notificationError) {
+            console.error("Failed to send success notification:", notificationError);
+          }
+
+          // ✅ Check for low balance and send alert
+          if (updatedUser.AccountBalance < 1000) {
+            try {
+              await sendLowBalanceAlert(user, updatedUser.AccountBalance);
+            } catch (notificationError) {
+              console.error("Failed to send low balance alert:", notificationError);
+            }
+          }
+
           return ctx.created({
             message: "Airtime purchase successful",
             data: {
@@ -268,6 +300,19 @@ module.exports = createCoreController(
               current_balance: updatedUser.AccountBalance,
             },
           });
+
+          // ✅ PHASE 1: Send transaction confirmation for mobile
+          try {
+            await sendTransactionConfirmationNotification(user, {
+              amount: data.amount,
+              reference: data.request_id,
+              description: `Airtime purchase for ${data.beneficiary}`,
+              id: data.request_id,
+            });
+          } catch (notificationError) {
+            console.error("Failed to send confirmation notification:", notificationError);
+          }
+
           return ctx.created({
             message: "Airtime purchase is being processed",
             data: {
@@ -326,6 +371,19 @@ module.exports = createCoreController(
                 current_balance: updatedRefundUser.AccountBalance,
               },
             });
+
+            // ✅ PHASE 1: Send payment failure notification for mobile
+            try {
+              await sendPaymentFailureNotification(
+                refundUser,
+                { amount: data.amount, reference: data.request_id },
+                'airtime',
+                'Transaction verification failed. Amount has been refunded to your account.'
+              );
+            } catch (notificationError) {
+              console.error("Failed to send failure notification:", notificationError);
+            }
+
             return ctx.serviceUnavailable(
               "Sorry something came up from network"
             );
@@ -353,6 +411,19 @@ module.exports = createCoreController(
             },
           });
 
+          // ✅ PHASE 1: Send payment failure notification for mobile
+          try {
+            const errorDescription = buyAirtime?.data?.response_description || 'Transaction failed';
+            await sendPaymentFailureNotification(
+              refundUser,
+              { amount: data.amount, reference: data.request_id },
+              'airtime',
+              `${errorDescription}. Amount has been refunded to your account.`
+            );
+          } catch (notificationError) {
+            console.error("Failed to send failure notification:", notificationError);
+          }
+
           console.log(buyAirtime);
           return ctx.throw(
             400,
@@ -372,6 +443,18 @@ module.exports = createCoreController(
             current_balance: refundUser.AccountBalance,
           },
         });
+
+        // ✅ PHASE 1: Send payment failure notification for mobile
+        try {
+          await sendPaymentFailureNotification(
+            refundUser,
+            { amount: data.amount, reference: data.request_id },
+            'airtime',
+            'An unexpected error occurred. Please contact support if the issue persists.'
+          );
+        } catch (notificationError) {
+          console.error("Failed to send failure notification:", notificationError);
+        }
 
         console.log(error);
         throw new ApplicationError("Something went wrong, try again");
@@ -478,6 +561,7 @@ module.exports = createCoreController(
               current_balance: updatedUser.AccountBalance,
             },
           });
+
           return ctx.created({ message: "Successful" });
         } else if (
           buyAirtime.data.code === "000" &&
@@ -490,6 +574,7 @@ module.exports = createCoreController(
               current_balance: updatedUser.AccountBalance,
             },
           });
+
           return ctx.created({ message: "Successful" });
           // const status = requeryTransaction({
           //   requeryParams: data.request_id,

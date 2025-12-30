@@ -16,6 +16,14 @@ const moment = require("moment");
 const isLessThanThreeMins = require("../../../utils/checkduplicate");
 const checkduplicate = require("../../../utils/checkduplicate");
 
+// ✅ PHASE 3: Import notification triggers for mobile data transactions
+const {
+  sendPaymentSuccessNotification,
+  sendPaymentFailureNotification,
+  sendTransactionConfirmationNotification,
+  sendLowBalanceAlert,
+} = require("../../../utils/notification-triggers");
+
 module.exports = createCoreController(
   "api::cg-data-order.cg-data-order",
   ({ strapi }) => ({
@@ -437,6 +445,29 @@ module.exports = createCoreController(
             },
           });
 
+          // ✅ PHASE 3: Send payment success notification for mobile
+          try {
+            await sendPaymentSuccessNotification(
+              userDetails,
+              {
+                amount: amount,
+                reference: request_id,
+              },
+              "data"
+            );
+          } catch (notificationError) {
+            console.error("Failed to send success notification:", notificationError);
+          }
+
+          // ✅ Check for low balance and send alert
+          if (updatedUser.AccountBalance < 1000) {
+            try {
+              await sendLowBalanceAlert(userDetails, updatedUser.AccountBalance);
+            } catch (notificationError) {
+              console.error("Failed to send low balance alert:", notificationError);
+            }
+          }
+
           return ctx.send({
             message:
               res.data.api_response ||
@@ -471,6 +502,19 @@ module.exports = createCoreController(
             },
           });
 
+          // ✅ PHASE 3: Send payment failure notification for mobile
+          try {
+            const errorDescription = res.data?.api_response || 'Data purchase failed';
+            await sendPaymentFailureNotification(
+              userDetails,
+              { amount: amount, reference: request_id },
+              'data',
+              `${errorDescription}. Amount has been refunded to your account.`
+            );
+          } catch (notificationError) {
+            console.error("Failed to send failure notification:", notificationError);
+          }
+
           const errorMessage =
             res.data?.api_response || "Data purchase failed. Please try again.";
           return ctx.badRequest(errorMessage);
@@ -486,7 +530,7 @@ module.exports = createCoreController(
               .query("plugin::users-permissions.user")
               .findOne({ where: { id: user.id } });
 
-            await strapi.query("plugin::users-permissions.user").update({
+            const refundedUser = await strapi.query("plugin::users-permissions.user").update({
               where: { id: user.id },
               data: {
                 AccountBalance:
@@ -504,6 +548,18 @@ module.exports = createCoreController(
                   Number(ctx.request.body.amount || 0),
               },
             });
+
+            // ✅ PHASE 3: Send payment failure notification for mobile
+            try {
+              await sendPaymentFailureNotification(
+                refundedUser,
+                { amount: ctx.request.body.amount, reference: ctx.request.body.request_id },
+                'data',
+                'An unexpected error occurred. Please contact support if the issue persists.'
+              );
+            } catch (notificationError) {
+              console.error("Failed to send failure notification:", notificationError);
+            }
           } catch (refundError) {
             console.error("Refund error:", refundError);
           }

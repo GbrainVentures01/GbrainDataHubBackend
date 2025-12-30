@@ -10,6 +10,14 @@ const {
   getService,
 } = require("../../../extensions/users-permissions/server/utils");
 
+// ✅ PHASE 2: Import notification triggers for mobile electricity transactions
+const {
+  sendPaymentSuccessNotification,
+  sendPaymentFailureNotification,
+  sendTransactionConfirmationNotification,
+  sendLowBalanceAlert,
+} = require("../../../utils/notification-triggers");
+
 /**
  *  data-order controller
  */
@@ -471,6 +479,29 @@ module.exports = createCoreController(
               },
             });
 
+          // ✅ PHASE 2: Send payment success notification for mobile
+          try {
+            await sendPaymentSuccessNotification(
+              userDetails,
+              {
+                amount: amount,
+                reference: request_id,
+              },
+              "electricity"
+            );
+          } catch (notificationError) {
+            console.error("Failed to send success notification:", notificationError);
+          }
+
+          // ✅ Check for low balance and send alert
+          if (updatedUser.AccountBalance < 1000) {
+            try {
+              await sendLowBalanceAlert(userDetails, updatedUser.AccountBalance);
+            } catch (notificationError) {
+              console.error("Failed to send low balance alert:", notificationError);
+            }
+          }
+
           return ctx.send({
             message:
               makeElectricityPurchase.data.response_description ||
@@ -507,6 +538,18 @@ module.exports = createCoreController(
                   },
                 });
 
+              // ✅ PHASE 2: Send transaction confirmation for mobile
+              try {
+                await sendTransactionConfirmationNotification(userDetails, {
+                  amount: amount,
+                  reference: request_id,
+                  description: `Electricity purchase for meter ${billersCode}`,
+                  id: request_id,
+                });
+              } catch (notificationError) {
+                console.error("Failed to send confirmation notification:", notificationError);
+              }
+
               return ctx.send({
                 message: "Transaction successful after verification",
                 success: true,
@@ -540,6 +583,18 @@ module.exports = createCoreController(
                   },
                 });
 
+              // ✅ PHASE 2: Send payment failure notification for mobile
+              try {
+                await sendPaymentFailureNotification(
+                  userDetails,
+                  { amount: amount, reference: request_id },
+                  'electricity',
+                  'Transaction verification failed. Amount has been refunded to your account.'
+                );
+              } catch (notificationError) {
+                console.error("Failed to send failure notification:", notificationError);
+              }
+
               return ctx.badRequest(
                 "Transaction failed after verification. Your account has been refunded."
               );
@@ -571,6 +626,19 @@ module.exports = createCoreController(
               },
             });
 
+          // ✅ PHASE 2: Send payment failure notification for mobile
+          try {
+            const errorDescription = makeElectricityPurchase?.data?.response_description || 'Transaction failed';
+            await sendPaymentFailureNotification(
+              userDetails,
+              { amount: amount, reference: request_id },
+              'electricity',
+              `${errorDescription}. Amount has been refunded to your account.`
+            );
+          } catch (notificationError) {
+            console.error("Failed to send failure notification:", notificationError);
+          }
+
           const errorMessage =
             makeElectricityPurchase?.data?.response_description ||
             "Electricity purchase failed. Please try again.";
@@ -591,7 +659,7 @@ module.exports = createCoreController(
 
             if (order) {
               // Restore the original balance from the order record
-              await strapi.query("plugin::users-permissions.user").update({
+              const refundedUser = await strapi.query("plugin::users-permissions.user").update({
                 where: { id: user.id },
                 data: {
                   AccountBalance: order.previous_balance,
@@ -607,6 +675,18 @@ module.exports = createCoreController(
                     current_balance: order.previous_balance,
                   },
                 });
+
+              // ✅ PHASE 2: Send payment failure notification for mobile
+              try {
+                await sendPaymentFailureNotification(
+                  refundedUser,
+                  { amount: ctx.request.body.amount, reference: ctx.request.body.request_id },
+                  'electricity',
+                  'An unexpected error occurred. Please contact support if the issue persists.'
+                );
+              } catch (notificationError) {
+                console.error("Failed to send failure notification:", notificationError);
+              }
             }
           } catch (refundError) {
             console.error("Electricity refund error:", refundError);

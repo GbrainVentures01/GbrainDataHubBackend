@@ -12,6 +12,14 @@ const {
 } = require("../../../extensions/users-permissions/server/utils");
 const checkduplicate = require("../../../utils/checkduplicate");
 
+// ✅ PHASE 3: Import notification triggers for mobile data transactions
+const {
+  sendPaymentSuccessNotification,
+  sendPaymentFailureNotification,
+  sendTransactionConfirmationNotification,
+  sendLowBalanceAlert,
+} = require("../../../utils/notification-triggers");
+
 module.exports = createCoreController(
   "api::sme-data-order.sme-data-order",
   ({ strapi }) => ({
@@ -419,6 +427,29 @@ module.exports = createCoreController(
             },
           });
 
+          // ✅ PHASE 3: Send payment success notification for mobile
+          try {
+            await sendPaymentSuccessNotification(
+              userDetails,
+              {
+                amount: amount,
+                reference: request_id,
+              },
+              "data"
+            );
+          } catch (notificationError) {
+            console.error("Failed to send success notification:", notificationError);
+          }
+
+          // ✅ Check for low balance and send alert
+          if (updatedUser.AccountBalance < 1000) {
+            try {
+              await sendLowBalanceAlert(userDetails, updatedUser.AccountBalance);
+            } catch (notificationError) {
+              console.error("Failed to send low balance alert:", notificationError);
+            }
+          }
+
           return ctx.send({
             message:
               res.data?.data?.msg ||
@@ -442,6 +473,18 @@ module.exports = createCoreController(
               current_balance: updatedUser.AccountBalance,
             },
           });
+
+          // ✅ PHASE 3: Send transaction confirmation for mobile
+          try {
+            await sendTransactionConfirmationNotification(userDetails, {
+              amount: amount,
+              reference: request_id,
+              description: `Data purchase for ${beneficiary} on ${network}`,
+              id: request_id,
+            });
+          } catch (notificationError) {
+            console.error("Failed to send confirmation notification:", notificationError);
+          }
 
           return ctx.send({
             message:
@@ -477,6 +520,19 @@ module.exports = createCoreController(
             },
           });
 
+          // ✅ PHASE 3: Send payment failure notification for mobile
+          try {
+            const errorDescription = res.data?.data?.msg || res.data?.message || 'Data purchase failed';
+            await sendPaymentFailureNotification(
+              userDetails,
+              { amount: amount, reference: request_id },
+              'data',
+              `${errorDescription}. Amount has been refunded to your account.`
+            );
+          } catch (notificationError) {
+            console.error("Failed to send failure notification:", notificationError);
+          }
+
           const errorMessage =
             res.data?.data?.msg ||
             res.data?.message ||
@@ -498,7 +554,7 @@ module.exports = createCoreController(
 
             if (order) {
               // Restore the original balance from the order record
-              await strapi.query("plugin::users-permissions.user").update({
+              const refundedUser = await strapi.query("plugin::users-permissions.user").update({
                 where: { id: user.id },
                 data: {
                   AccountBalance: order.previous_balance,
@@ -512,6 +568,18 @@ module.exports = createCoreController(
                   current_balance: order.previous_balance,
                 },
               });
+
+              // ✅ PHASE 3: Send payment failure notification for mobile
+              try {
+                await sendPaymentFailureNotification(
+                  refundedUser,
+                  { amount: ctx.request.body.amount, reference: ctx.request.body.request_id },
+                  'data',
+                  'An unexpected error occurred. Please contact support if the issue persists.'
+                );
+              } catch (notificationError) {
+                console.error("Failed to send failure notification:", notificationError);
+              }
             }
           } catch (refundError) {
             console.error("SME refund error:", refundError);

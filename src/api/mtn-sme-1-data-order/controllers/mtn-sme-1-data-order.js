@@ -11,6 +11,11 @@ const {
   getService,
 } = require("../../../extensions/users-permissions/server/utils");
 const checkduplicate = require("../../../utils/checkduplicate");
+const {
+  sendPaymentSuccessNotification,
+  sendPaymentFailureNotification,
+  sendLowBalanceAlert,
+} = require("../../../utils/notification-triggers");
 
 const { createCoreController } = require("@strapi/strapi").factories;
 
@@ -119,6 +124,27 @@ module.exports = createCoreController(
                 current_balance: updatedUser.AccountBalance,
               },
             });
+          
+          // Send success notification with graceful error handling
+          try {
+            await sendPaymentSuccessNotification(user, {
+              amount: data.amount,
+              reference: ref,
+              type: "MTN SME 1"
+            }, "data");
+          } catch (notificationError) {
+            console.error("Failed to send payment success notification:", notificationError);
+          }
+          
+          // Send low balance alert if necessary
+          if (updatedUser.AccountBalance < 1000) {
+            try {
+              await sendLowBalanceAlert(user, updatedUser.AccountBalance);
+            } catch (notificationError) {
+              console.error("Failed to send low balance alert:", notificationError);
+            }
+          }
+          
           return ctx.send({
             data: {
               message:
@@ -148,6 +174,18 @@ module.exports = createCoreController(
                 current_balance: updatedUser.AccountBalance,
               },
             });
+          
+          // Send failure notification with graceful error handling
+          try {
+            await sendPaymentFailureNotification(user, {
+              amount: data.amount,
+              reference: ref,
+              type: "MTN SME 1"
+            }, "data", res.data.api_response || "Transaction failed");
+          } catch (notificationError) {
+            console.error("Failed to send payment failure notification:", notificationError);
+          }
+          
           console.log(res.data);
           ctx.throw(400, res.data.api_response);
         }
@@ -183,6 +221,18 @@ module.exports = createCoreController(
                 current_balance: user.AccountBalance,
               },
             });
+          
+          // Send failure notification with graceful error handling
+          try {
+            await sendPaymentFailureNotification(user, {
+              amount: data.amount,
+              reference: ref,
+              type: "MTN SME 1"
+            }, "data", "Transaction was not successful");
+          } catch (notificationError) {
+            console.error("Failed to send payment failure notification:", notificationError);
+          }
+          
           ctx.throw(500, "Transaction was not successful");
         }
       } catch (error) {
@@ -209,6 +259,18 @@ module.exports = createCoreController(
                 current_balance: updatedUser.AccountBalance,
               },
             });
+          
+          // Send failure notification with graceful error handling
+          try {
+            await sendPaymentFailureNotification(user, {
+              amount: data.amount,
+              reference: ref,
+              type: "MTN SME 1"
+            }, "data", error.message || "Transaction was not successful");
+          } catch (notificationError) {
+            console.error("Failed to send payment failure notification:", notificationError);
+          }
+          
           ctx.throw(
             400,
             "Transaction was not successful, please try again later."
@@ -226,6 +288,18 @@ module.exports = createCoreController(
                 current_balance: user.AccountBalance,
               },
             });
+          
+          // Send failure notification with graceful error handling
+          try {
+            await sendPaymentFailureNotification(user, {
+              amount: data.amount,
+              reference: ref,
+              type: "MTN SME 1"
+            }, "data", error.message || "Something went wrong");
+          } catch (notificationError) {
+            console.error("Failed to send payment failure notification:", notificationError);
+          }
+          
           ctx.throw(500, "Something went wrong, please try again later.");
         }
       }
