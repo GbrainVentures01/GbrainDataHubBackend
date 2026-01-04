@@ -2614,4 +2614,49 @@ module.exports = {
       });
     }
   },
+
+  /**
+   * Save FCM token for push notifications
+   * POST /auth/fcm-token
+   * Body: { token: "FCM_DEVICE_TOKEN" }
+   */
+  async saveFCMToken(ctx) {
+    const user = ctx.state.user;
+
+    if (!user) {
+      return ctx.unauthorized("User not authenticated");
+    }
+
+    const { token } = ctx.request.body;
+
+    if (!token || typeof token !== "string") {
+      return ctx.badRequest("FCM token is required and must be a string");
+    }
+
+    try {
+      // Update user with FCM token
+      await strapi.entityService.update(
+        "plugin::users-permissions.user",
+        user.id,
+        {
+          data: {
+            fcmToken: token,
+          },
+        }
+      );
+
+      console.log(`✅ [FCM] Token saved for user ${user.id}`);
+
+      ctx.send({
+        message: "FCM token saved successfully",
+        success: true,
+      });
+    } catch (error) {
+      strapi.log.error("Failed to save FCM token:", error);
+      ctx.internalServerError({
+        error: "Unable to save FCM token",
+        errorCode: "SAVE_FCM_TOKEN_ERROR",
+      });
+    }
+  },
 };

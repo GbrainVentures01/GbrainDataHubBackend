@@ -29,7 +29,51 @@ async function initializeFirebase(serviceAccountKey) {
 }
 
 /**
- * Send a notification to a specific user
+ * Get FCM token for a user by user ID
+ * @param {Number} userId - User ID
+ * @returns {Promise<String|null>} - FCM token or null if not found
+ */
+async function getUserFCMToken(userId) {
+  try {
+    const user = await strapi.entityService.findOne('plugin::users-permissions.user', userId, {
+      fields: ['fcmToken'],
+    });
+    return user?.fcmToken || null;
+  } catch (error) {
+    console.error(`❌ [FCM] Failed to fetch FCM token for user ${userId}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Send a notification to a specific user by user ID
+ * @param {Number} userId - User ID from database
+ * @param {Object} payload - Notification payload
+ * @returns {Promise<String|null>} - Message ID or null if token not found
+ */
+async function sendNotificationToUser(userId, payload) {
+  try {
+    if (!firebaseApp) {
+      throw new Error('Firebase not initialized');
+    }
+
+    // Fetch user's FCM token
+    const fcmToken = await getUserFCMToken(userId);
+    if (!fcmToken) {
+      console.warn(`⚠️ [FCM] No FCM token found for user ${userId}`);
+      return null;
+    }
+
+    return await sendNotificationToToken(fcmToken, payload);
+  } catch (error) {
+    console.error(`❌ [FCM] Failed to send notification to user ${userId}:`, error);
+    // Don't throw - allow notification failure to not block transaction
+    return null;
+  }
+}
+
+/**
+ * Send a notification to a specific device token
  * @param {String} deviceToken - FCM device token
  * @param {Object} payload - Notification payload
  * @returns {Promise<String>} - Message ID
@@ -214,6 +258,8 @@ async function unsubscribeFromTopic(topic, tokens) {
 
 module.exports = {
   initializeFirebase,
+  getUserFCMToken,
+  sendNotificationToUser,
   sendNotificationToToken,
   sendNotificationToTokens,
   sendNotificationToTopic,

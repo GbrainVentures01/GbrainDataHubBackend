@@ -241,6 +241,12 @@
       "relation": "oneToMany",
       "target": "api::wallet-transaction.wallet-transaction",
       "mappedBy": "user"
+    },
+    "fcmToken": {
+      "type": "text",
+      "required": false,
+      "configurable": true,
+      "private": true
     }
   }
 }

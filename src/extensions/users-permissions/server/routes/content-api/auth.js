@@ -255,4 +255,14 @@ module.exports = [
       prefix: "",
     },
   },
+  // FCM Token registration endpoint
+  {
+    method: "POST",
+    path: "/auth/fcm-token",
+    handler: "auth.saveFCMToken",
+    config: {
+      middlewares: ["plugin::users-permissions.rateLimit"],
+      prefix: "",
+    },
+  },
 ];

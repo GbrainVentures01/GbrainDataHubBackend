@@ -47,7 +47,7 @@ async function sendPaymentSuccessNotification(user, payment, type) {
     };
 
     console.log(`📤 [Notification] Sending payment success notification to user ${user.id}`);
-    await firebaseNotificationService.sendNotificationToToken(user.id, payload);
+    await firebaseNotificationService.sendNotificationToUser(user.id, payload);
   } catch (error) {
     console.error('❌ [Notification] Error sending payment success notification:', error);
   }
@@ -95,7 +95,7 @@ async function sendPaymentFailureNotification(user, payment, type, reason) {
     };
 
     console.log(`📤 [Notification] Sending payment failure notification to user ${user.id}`);
-    await firebaseNotificationService.sendNotificationToToken(user.id, payload);
+    await firebaseNotificationService.sendNotificationToUser(user.id, payload);
   } catch (error) {
     console.error('❌ [Notification] Error sending payment failure notification:', error);
   }
@@ -130,7 +130,7 @@ async function sendTransactionConfirmationNotification(user, transaction) {
     };
 
     console.log(`📤 [Notification] Sending transaction confirmation to user ${user.id}`);
-    await firebaseNotificationService.sendNotificationToToken(user.id, payload);
+    await firebaseNotificationService.sendNotificationToUser(user.id, payload);
   } catch (error) {
     console.error('❌ [Notification] Error sending transaction confirmation:', error);
   }
@@ -184,7 +184,7 @@ async function sendSecurityAlertNotification(user, alertType, details) {
     };
 
     console.log(`📤 [Notification] Sending security alert to user ${user.id}`);
-    await firebaseNotificationService.sendNotificationToToken(user.id, payload);
+    await firebaseNotificationService.sendNotificationToUser(user.id, payload);
   } catch (error) {
     console.error('❌ [Notification] Error sending security alert:', error);
   }
@@ -221,7 +221,7 @@ async function sendPromotionNotification(user, promotion) {
     };
 
     console.log(`📤 [Notification] Sending promotion to user ${user.id}`);
-    await firebaseNotificationService.sendNotificationToToken(user.id, payload);
+    await firebaseNotificationService.sendNotificationToUser(user.id, payload);
   } catch (error) {
     console.error('❌ [Notification] Error sending promotion notification:', error);
   }
@@ -257,7 +257,7 @@ async function sendWalletCreditNotification(user, amount, reason) {
     };
 
     console.log(`📤 [Notification] Sending wallet credit to user ${user.id}`);
-    await firebaseNotificationService.sendNotificationToToken(user.id, payload);
+    await firebaseNotificationService.sendNotificationToUser(user.id, payload);
   } catch (error) {
     console.error('❌ [Notification] Error sending wallet credit notification:', error);
   }
@@ -290,7 +290,7 @@ async function sendLowBalanceAlert(user, balance) {
     };
 
     console.log(`📤 [Notification] Sending low balance alert to user ${user.id}`);
-    await firebaseNotificationService.sendNotificationToToken(user.id, payload);
+    await firebaseNotificationService.sendNotificationToUser(user.id, payload);
   } catch (error) {
     console.error('❌ [Notification] Error sending low balance alert:', error);
   }
