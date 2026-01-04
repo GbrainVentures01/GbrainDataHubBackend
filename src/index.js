@@ -23,5 +23,21 @@ module.exports = {
   async bootstrap({ strapi }) {
     // Seed Nigerian banks
     await seedBanks();
+
+    // Initialize Firebase Admin SDK for push notifications
+    try {
+      const firebaseNotificationService = require("./utils/firebase/notification-service");
+      const serviceAccountKey = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || "{}");
+      
+      if (Object.keys(serviceAccountKey).length > 0) {
+        await firebaseNotificationService.initializeFirebase(serviceAccountKey);
+        console.log("✅ Firebase Admin SDK initialized successfully");
+      } else {
+        console.warn("⚠️ Firebase service account key not found in environment variables");
+      }
+    } catch (error) {
+      console.error("❌ Failed to initialize Firebase:", error);
+      // Don't throw - allow app to start even if Firebase initialization fails
+    }
   },
 };
