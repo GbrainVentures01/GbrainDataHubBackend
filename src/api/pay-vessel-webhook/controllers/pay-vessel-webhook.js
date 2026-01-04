@@ -1,5 +1,9 @@
 "use strict";
 const crypto = require("crypto");
+const {
+  sendWalletCreditNotification,
+  sendPaymentFailureNotification,
+} = require("../../../utils/notification-triggers");
 
 /**
  *  pay-vessel-webhook controller
@@ -77,12 +81,24 @@ module.exports = createCoreController(
               .service("api::account-funding.account-funding")
               .create(newFunding);
 
-            await strapi.query("plugin::users-permissions.user").update({
+            const updatedUser = await strapi.query("plugin::users-permissions.user").update({
               where: { id: user.id },
               data: {
                 AccountBalance: user.AccountBalance + Number(settlementAmount),
               },
             });
+            
+            try {
+              await sendWalletCreditNotification(updatedUser, {
+                amount: Number(settlementAmount),
+                gateway: "PayVessel",
+                reference: reference,
+                timestamp: new Date().toISOString(),
+              });
+            } catch (notificationError) {
+              console.error("Failed to send wallet credit notification:", notificationError);
+            }
+            
             return ctx.send(
               {
                 message: "success",

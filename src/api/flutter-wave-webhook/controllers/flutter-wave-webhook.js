@@ -7,6 +7,10 @@
 const { createCoreController } = require("@strapi/strapi").factories;
 const Flutterwave = require("flutterwave-node-v3");
 const Transactions = require("flutterwave-node-v3/lib/rave.transactions");
+const {
+  sendWalletCreditNotification,
+  sendPaymentFailureNotification,
+} = require("../../../utils/notification-triggers");
 
 module.exports = createCoreController(
   "api::flutter-wave-webhook.flutter-wave-webhook",
@@ -64,6 +68,18 @@ module.exports = createCoreController(
                 current_balance: updatedUser.AccountBalance
               },
             });
+            
+            try {
+              await sendWalletCreditNotification(updatedUser, {
+                amount: Number(reqBody.data.amount),
+                gateway: "Flutterwave",
+                reference: reqBody.data.tx_ref,
+                flwRef: reqBody.data.flw_ref,
+                timestamp: new Date().toISOString(),
+              });
+            } catch (notificationError) {
+              console.error("Failed to send wallet credit notification:", notificationError);
+            }
 
             // const flw = new Flutterwave(
             //   process.env.FLUTTER_WAVE_PUBLIC_KEY,

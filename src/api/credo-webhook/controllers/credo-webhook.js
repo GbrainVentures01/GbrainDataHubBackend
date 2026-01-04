@@ -1,6 +1,10 @@
 "use strict";
 
 const { sha512 } = require("js-sha512");
+const {
+  sendWalletCreditNotification,
+  sendPaymentFailureNotification,
+} = require("../../../utils/notification-triggers");
 
 /**
  *  credo-webhook controller
@@ -72,6 +76,18 @@ module.exports = createCoreController(
                 current_balance: updatedUser.AccountBalance,
               },
             });
+            
+            try {
+              await sendWalletCreditNotification(updatedUser, {
+                amount: Number(reqBody.data.debitedAmount),
+                gateway: "Credo",
+                reference: reqBody.data.businessRef,
+                credoRef: reqBody.data.transRef,
+                timestamp: new Date().toISOString(),
+              });
+            } catch (notificationError) {
+              console.error("Failed to send wallet credit notification:", notificationError);
+            }
           }
         } catch (error) {
           console.log(error);

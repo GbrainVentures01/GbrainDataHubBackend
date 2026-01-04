@@ -2,6 +2,10 @@
 
 const { sha512 } = require("js-sha512");
 const calculateTransactionHash = require("../../../utils/monnify/calculateTransactionHash");
+const {
+  sendWalletCreditNotification,
+  sendPaymentFailureNotification,
+} = require("../../../utils/notification-triggers");
 
 /**
  *  monnify-webhook controller
@@ -119,6 +123,17 @@ module.exports = createCoreController(
                 current_balance: updatedUser.AccountBalance,
               },
             });
+            
+            try {
+              await sendWalletCreditNotification(updatedUser, {
+                amount: Number(reqBody.eventData.amountPaid),
+                gateway: "Monnify",
+                reference: reqBody.eventData.paymentReference,
+                timestamp: new Date().toISOString(),
+              });
+            } catch (notificationError) {
+              console.error("Failed to send wallet credit notification:", notificationError);
+            }
           }
         } catch (error) {
           console.log(error);

@@ -8,6 +8,10 @@ const createReservedAccount = require("../../../utils/monnify/createReservedAcco
 const customNetwork = require("../../../utils/customNetwork");
 const generatePalmpayAccount = require("../../../utils/monnify/generatePayVesselAccount");
 const generatePayVesselAccount = require("../../../utils/monnify/generatePayVesselAccount");
+const {
+  sendWalletCreditNotification,
+  sendPaymentFailureNotification,
+} = require("../../../utils/notification-triggers");
 
 /**
  *  account-funding controller
@@ -319,11 +323,33 @@ module.exports = createCoreController(
           });
           console.log(res);
           if (res.status === "success") {
+            try {
+              await sendWalletCreditNotification(user, {
+                amount: Number(amount),
+                gateway: "Flutterwave",
+                reference: Fref,
+                timestamp: new Date().toISOString(),
+              });
+            } catch (notificationError) {
+              console.error("Failed to send wallet credit notification:", notificationError);
+            }
             ctx.send({
               message: "success",
               response: res,
             });
           } else {
+            try {
+              await sendPaymentFailureNotification(user, {
+                type: "Wallet Funding",
+                amount: Number(amount),
+                gateway: "Flutterwave",
+                reference: Fref,
+                reason: res.message || "Wallet funding failed",
+                timestamp: new Date().toISOString(),
+              });
+            } catch (notificationError) {
+              console.error("Failed to send payment failure notification:", notificationError);
+            }
             return ctx.serviceUnavailable("Service temporarily unavailable");
           }
         } else if (gateway === "monify") {
@@ -335,11 +361,33 @@ module.exports = createCoreController(
           });
           console.log(res);
           if (res.requestSuccessful) {
+            try {
+              await sendWalletCreditNotification(user, {
+                amount: Number(amount),
+                gateway: "Monnify",
+                reference: Mnfy,
+                timestamp: new Date().toISOString(),
+              });
+            } catch (notificationError) {
+              console.error("Failed to send wallet credit notification:", notificationError);
+            }
             ctx.send({
               message: "success",
               response: res,
             });
           } else {
+            try {
+              await sendPaymentFailureNotification(user, {
+                type: "Wallet Funding",
+                amount: Number(amount),
+                gateway: "Monnify",
+                reference: Mnfy,
+                reason: res.responseMessage || "Wallet funding failed",
+                timestamp: new Date().toISOString(),
+              });
+            } catch (notificationError) {
+              console.error("Failed to send payment failure notification:", notificationError);
+            }
             return ctx.serviceUnavailable("Service temporarily unavailable");
           }
         } else {
@@ -351,11 +399,33 @@ module.exports = createCoreController(
           });
           console.log(res);
           if (res.status === 200) {
+            try {
+              await sendWalletCreditNotification(user, {
+                amount: Number(amount),
+                gateway: "Credo",
+                reference: Cref,
+                timestamp: new Date().toISOString(),
+              });
+            } catch (notificationError) {
+              console.error("Failed to send wallet credit notification:", notificationError);
+            }
             ctx.send({
               message: "success",
               response: res,
             });
           } else {
+            try {
+              await sendPaymentFailureNotification(user, {
+                type: "Wallet Funding",
+                amount: Number(amount),
+                gateway: "Credo",
+                reference: Cref,
+                reason: res.message || "Wallet funding failed",
+                timestamp: new Date().toISOString(),
+              });
+            } catch (notificationError) {
+              console.error("Failed to send payment failure notification:", notificationError);
+            }
             return ctx.serviceUnavailable("Service temporarily unavailable");
           }
         }

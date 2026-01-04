@@ -9,6 +9,12 @@ const requeryTransaction = require("../../../utils/vtpass/requeryTransaction");
 const {
   getService,
 } = require("../../../extensions/users-permissions/server/utils");
+const {
+  sendPaymentSuccessNotification,
+  sendPaymentFailureNotification,
+  sendTransactionConfirmationNotification,
+  sendLowBalanceAlert,
+} = require("../../../utils/notification-triggers");
 
 /**
  *  data-order controller
@@ -142,6 +148,26 @@ module.exports = createCoreController(
               current_balance: updatedUser.AccountBalance,
             },
           });
+          
+          // Send success notification with graceful error handling
+          try {
+            await sendPaymentSuccessNotification(user, {
+              amount: amount,
+              reference: request_id,
+              type: "Exam PIN"
+            }, "exam-pin");
+          } catch (notificationError) {
+            console.error("Failed to send payment success notification:", notificationError);
+          }
+          
+          // Send low balance alert if necessary
+          if (updatedUser.AccountBalance < 1000) {
+            try {
+              await sendLowBalanceAlert(user, updatedUser.AccountBalance);
+            } catch (notificationError) {
+              console.error("Failed to send low balance alert:", notificationError);
+            }
+          }
 
           return ctx.send({
             success: true,
@@ -174,6 +200,27 @@ module.exports = createCoreController(
                 current_balance: updatedUser.AccountBalance,
               },
             });
+            
+            // Send transaction confirmation notification with graceful error handling
+            try {
+              await sendTransactionConfirmationNotification(user, {
+                amount: amount,
+                reference: request_id,
+                type: "Exam PIN",
+                status: "confirmed after verification"
+              });
+            } catch (notificationError) {
+              console.error("Failed to send transaction confirmation notification:", notificationError);
+            }
+            
+            // Send low balance alert if necessary
+            if (updatedUser.AccountBalance < 1000) {
+              try {
+                await sendLowBalanceAlert(user, updatedUser.AccountBalance);
+              } catch (notificationError) {
+                console.error("Failed to send low balance alert:", notificationError);
+              }
+            }
 
             return ctx.send({
               success: true,
@@ -210,6 +257,17 @@ module.exports = createCoreController(
                 current_balance: orderRecord.previous_balance,
               },
             });
+            
+            // Send failure notification with graceful error handling
+            try {
+              await sendPaymentFailureNotification(user, {
+                amount: amount,
+                reference: request_id,
+                type: "Exam PIN"
+              }, "exam-pin", "Transaction failed after verification");
+            } catch (notificationError) {
+              console.error("Failed to send payment failure notification:", notificationError);
+            }
 
             return ctx.throw(400, "Transaction failed after requery");
           }
@@ -235,11 +293,21 @@ module.exports = createCoreController(
               current_balance: orderRecord.previous_balance,
             },
           });
+          
+          // Send failure notification with graceful error handling
+          const errorMessage =
+            purchaseExamPin?.data?.response_description || "Transaction failed";
+          try {
+            await sendPaymentFailureNotification(user, {
+              amount: amount,
+              reference: request_id,
+              type: "Exam PIN"
+            }, "exam-pin", errorMessage);
+          } catch (notificationError) {
+            console.error("Failed to send payment failure notification:", notificationError);
+          }
 
-          return ctx.throw(
-            400,
-            purchaseExamPin?.data?.response_description || "Transaction failed"
-          );
+          return ctx.throw(400, errorMessage);
         }
       } catch (error) {
         console.error("Error purchasing exam pin:", error);
@@ -251,7 +319,7 @@ module.exports = createCoreController(
             .findOne({ where: { request_id: request_id } });
 
           if (orderRecord && orderRecord.previous_balance) {
-            await strapi.query("plugin::users-permissions.user").update({
+            const refundedUser = await strapi.query("plugin::users-permissions.user").update({
               where: { id: user.id },
               data: {
                 AccountBalance: orderRecord.previous_balance,
@@ -265,6 +333,17 @@ module.exports = createCoreController(
                 current_balance: orderRecord.previous_balance,
               },
             });
+            
+            // Send failure notification with graceful error handling
+            try {
+              await sendPaymentFailureNotification(refundedUser, {
+                amount: amount,
+                reference: request_id,
+                type: "Exam PIN"
+              }, "exam-pin", error.message || "An error occurred during processing");
+            } catch (notificationError) {
+              console.error("Failed to send payment failure notification:", notificationError);
+            }
           }
         } catch (refundError) {
           console.error("Error during refund:", refundError);

@@ -9,6 +9,12 @@ const requeryTransaction = require("../../../utils/vtpass/requeryTransaction");
 const {
   getService,
 } = require("../../../extensions/users-permissions/server/utils");
+const {
+  sendPaymentSuccessNotification,
+  sendPaymentFailureNotification,
+  sendTransactionConfirmationNotification,
+  sendLowBalanceAlert,
+} = require("../../../utils/notification-triggers");
 
 /**
  *  data-order controller
@@ -381,6 +387,26 @@ module.exports = createCoreController(
               current_balance: updatedUser.AccountBalance,
             },
           });
+          
+          // Send success notification with graceful error handling
+          try {
+            await sendPaymentSuccessNotification(userDetails, {
+              amount: amount,
+              reference: request_id,
+              type: "Cable/TV"
+            }, "cable");
+          } catch (notificationError) {
+            console.error("Failed to send payment success notification:", notificationError);
+          }
+          
+          // Send low balance alert if necessary
+          if (updatedUser.AccountBalance < 1000) {
+            try {
+              await sendLowBalanceAlert(userDetails, updatedUser.AccountBalance);
+            } catch (notificationError) {
+              console.error("Failed to send low balance alert:", notificationError);
+            }
+          }
 
           return ctx.send({
             message:
@@ -413,6 +439,27 @@ module.exports = createCoreController(
                   current_balance: updatedUser.AccountBalance,
                 },
               });
+              
+              // Send transaction confirmation notification with graceful error handling
+              try {
+                await sendTransactionConfirmationNotification(userDetails, {
+                  amount: amount,
+                  reference: request_id,
+                  type: "Cable/TV",
+                  status: "confirmed after verification"
+                });
+              } catch (notificationError) {
+                console.error("Failed to send transaction confirmation notification:", notificationError);
+              }
+              
+              // Send low balance alert if necessary
+              if (updatedUser.AccountBalance < 1000) {
+                try {
+                  await sendLowBalanceAlert(userDetails, updatedUser.AccountBalance);
+                } catch (notificationError) {
+                  console.error("Failed to send low balance alert:", notificationError);
+                }
+              }
 
               return ctx.send({
                 message: "Transaction successful after verification",
@@ -443,6 +490,17 @@ module.exports = createCoreController(
                   current_balance: refundedUser.AccountBalance,
                 },
               });
+              
+              // Send failure notification with graceful error handling
+              try {
+                await sendPaymentFailureNotification(userDetails, {
+                  amount: amount,
+                  reference: request_id,
+                  type: "Cable/TV"
+                }, "cable", "Transaction failed after verification");
+              } catch (notificationError) {
+                console.error("Failed to send payment failure notification:", notificationError);
+              }
 
               return ctx.badRequest(
                 "Transaction failed after verification. Your account has been refunded."
@@ -472,10 +530,21 @@ module.exports = createCoreController(
               current_balance: refundedUser.AccountBalance,
             },
           });
-
+          
+          // Send failure notification with graceful error handling
           const errorMessage =
             makeCablePurchase?.data?.response_description ||
             "Cable/TV subscription purchase failed. Please try again.";
+          try {
+            await sendPaymentFailureNotification(userDetails, {
+              amount: amount,
+              reference: request_id,
+              type: "Cable/TV"
+            }, "cable", errorMessage);
+          } catch (notificationError) {
+            console.error("Failed to send payment failure notification:", notificationError);
+          }
+
           return ctx.badRequest(errorMessage);
         }
       } catch (error) {
@@ -493,7 +562,7 @@ module.exports = createCoreController(
 
             if (order) {
               // Restore the original balance from the order record
-              await strapi.query("plugin::users-permissions.user").update({
+              const refundedUser = await strapi.query("plugin::users-permissions.user").update({
                 where: { id: user.id },
                 data: {
                   AccountBalance: order.previous_balance,
@@ -507,6 +576,17 @@ module.exports = createCoreController(
                   current_balance: order.previous_balance,
                 },
               });
+              
+              // Send failure notification with graceful error handling
+              try {
+                await sendPaymentFailureNotification(refundedUser, {
+                  amount: ctx.request.body.amount,
+                  reference: ctx.request.body.request_id,
+                  type: "Cable/TV"
+                }, "cable", error.message || "An error occurred during processing");
+              } catch (notificationError) {
+                console.error("Failed to send payment failure notification:", notificationError);
+              }
             }
           } catch (refundError) {
             console.error("Cable refund error:", refundError);

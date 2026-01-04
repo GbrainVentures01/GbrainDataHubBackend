@@ -18,6 +18,9 @@ const {
 } = require("@strapi/plugin-users-permissions/server/controllers/validation/auth");
 const getToken = require("../../../../utils/monnify/getToken");
 const createReservedAccount = require("../../../../utils/monnify/createReservedAccount");
+const {
+  sendSecurityAlertNotification,
+} = require("../../../../utils/notification-triggers");
 
 const { sanitize } = utils;
 const { ApplicationError, ValidationError } = utils.errors;
@@ -886,6 +889,20 @@ module.exports = {
       );
 
       if (!validPassword) {
+        // Send failed login attempt notification with graceful error handling
+        const securityInfo = getSecurityInfo(ctx);
+        try {
+          await sendSecurityAlertNotification(user, "Failed Login Attempts", {
+            device: securityInfo.deviceInfo,
+            browser: securityInfo.browserInfo,
+            ipAddress: securityInfo.ipAddress,
+            timestamp: securityInfo.timestamp,
+            reason: "Invalid password"
+          });
+        } catch (notificationError) {
+          console.error("Failed to send security notification:", notificationError);
+        }
+
         return ctx.unauthorized("Invalid email or password", {
           errorCode: "INVALID_CREDENTIALS",
         });
@@ -902,6 +919,18 @@ module.exports = {
       strapi.log.info(
         `Mobile login successful for ${user.email} from IP ${securityInfo.ipAddress} using ${securityInfo.deviceInfo}`
       );
+
+      // Send push notification for new device login with graceful error handling
+      try {
+        await sendSecurityAlertNotification(user, "New Device Login", {
+          device: securityInfo.deviceInfo,
+          browser: securityInfo.browserInfo,
+          ipAddress: securityInfo.ipAddress,
+          timestamp: securityInfo.timestamp
+        });
+      } catch (notificationError) {
+        console.error("Failed to send security notification:", notificationError);
+      }
 
       // Send security notification email (non-blocking)
       sendSecurityNotificationEmail(user, securityInfo, "Account Login").catch(
@@ -2408,7 +2437,19 @@ module.exports = {
       // Get security information for notification
       const securityInfo = getSecurityInfo(ctx);
 
-      // Send security notification about PIN change
+      // Send push notification for PIN change with graceful error handling
+      try {
+        await sendSecurityAlertNotification(user, "PIN Changed", {
+          device: securityInfo.deviceInfo,
+          browser: securityInfo.browserInfo,
+          ipAddress: securityInfo.ipAddress,
+          timestamp: securityInfo.timestamp
+        });
+      } catch (notificationError) {
+        console.error("Failed to send security notification:", notificationError);
+      }
+
+      // Send security notification email about PIN change
       await sendSecurityNotificationEmail(
         user,
         securityInfo,
@@ -2541,7 +2582,19 @@ module.exports = {
       // Get security information for notification
       const securityInfo = getSecurityInfo(ctx);
 
-      // Send security notification about password change
+      // Send push notification for password change with graceful error handling
+      try {
+        await sendSecurityAlertNotification(user, "Password Changed", {
+          device: securityInfo.deviceInfo,
+          browser: securityInfo.browserInfo,
+          ipAddress: securityInfo.ipAddress,
+          timestamp: securityInfo.timestamp
+        });
+      } catch (notificationError) {
+        console.error("Failed to send security notification:", notificationError);
+      }
+
+      // Send security notification email about password change
       await sendSecurityNotificationEmail(
         user,
         securityInfo,
