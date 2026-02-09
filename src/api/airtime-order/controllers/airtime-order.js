@@ -253,6 +253,7 @@ module.exports = createCoreController(
           phone: data.beneficiary,
           amount: String(data.amount),
           airtime_type: "VTU",
+          pin: process.env.BELLO_PIN,
         };
 
         const buyAirtime = await customNetwork({
@@ -463,6 +464,7 @@ module.exports = createCoreController(
           phone: data.beneficiary,
           amount: String(data.amount),
           airtime_type: "VTU",
+          pin: process.env.BELLO_PIN,
         };
 
         const buyAirtime = await customNetwork({
