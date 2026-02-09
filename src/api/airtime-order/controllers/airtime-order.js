@@ -3,8 +3,7 @@
 const converter = require("../../../utils/converter");
 const calculateTransactionHash = require("../../../utils/monnify/calculateTransactionHash");
 const customNetwork = require("../../../utils/customNetwork");
-const { base64encode } = require("nodejs-base64");
-const requeryTransaction = require("../../../utils/vtpass/requeryTransaction");
+const randomString = require("randomstring");
 const { ApplicationError } = require("@strapi/utils/lib/errors");
 const {
   getService,
@@ -18,6 +17,28 @@ const {
   sendTransactionConfirmationNotification,
   sendLowBalanceAlert,
 } = require("../../../utils/notification-triggers");
+
+/**
+ * Helper function to map network names to Bello network IDs
+ * @param {string} network - Network name (mtn, airtel, glo, 9mobile, etisalat)
+ * @returns {string} - Bello network ID
+ */
+const getNetworkId = (network) => {
+  const networkLower = network?.toLowerCase() || '';
+  switch (networkLower) {
+    case 'mtn':
+      return '1';
+    case 'airtel':
+      return '2';
+    case 'glo':
+      return '3';
+    case '9mobile':
+    case 'etisalat':
+      return '4';
+    default:
+      return '1'; // Default to MTN
+  }
+};
 
 /**
  *  data-order controller
@@ -198,9 +219,14 @@ module.exports = createCoreController(
 
       try {
         const { pin, biometricToken, authMethod, ...restofdata } = data;
+        
+        // Generate reference for Bello
+        const ref = data.request_id || `GBRAIN|AIRTIME|${randomString.generate(8)}`;
+        
         const newOrder = {
           data: {
             ...restofdata,
+            request_id: ref,
             user: id,
             current_balance: user.AccountBalance,
             previous_balance: user.AccountBalance,
@@ -221,34 +247,29 @@ module.exports = createCoreController(
             },
           });
 
-        // Prepare payload for VTPass
+        // Prepare payload for Bello
         const payload = {
-          request_id: data.request_id,
-          serviceID: data.serviceID,
+          network_id: getNetworkId(data.network || data.serviceID),
           phone: data.beneficiary,
-          amount: Number(data.amount),
+          amount: String(data.amount),
+          airtime_type: "VTU",
         };
 
         const buyAirtime = await customNetwork({
           method: "POST",
-          path: "pay",
+          path: "airtime",
           requestBody: payload,
-          target: "vtpass",
+          target: "bello",
           headers: {
-            Authorization: `Basic ${base64encode(
-              `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
-            )}`,
+            Authorization: `Bearer ${process.env.BELLO_SECRET}`,
           },
         });
 
-        console.log(buyAirtime.data.content.transactions);
+        console.log("Bello airtime response:", buyAirtime.data);
 
-        if (
-          buyAirtime.data.code === "000" &&
-          buyAirtime.data.content.transactions.status === "delivered"
-        ) {
+        if (buyAirtime.status === 200 && buyAirtime.data.status) {
           await strapi.query("api::airtime-order.airtime-order").update({
-            where: { request_id: data.request_id },
+            where: { request_id: ref },
             data: {
               status: "delivered",
               current_balance: updatedUser.AccountBalance,
@@ -261,7 +282,7 @@ module.exports = createCoreController(
               user,
               {
                 amount: data.amount,
-                reference: data.request_id,
+                reference: ref,
               },
               "airtime"
             );
@@ -281,115 +302,16 @@ module.exports = createCoreController(
           return ctx.created({
             message: "Airtime purchase successful",
             data: {
-              transactionId: data.request_id,
+              transactionId: ref,
               amount: data.amount,
               beneficiary: data.beneficiary,
-              network: data.serviceID,
+              network: data.network || data.serviceID,
               status: "delivered",
               newBalance: updatedUser.AccountBalance,
             },
           });
-        } else if (
-          buyAirtime.data.code === "000" &&
-          buyAirtime.data.content.transactions.status !== "delivered"
-        ) {
-          await strapi.query("api::airtime-order.airtime-order").update({
-            where: { request_id: data.request_id },
-            data: {
-              status: "processing",
-              current_balance: updatedUser.AccountBalance,
-            },
-          });
-
-          // ✅ PHASE 1: Send transaction confirmation for mobile
-          try {
-            await sendTransactionConfirmationNotification(user, {
-              amount: data.amount,
-              reference: data.request_id,
-              description: `Airtime purchase for ${data.beneficiary}`,
-              id: data.request_id,
-            });
-          } catch (notificationError) {
-            console.error("Failed to send confirmation notification:", notificationError);
-          }
-
-          return ctx.created({
-            message: "Airtime purchase is being processed",
-            data: {
-              transactionId: data.request_id,
-              amount: data.amount,
-              beneficiary: data.beneficiary,
-              network: data.serviceID,
-              status: "processing",
-              newBalance: updatedUser.AccountBalance,
-            },
-          });
-        } else if (buyAirtime.data.code === "099") {
-          const status = requeryTransaction({
-            requeryParams: data.request_id,
-          });
-          console.log(status);
-          if (status.code === "000" || status.code === "099") {
-            await strapi.query("api::airtime-order.airtime-order").update({
-              where: { request_id: data.request_id },
-              data: {
-                status: "delivered",
-                current_balance: updatedUser.AccountBalance,
-              },
-            });
-            return ctx.created({
-              message: "Airtime purchase successful",
-              data: {
-                transactionId: data.request_id,
-                amount: data.amount,
-                beneficiary: data.beneficiary,
-                network: data.serviceID,
-                status: "delivered",
-                newBalance: updatedUser.AccountBalance,
-              },
-            });
-          } else {
-            // Refund user
-            const refundUser = await strapi
-              .query("plugin::users-permissions.user")
-              .findOne({ where: { id: id } });
-
-            const updatedRefundUser = await strapi
-              .query("plugin::users-permissions.user")
-              .update({
-                where: { id: refundUser.id },
-                data: {
-                  AccountBalance:
-                    refundUser.AccountBalance + Number(data.amount),
-                },
-              });
-
-            await strapi.query("api::airtime-order.airtime-order").update({
-              where: { request_id: data.request_id },
-              data: {
-                status: "failed",
-                current_balance: updatedRefundUser.AccountBalance,
-              },
-            });
-
-            // ✅ PHASE 1: Send payment failure notification for mobile
-            try {
-              await sendPaymentFailureNotification(
-                refundUser,
-                { amount: data.amount, reference: data.request_id },
-                'airtime',
-                'Transaction verification failed. Amount has been refunded to your account.'
-              );
-            } catch (notificationError) {
-              console.error("Failed to send failure notification:", notificationError);
-            }
-
-            return ctx.serviceUnavailable(
-              "Sorry something came up from network"
-            );
-          }
         } else {
-          // Refund user
+          // Refund user on failure
           const refundUser = await strapi
             .query("plugin::users-permissions.user")
             .findOne({ where: { id: id } });
@@ -404,7 +326,7 @@ module.exports = createCoreController(
             });
 
           await strapi.query("api::airtime-order.airtime-order").update({
-            where: { request_id: data.request_id },
+            where: { request_id: ref },
             data: {
               status: "failed",
               current_balance: updatedRefundUser.AccountBalance,
@@ -413,10 +335,10 @@ module.exports = createCoreController(
 
           // ✅ PHASE 1: Send payment failure notification for mobile
           try {
-            const errorDescription = buyAirtime?.data?.response_description || 'Transaction failed';
+            const errorDescription = buyAirtime?.data?.api_response || buyAirtime?.data?.message || 'Transaction failed';
             await sendPaymentFailureNotification(
               refundUser,
-              { amount: data.amount, reference: data.request_id },
+              { amount: data.amount, reference: ref },
               'airtime',
               `${errorDescription}. Amount has been refunded to your account.`
             );
@@ -424,20 +346,21 @@ module.exports = createCoreController(
             console.error("Failed to send failure notification:", notificationError);
           }
 
-          console.log(buyAirtime);
+          console.log("Bello airtime failed:", buyAirtime.data);
           return ctx.throw(
             400,
-            buyAirtime?.data?.response_description || "Transaction failed"
+            buyAirtime?.data?.api_response || buyAirtime?.data?.message || "Transaction failed"
           );
         }
       } catch (error) {
         // Handle error and refund user
+        const ref = data.request_id || `GBRAIN|AIRTIME|${randomString.generate(8)}`;
         const refundUser = await strapi
           .query("plugin::users-permissions.user")
           .findOne({ where: { id: id } });
 
         await strapi.query("api::airtime-order.airtime-order").update({
-          where: { request_id: data.request_id },
+          where: { request_id: ref },
           data: {
             status: "failed",
             current_balance: refundUser.AccountBalance,
@@ -448,7 +371,7 @@ module.exports = createCoreController(
         try {
           await sendPaymentFailureNotification(
             refundUser,
-            { amount: data.amount, reference: data.request_id },
+            { amount: data.amount, reference: ref },
             'airtime',
             'An unexpected error occurred. Please contact support if the issue persists.'
           );
@@ -456,7 +379,7 @@ module.exports = createCoreController(
           console.error("Failed to send failure notification:", notificationError);
         }
 
-        console.log(error);
+        console.log("Bello airtime error:", error);
         throw new ApplicationError("Something went wrong, try again");
       }
     },
@@ -495,7 +418,7 @@ module.exports = createCoreController(
         .findOne({ where: { id: id } });
 
       if (
-        user.AccountBalance < Number(data.amount || user.AccountBalance === 0)
+        user.AccountBalance < Number(data.amount) || user.AccountBalance === 0
       ) {
         return ctx.badRequest("Low Wallet Balance, please fund your wallet");
       }
@@ -506,13 +429,16 @@ module.exports = createCoreController(
       if (!validPin) {
         return ctx.badRequest("Incorrect Pin");
       }
-      // update latest user's details (debit user's account)
+
+      // Generate reference for Bello
+      const ref = data.request_id || `GBRAIN|AIRTIME|${randomString.generate(8)}`;
 
       try {
         const { pin, ...restofdata } = data;
         const newOrder = {
           data: {
             ...restofdata,
+            request_id: ref,
             user: id,
             current_balance: user.AccountBalance,
             previous_balance: user.AccountBalance,
@@ -531,138 +457,116 @@ module.exports = createCoreController(
             },
           });
 
+        // Prepare payload for Bello
         const payload = {
-          request_id: data.request_id,
-          serviceID: data.serviceID,
+          network_id: getNetworkId(data.network || data.serviceID),
           phone: data.beneficiary,
-          amount: Number(data.amount),
+          amount: String(data.amount),
+          airtime_type: "VTU",
         };
 
         const buyAirtime = await customNetwork({
           method: "POST",
-          path: "pay",
+          path: "airtime",
           requestBody: payload,
-          target: "vtpass",
+          target: "bello",
           headers: {
-            Authorization: `Basic ${base64encode(
-              `${process.env.VTPASS_USERNAME}:${process.env.VTPASS_PASSWORD}`
-            )}`,
+            Authorization: `Bearer ${process.env.BELLO_SECRET}`,
           },
         });
-        console.log(buyAirtime.data.content.transactions);
-        if (
-          buyAirtime.data.code === "000" &&
-          buyAirtime.data.content.transactions.status === "delivered"
-        ) {
+
+        console.log("Bello airtime response:", buyAirtime.data);
+
+        if (buyAirtime.status === 200 && buyAirtime.data.status) {
           await strapi.query("api::airtime-order.airtime-order").update({
-            where: { request_id: data.request_id },
+            where: { request_id: ref },
             data: {
               status: "delivered",
               current_balance: updatedUser.AccountBalance,
             },
           });
 
-          return ctx.created({ message: "Successful" });
-        } else if (
-          buyAirtime.data.code === "000" &&
-          buyAirtime.data.content.transactions.status !== "delivered"
-        ) {
-          await strapi.query("api::airtime-order.airtime-order").update({
-            where: { request_id: data.request_id },
-            data: {
-              status: "processing",
-              current_balance: updatedUser.AccountBalance,
-            },
-          });
-
-          return ctx.created({ message: "Successful" });
-          // const status = requeryTransaction({
-          //   requeryParams: data.request_id,
-          // });
-        } else if (buyAirtime.data.code === "099") {
-          const status = requeryTransaction({
-            requeryParams: data.request_id,
-          });
-          console.log(status);
-          if (status.code === "000" || status.code === "099") {
-            await strapi.query("api::airtime-order.airtime-order").update({
-              where: { request_id: data.request_id },
-              data: {
-                status: "delivered",
-                current_balance: updatedUser.AccountBalance,
-              },
-            });
-            return ctx.created({ message: "Successful" });
-          } else {
-            // get latest user's details snapshot from database
-            const user = await strapi
-              .query("plugin::users-permissions.user")
-              .findOne({
-                where: { id: id },
-              });
-            // update latest user's details (refund user exact amount debited before)
-
-            const updatedUser = await strapi
-              .query("plugin::users-permissions.user")
-              .update({
-                where: { id: user.id },
-                data: {
-                  AccountBalance: user.AccountBalance + Number(data.amount),
-                },
-              });
-            await strapi.query("api::airtime-order.airtime-order").update({
-              where: { request_id: data.request_id },
-              data: {
-                status: "failed",
-                current_balance: updatedUser.AccountBalance,
-              },
-            });
-            return ctx.serviceUnavailable(
-              "Sorry something came up from network"
-            );
+          // Send success notification with graceful error handling
+          try {
+            await sendPaymentSuccessNotification(user, {
+              amount: data.amount,
+              reference: ref,
+            }, "airtime");
+          } catch (notificationError) {
+            console.error("Failed to send payment success notification:", notificationError);
           }
+
+          // Send low balance alert if necessary
+          if (updatedUser.AccountBalance < 1000) {
+            try {
+              await sendLowBalanceAlert(user, updatedUser.AccountBalance);
+            } catch (notificationError) {
+              console.error("Failed to send low balance alert:", notificationError);
+            }
+          }
+
+          return ctx.created({ message: "Successful" });
         } else {
-          // get latest user's details snapshot from database
-          const user = await strapi
+          // Refund user on failure
+          const refundUser = await strapi
             .query("plugin::users-permissions.user")
-            .findOne({
-              where: { id: id },
-            });
-          const updatedUser = await strapi
+            .findOne({ where: { id: id } });
+
+          const updatedRefundUser = await strapi
             .query("plugin::users-permissions.user")
             .update({
-              where: { id: user.id },
+              where: { id: refundUser.id },
               data: {
-                AccountBalance: user.AccountBalance + Number(data.amount),
+                AccountBalance: refundUser.AccountBalance + Number(data.amount),
               },
             });
 
           await strapi.query("api::airtime-order.airtime-order").update({
-            where: { request_id: data.request_id },
+            where: { request_id: ref },
             data: {
               status: "failed",
-              current_balance: updatedUser.AccountBalance,
+              current_balance: updatedRefundUser.AccountBalance,
             },
           });
-          console.log(buyAirtime);
 
-          return ctx.throw(400, buyAirtime?.data?.response_description);
+          // Send failure notification with graceful error handling
+          try {
+            await sendPaymentFailureNotification(refundUser, {
+              amount: data.amount,
+              reference: ref,
+            }, "airtime", buyAirtime?.data?.api_response || buyAirtime?.data?.message || "Transaction failed");
+          } catch (notificationError) {
+            console.error("Failed to send payment failure notification:", notificationError);
+          }
+
+          console.log("Bello airtime failed:", buyAirtime.data);
+          return ctx.throw(400, buyAirtime?.data?.api_response || buyAirtime?.data?.message || "Transaction failed");
         }
       } catch (error) {
-        const user = await strapi
+        const refundUser = await strapi
           .query("plugin::users-permissions.user")
-          .findOne({
-            where: { id: id },
-          });
+          .findOne({ where: { id: id } });
+
         await strapi.query("api::airtime-order.airtime-order").update({
-          where: { request_id: data.request_id },
+          where: { request_id: ref },
           data: {
             status: "failed",
-            current_balance: user.AccountBalance,
+            current_balance: refundUser.AccountBalance,
           },
         });
-        console.log(error);
-        throw new ApplicationError("something went wrong, try again");
+
+        // Send failure notification with graceful error handling
+        try {
+          await sendPaymentFailureNotification(refundUser, {
+            amount: data.amount,
+            reference: ref,
+          }, "airtime", error.message || "Something went wrong");
+        } catch (notificationError) {
+          console.error("Failed to send payment failure notification:", notificationError);
+        }
+
+        console.log("Bello airtime error:", error);
+        throw new ApplicationError("Something went wrong, try again");
       }
     },
   })
