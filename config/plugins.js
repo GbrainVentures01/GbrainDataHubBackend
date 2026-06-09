@@ -1,14 +1,20 @@
 module.exports = ({ env }) => ({
   email: {
     config: {
-      provider: "strapi-provider-email-mailjet",
+      provider: "nodemailer",
       providerOptions: {
-        publicApiKey: env("MAILJET_PUBLIC_KEY"),
-        secretApiKey: env("MAILJET_SECRET_KEY"),
+        host: env("SMTP_HOST", "smtp-relay.brevo.com"),
+        port: env.int("SMTP_PORT", 587),
+        secure: env.bool("SMTP_SECURE", false),
+        auth: {
+          user: env("SMTP_USERNAME"),
+          pass: env("SMTP_PASSWORD"),
+        },
       },
       settings: {
         defaultFrom: "admin@gbrainventures.com",
         defaultFromName: "Fendur",
+        defaultReplyTo: "admin@gbrainventures.com",
       },
     },
     // ...US East (N. Virginia) us-east-1
