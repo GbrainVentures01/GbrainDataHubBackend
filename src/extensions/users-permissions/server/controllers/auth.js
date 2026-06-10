@@ -2338,7 +2338,17 @@ module.exports = {
         });
       }
 
-      if (!user.hasTransactionPin || !user.transactionPin) {
+      let transactionPinHash = user.transactionPin;
+
+      if (user.hasTransactionPin && !transactionPinHash) {
+        const userPinRecord = await strapi.db.connection("up_users")
+          .where({ id: userId })
+          .first("transaction_pin");
+
+        transactionPinHash = userPinRecord?.transaction_pin || null;
+      }
+
+      if (!user.hasTransactionPin || !transactionPinHash) {
         return ctx.badRequest(
           "No transaction PIN set for this account. Please set up your transaction PIN first.",
           {
@@ -2350,7 +2360,7 @@ module.exports = {
       // Verify current PIN
       const isCurrentPinValid = await strapi
         .service("plugin::users-permissions.user")
-        .validatePassword(currentPin, user.transactionPin);
+        .validatePassword(currentPin, transactionPinHash);
 
       if (!isCurrentPinValid) {
         return ctx.badRequest("Current PIN is incorrect", {
@@ -2361,7 +2371,7 @@ module.exports = {
       // Hash the new PIN
       const hashedNewPin = await strapi
         .service("plugin::users-permissions.user")
-        .hashPassword(newPin);
+        .hashPin({ pin: newPin });
 
       // Update user with new transaction PIN
       await strapi.query("plugin::users-permissions.user").update({
