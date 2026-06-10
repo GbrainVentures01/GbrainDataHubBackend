@@ -138,7 +138,30 @@ module.exports = ({ strapi }) => ({
   },
 
   validatePassword(password, hash) {
-    return bcrypt.compare(password, hash);
+    if (typeof password !== "string" || !password || !hash) {
+      return Promise.resolve(false);
+    }
+
+    let normalizedHash = hash;
+
+    if (Buffer.isBuffer(normalizedHash)) {
+      normalizedHash = normalizedHash.toString("utf8");
+    } else if (typeof normalizedHash === "object") {
+      // Some production database adapters can return password fields as wrapped objects.
+      const candidate = Object.values(normalizedHash).find(
+        (value) =>
+          typeof value === "string" &&
+          value.startsWith("$2") &&
+          value.split("$").length >= 4
+      );
+      normalizedHash = candidate || "";
+    }
+
+    if (typeof normalizedHash !== "string" || !normalizedHash) {
+      return Promise.resolve(false);
+    }
+
+    return bcrypt.compare(password, normalizedHash);
   },
 
   async sendConfirmationEmail(user) {
@@ -179,11 +202,8 @@ module.exports = ({ strapi }) => ({
       .service("email")
       .send({
         to: user.email,
-        from:
-          settings.from.email && settings.from.name
-            ? `${settings.from.name} <${settings.from.email}>`
-            : undefined,
-        replyTo: settings.response_email,
+        from: "admin@gbrainventures.com",
+        replyTo: settings.response_email || "admin@gbrainventures.com",
         subject: settings.object,
         text: settings.message,
         html: settings.message,

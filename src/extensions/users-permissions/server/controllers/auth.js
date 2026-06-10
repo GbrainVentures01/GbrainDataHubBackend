@@ -96,110 +96,48 @@ const sendSecurityNotificationEmail = async (
   action,
   additionalInfo = {}
 ) => {
-  const emailSubject = `Security Alert: ${action} - Fendur`;
+  const emailSubject = `Account Notification: ${action} - Fendur`;
 
   const emailHtml = `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
-      <style>
-        .container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; }
-        .header { background: linear-gradient(135deg, #83529f, #a855f7); color: white; padding: 30px; text-align: center; }
-        .content { padding: 30px; background: #f8f9fa; }
-        .security-box { background: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        .info-table th, .info-table td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-        .info-table th { background-color: #f1f5f9; font-weight: bold; }
-        .footer { text-align: center; padding: 20px; color: #666; }
-        .warning { background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 8px; margin: 20px 0; color: #721c24; }
-      </style>
     </head>
     <body>
-      <div class="container">
-        <div class="header">
-          <h1>🔐 Security Alert</h1>
-          <p>Fendur Account Activity</p>
-        </div>
-        <div class="content">
-          <h2>${action}</h2>
-          <p>Hello ${user.username || user.email},</p>
-          <p>We detected a ${action.toLowerCase()} on your Fendur account. Here are the details:</p>
-          
-          <table class="info-table">
-            <tr>
-              <th>Date & Time</th>
-              <td>${new Date(securityInfo.timestamp).toLocaleString("en-US", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                timeZoneName: "short",
-              })}</td>
-            </tr>
-            <tr>
-              <th>IP Address</th>
-              <td>${securityInfo.ipAddress}</td>
-            </tr>
-            <tr>
-              <th>Device</th>
-              <td>${securityInfo.deviceInfo}</td>
-            </tr>
-            <tr>
-              <th>Browser</th>
-              <td>${securityInfo.browserInfo}</td>
-            </tr>
-            <tr>
-              <th>Location</th>
-              <td>${securityInfo.location}</td>
-            </tr>
-            ${
-              additionalInfo.code
-                ? `
-            <tr>
-              <th>Verification Code</th>
-              <td style="font-family: monospace; font-size: 18px; font-weight: bold;">${additionalInfo.code}</td>
-            </tr>
-            `
-                : ""
-            }
-          </table>
-          
-          <div class="security-box">
-            <p><strong>🛡️ Security Tips:</strong></p>
-            <ul>
-              <li>If this was you, no action is needed</li>
-              <li>If you don't recognize this activity, change your password immediately</li>
-              <li>Never share your account credentials with anyone</li>
-              <li>Use strong, unique passwords for your financial accounts</li>
-            </ul>
-          </div>
-          
-          ${
-            action.includes("Login")
-              ? `
-          <div class="warning">
-            <p><strong>⚠️ Didn't authorize this login?</strong></p>
-            <p>If you didn't sign in to your account, please:</p>
-            <ul>
-              <li>Change your password immediately</li>
-              <li>Contact our support team</li>
-              <li>Review your account activity</li>
-            </ul>
-          </div>
-          `
-              : ""
-          }
-          
-          <p>If you have any concerns about your account security, please contact our support team immediately.</p>
-        </div>
-        <div class="footer">
-          <p>© ${new Date().getFullYear()} Fendur | Financial Technology Platform</p>
-          <p>This is an automated security notification. Please do not reply to this email.</p>
-        </div>
-      </div>
+      <h2>${action}</h2>
+      <p>Hello ${user.username || user.email},</p>
+      <p>We want to inform you of activity on your Fendur account:</p>
+      
+      <p>
+        <strong>Date & Time:</strong> ${new Date(securityInfo.timestamp).toLocaleString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZoneName: "short",
+        })}<br>
+        <strong>IP Address:</strong> ${securityInfo.ipAddress}<br>
+        <strong>Device:</strong> ${securityInfo.deviceInfo}<br>
+        <strong>Browser:</strong> ${securityInfo.browserInfo}<br>
+        <strong>Location:</strong> ${securityInfo.location}
+        ${
+          additionalInfo.code
+            ? `<br><strong>Verification Code:</strong> ${additionalInfo.code}`
+            : ""
+        }
+      </p>
+      
+      <p>If you recognize this activity, no action is needed. If you do not recognize this activity, please change your password and contact our support team.</p>
+      
+      <p>Best regards,<br>Fendur Team</p>
+      <hr>
+      <p style="color: #666; font-size: 12px;">
+        © ${new Date().getFullYear()} Fendur | Financial Technology Platform<br>
+        <a href="https://gbrainventures.com/unsubscribe">Unsubscribe</a>
+      </p>
     </body>
     </html>
   `;
@@ -210,15 +148,15 @@ const sendSecurityNotificationEmail = async (
       .service("email")
       .send({
         to: user.email,
+        from: "admin@gbrainventures.com",
+        replyTo: "admin@gbrainventures.com",
         subject: emailSubject,
         html: emailHtml,
-        text: `Security Alert: ${action} detected on your Fendur account from IP ${
+        text: `Account Notification: ${action} detected on your Fendur account from IP ${
           securityInfo.ipAddress
-        } using ${securityInfo.deviceInfo} (${
-          securityInfo.browserInfo
-        }) at ${new Date(
+        } using ${securityInfo.deviceInfo} at ${new Date(
           securityInfo.timestamp
-        ).toLocaleString()}. If this wasn't you, please contact support immediately.`,
+        ).toLocaleString()}. Contact support if you do not recognize this activity.`,
       });
 
     strapi.log.info(
