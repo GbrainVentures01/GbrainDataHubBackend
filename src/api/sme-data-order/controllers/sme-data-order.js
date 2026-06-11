@@ -325,16 +325,16 @@ module.exports = createCoreController(
             return ctx.badRequest("PIN is required for PIN authentication");
           }
 
-          // Check if user has a transaction PIN set
-          if (!userDetails.transactionPin) {
+          // Check if user has PIN set
+          if (!userDetails.pin) {
             return ctx.badRequest(
-              "Please set up a transaction PIN in your profile settings"
+              "Please set up a PIN in your profile settings"
             );
           }
 
           const validPin = await getService("user").validatePassword(
             pin,
-            userDetails.transactionPin
+            userDetails.pin
           );
           if (!validPin) {
             return ctx.badRequest("Incorrect Pin");

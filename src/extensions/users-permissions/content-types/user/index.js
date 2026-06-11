@@ -73,3 +73,15 @@ module.exports = {
 
   config: schemaConfig, // TODO: to move to content-manager options
 };
+
+
+// "transactionPin": {
+//   "type": "password",
+//   "configurable": false,
+//   "private": true
+// },
+// "hasTransactionPin": {
+//   "type": "boolean",
+//   "default": false,
+//   "required": true
+// },

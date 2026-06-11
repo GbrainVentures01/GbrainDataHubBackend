@@ -1010,8 +1010,7 @@ module.exports = {
         role: role.id,
         confirmed: false, // ⚠️ Mobile users must verify email
         phoneNumber: phoneNumber || null,
-        // Note: transactionPin will be set separately later by user choice
-        hasTransactionPin: false,
+        // Note: PIN will be set separately later by user choice
       };
 
       // Create user
@@ -1555,8 +1554,9 @@ module.exports = {
         });
       }
 
-      if (!user.hasTransactionPin) {
-        return ctx.badRequest("No transaction PIN set for this account", {
+      // Check if user has a PIN set (using single pin field)
+      if (!user.pin) {
+        return ctx.badRequest("No PIN set for this account", {
           errorCode: "NO_PIN_SET",
         });
       }
@@ -1708,12 +1708,11 @@ module.exports = {
       // Hash new PIN
       const hashedPin = await getService("user").hashPin({ pin: newPin });
 
-      // Update user transaction PIN
+      // Update user PIN
       await strapi.query("plugin::users-permissions.user").update({
         where: { id: user.id },
         data: {
-          transactionPin: hashedPin,
-          hasTransactionPin: true,
+          pin: hashedPin,
         },
       });
 
@@ -1722,7 +1721,7 @@ module.exports = {
       sendSecurityNotificationEmail(
         user,
         securityInfo,
-        "Transaction PIN Reset Successful"
+        "PIN Reset Successful"
       ).catch((error) => {
         strapi.log.error(
           "Failed to send PIN reset success notification:",
@@ -1731,8 +1730,7 @@ module.exports = {
       });
 
       ctx.send({
-        message: "Transaction PIN reset successful",
-        hasTransactionPin: true,
+        message: "PIN reset successful",
       });
     } catch (error) {
       strapi.log.error("Reset PIN with code error:", error);
@@ -1744,7 +1742,8 @@ module.exports = {
   },
 
   /**
-   * Mobile Set Transaction PIN - Set transaction PIN for mobile users
+   * Mobile Set Transaction PIN - Set PIN for mobile and web users
+   * Unified: Both apps now use the same 'pin' field
    */
   async mobileSetTransactionPin(ctx) {
     const { pin, pinConfirmation } = ctx.request.body;
@@ -1758,7 +1757,7 @@ module.exports = {
     }
 
     if (!transactionPin || !confirmPin) {
-      return ctx.badRequest("Transaction PIN and confirmation are required", {
+      return ctx.badRequest("PIN and confirmation are required", {
         errorCode: "MISSING_FIELDS",
       });
     }
@@ -1770,9 +1769,9 @@ module.exports = {
     }
 
     try {
-      // Validate PIN format (should be 4-6 digits)
-      if (!/^\d{4,6}$/.test(transactionPin)) {
-        return ctx.badRequest("PIN must be 4-6 digits", {
+      // Validate PIN format (4 digits for all users - web and mobile)
+      if (!/^\d{4}$/.test(transactionPin)) {
+        return ctx.badRequest("PIN must be exactly 4 digits", {
           errorCode: "INVALID_PIN_FORMAT",
         });
       }
@@ -1794,17 +1793,16 @@ module.exports = {
         });
       }
 
-      // Hash the PIN
+      // Hash the PIN using standard method
       const hashedPin = await getService("user").hashPin({
         pin: transactionPin,
       });
 
-      // Update user with transaction PIN
+      // Update user with PIN (single field for both web and mobile)
       await strapi.query("plugin::users-permissions.user").update({
         where: { id: userId },
         data: {
-          transactionPin: hashedPin,
-          hasTransactionPin: true,
+          pin: hashedPin,
         },
       });
 
@@ -1813,7 +1811,7 @@ module.exports = {
       sendSecurityNotificationEmail(
         user,
         securityInfo,
-        "Transaction PIN Setup Successful"
+        "PIN Setup Successful"
       ).catch((error) => {
         strapi.log.error(
           "Failed to send PIN setup success notification:",
@@ -1822,9 +1820,8 @@ module.exports = {
       });
 
       ctx.send({
-        message: "Transaction PIN set successfully",
+        message: "PIN set successfully",
         success: true,
-        hasTransactionPin: true,
       });
     } catch (error) {
       strapi.log.error("Set transaction PIN error:", error);
@@ -2195,8 +2192,9 @@ module.exports = {
         });
       }
 
-      if (!user.hasTransactionPin) {
-        return ctx.badRequest("No transaction PIN set for this account", {
+      // Check if user has PIN set
+      if (!user.pin) {
+        return ctx.badRequest("No PIN set for this account", {
           errorCode: "NO_PIN_SET",
         });
       }
@@ -2287,7 +2285,8 @@ module.exports = {
   },
 
   /**
-   * Change Transaction PIN - Change the user's transaction PIN
+   * Change Transaction PIN - Change the user's PIN
+   * Unified: Uses single 'pin' field for both web and mobile users
    */
   async changeTransactionPin(ctx) {
     const { currentPin, newPin, confirmNewPin } = ctx.request.body;
@@ -2338,32 +2337,20 @@ module.exports = {
         });
       }
 
-      console.log("User:", user);
-
-      let transactionPinHash = user.transactionPin;
-      console.log("Initial transactionPinHash:", transactionPinHash);
-
-      if (user.hasTransactionPin && !transactionPinHash) {
-        const userPinRecord = await strapi.db.connection("up_users")
-          .where({ id: userId })
-          .first("transaction_pin");
-
-        transactionPinHash = userPinRecord?.transaction_pin || null;
-      }
-
-      if (!user.hasTransactionPin || !transactionPinHash) {
+      // Check if user has PIN set
+      if (!user.pin) {
         return ctx.badRequest(
-          "No transaction PIN set for this account. Please set up your transaction PIN first.",
+          "No PIN set for this account. Please set up your PIN first.",
           {
             errorCode: "NO_PIN_SET",
           }
         );
       }
 
-      // Verify current PIN
+      // Verify current PIN against existing pin field
       const isCurrentPinValid = await strapi
         .service("plugin::users-permissions.user")
-        .validatePassword(currentPin, transactionPinHash);
+        .validatePassword(currentPin, user.pin);
 
       if (!isCurrentPinValid) {
         return ctx.badRequest("Current PIN is incorrect", {
@@ -2376,11 +2363,11 @@ module.exports = {
         .service("plugin::users-permissions.user")
         .hashPin({ pin: newPin });
 
-      // Update user with new transaction PIN
+      // Update user with new PIN
       await strapi.query("plugin::users-permissions.user").update({
         where: { id: userId },
         data: {
-          transactionPin: hashedNewPin,
+          pin: hashedNewPin,
           updatedAt: new Date(),
         },
       });
@@ -2404,12 +2391,12 @@ module.exports = {
       await sendSecurityNotificationEmail(
         user,
         securityInfo,
-        "Transaction PIN Changed Successfully",
+        "PIN Changed Successfully",
         { action: "PIN Change" }
       );
 
       ctx.send({
-        message: "Transaction PIN changed successfully",
+        message: "PIN changed successfully",
         success: true,
       });
     } catch (error) {

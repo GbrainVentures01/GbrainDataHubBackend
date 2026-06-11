@@ -194,7 +194,7 @@ module.exports = createCoreController(
         }
         const validPin = await getService("user").validatePassword(
           data.pin,
-          user.transactionPin
+          user.pin
         );
         if (!validPin) {
           return ctx.badRequest("Incorrect Pin");
