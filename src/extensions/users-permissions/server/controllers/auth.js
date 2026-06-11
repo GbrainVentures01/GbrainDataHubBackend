@@ -2338,7 +2338,10 @@ module.exports = {
         });
       }
 
+      console.log("User:", user);
+
       let transactionPinHash = user.transactionPin;
+      console.log("Initial transactionPinHash:", transactionPinHash);
 
       if (user.hasTransactionPin && !transactionPinHash) {
         const userPinRecord = await strapi.db.connection("up_users")
