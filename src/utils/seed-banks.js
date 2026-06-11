@@ -30,29 +30,49 @@ const nigerianBanks = [
   { name: 'PremiumTrust Bank', code: '105', slug: 'premiumtrust-bank' },
 ];
 
-async function seedBanks() {
+async function seedBanks(strapi) {
   try {
     console.log('Starting to seed Nigerian banks...');
     
-    for (const bankData of nigerianBanks) {
-      // Check if bank already exists
-      const existing = await strapi.db.query('api::bank.bank').findOne({
-        where: { code: bankData.code },
-      });
+    // Check if any banks exist
+    const existingBanks = await strapi.entityService.count('api::bank.bank');
+    
+    if (existingBanks >= nigerianBanks.length) {
+      console.log(`✅ All ${nigerianBanks.length} banks already seeded. Skipping seed operation.`);
+      return;
+    }
 
-      if (!existing) {
+    // Get all existing bank codes in one query
+    const allBanks = await strapi.entityService.findMany('api::bank.bank', {
+      fields: ['code'],
+      pagination: { limit: 1000 },
+    });
+    const existingCodes = new Set(allBanks.map(b => b.code));
+
+    // Filter banks that need to be created
+    const banksToCreate = nigerianBanks.filter(b => !existingCodes.has(b.code));
+
+    if (banksToCreate.length === 0) {
+      console.log('✅ All banks already exist. No seeding needed.');
+      return;
+    }
+
+    // Create missing banks
+    for (const bankData of banksToCreate) {
+      try {
         await strapi.entityService.create('api::bank.bank', {
           data: bankData,
         });
         console.log(`✅ Created bank: ${bankData.name}`);
-      } else {
-        console.log(`⏭️  Bank already exists: ${bankData.name}`);
+      } catch (err) {
+        console.error(`⚠️  Failed to create bank ${bankData.name}:`, err.message);
       }
     }
 
-    console.log('✅ Bank seeding completed successfully!');
+    console.log(`✅ Bank seeding completed! Created ${banksToCreate.length} new banks.`);
   } catch (error) {
-    console.error('❌ Error seeding banks:', error);
+    console.error('⚠️  Error seeding banks (non-critical):', error.message);
+    // Don't throw - this shouldn't block app startup
   }
 }
 
