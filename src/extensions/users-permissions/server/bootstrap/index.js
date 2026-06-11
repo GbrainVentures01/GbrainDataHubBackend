@@ -19,23 +19,69 @@ module.exports = async ({ strapi }) => {
     name: "users-permissions",
   });
 
-  await initGrant(pluginStore);
-  await initEmails(pluginStore);
-  await initAdvancedOptions(pluginStore);
+  // Add startup timeout protection (45 seconds)
+  const startTime = Date.now();
+  const timeoutMs = 45000;
 
-  await strapi.admin.services.permission.actionProvider.registerMany(
-    usersPermissionsActions.actions
-  );
+  try {
+    console.log("🔄 [Bootstrap] Starting users-permissions initialization...");
 
-  await getService("users-permissions").initialize();
+    console.log("🔄 [Bootstrap] Initializing grant configuration...");
+    await initGrant(pluginStore);
+    console.log(`✅ [Bootstrap] Grant initialized (${Date.now() - startTime}ms)`);
 
-  if (!strapi.config.get("plugin.users-permissions.jwtSecret")) {
-    const jwtSecret = crypto.randomBytes(16).toString("base64");
-    strapi.config.set("plugin.users-permissions.jwtSecret", jwtSecret);
+    console.log("🔄 [Bootstrap] Initializing email templates...");
+    await initEmails(pluginStore);
+    console.log(`✅ [Bootstrap] Emails initialized (${Date.now() - startTime}ms)`);
 
-    if (!process.env.JWT_SECRET) {
-      strapi.fs.appendFile(".env", `JWT_SECRET=${jwtSecret}\n`);
+    console.log("🔄 [Bootstrap] Initializing advanced options...");
+    await initAdvancedOptions(pluginStore);
+    console.log(`✅ [Bootstrap] Advanced options initialized (${Date.now() - startTime}ms)`);
+
+    // Check elapsed time
+    if (Date.now() - startTime > timeoutMs) {
+      console.warn(`⚠️ [Bootstrap] Approaching timeout! Already ${Date.now() - startTime}ms elapsed`);
     }
+
+    console.log("🔄 [Bootstrap] Registering admin actions...");
+    await strapi.admin.services.permission.actionProvider.registerMany(
+      usersPermissionsActions.actions
+    );
+    console.log(`✅ [Bootstrap] Admin actions registered (${Date.now() - startTime}ms)`);
+
+    // Check elapsed time again
+    if (Date.now() - startTime > timeoutMs) {
+      console.warn(`⚠️ [Bootstrap] Approaching timeout! Already ${Date.now() - startTime}ms elapsed`);
+    }
+
+    console.log("🔄 [Bootstrap] Initializing users-permissions service...");
+    await getService("users-permissions").initialize();
+    console.log(`✅ [Bootstrap] Users-permissions service initialized (${Date.now() - startTime}ms)`);
+
+    console.log("🔄 [Bootstrap] Setting JWT secret...");
+    if (!strapi.config.get("plugin.users-permissions.jwtSecret")) {
+      const jwtSecret = crypto.randomBytes(16).toString("base64");
+      strapi.config.set("plugin.users-permissions.jwtSecret", jwtSecret);
+
+      // Only try to write .env file locally (not on Heroku/production)
+      if (!process.env.JWT_SECRET && process.env.NODE_ENV !== "production") {
+        try {
+          strapi.fs.appendFile(".env", `JWT_SECRET=${jwtSecret}\n`);
+          console.log("💾 [Bootstrap] JWT secret saved to .env (development only)");
+        } catch (fsError) {
+          console.warn("⚠️ [Bootstrap] Could not write JWT secret to .env file (read-only filesystem)");
+        }
+      } else if (process.env.NODE_ENV === "production") {
+        console.log("ℹ️ [Bootstrap] Running on production - JWT secret managed via environment variables");
+      }
+    }
+    console.log(`✅ [Bootstrap] JWT secret configured (${Date.now() - startTime}ms)`);
+
+    console.log(`✅ [Bootstrap] Complete! Total time: ${Date.now() - startTime}ms`);
+  } catch (error) {
+    console.error(`❌ [Bootstrap] Error during initialization:`, error.message);
+    console.error(`⚠️ [Bootstrap] Total elapsed time: ${Date.now() - startTime}ms`);
+    throw error;
   }
 };
 
