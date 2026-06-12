@@ -57,6 +57,16 @@
       "configurable": false,
       "private": true
     },
+    "transactionPin": {
+      "type": "password",
+      "configurable": false,
+      "private": true
+    },
+    "hasTransactionPin": {
+      "type": "boolean",
+      "default": false,
+      "required": true
+    },
     "biometricEnabled": {
       "type": "boolean",
       "default": false,

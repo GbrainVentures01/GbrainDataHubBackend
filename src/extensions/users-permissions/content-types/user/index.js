@@ -75,13 +75,3 @@ module.exports = {
 };
 
 
-// "transactionPin": {
-//   "type": "password",
-//   "configurable": false,
-//   "private": true
-// },
-// "hasTransactionPin": {
-//   "type": "boolean",
-//   "default": false,
-//   "required": true
-// },
