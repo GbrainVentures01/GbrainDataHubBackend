@@ -17,6 +17,27 @@ module.exports = createCoreController(
       const userId = ctx.state.user.id;
 
       try {
+        // Get user and check KYC tier
+        const user = await strapi.entityService.findOne(
+          "plugin::users-permissions.user",
+          userId,
+          {
+            fields: ["id", "kycTier", "AccountBalance", "cryptoWalletBalance", "giftCardBalance"],
+          }
+        );
+
+        // User must be at least Tier 1 (email verified) to transfer
+        if (!user.kycTier || user.kycTier < 1) {
+          return ctx.forbidden(
+            "You must verify your email to perform wallet transfers",
+            {
+              errorCode: "KYC_TIER_REQUIRED",
+              requiredTier: 1,
+              currentTier: user.kycTier || 0,
+            }
+          );
+        }
+
         // Validate input
         if (!fromWallet || !toWallet || !amount) {
           return ctx.badRequest("Missing required fields");
@@ -47,19 +68,7 @@ module.exports = createCoreController(
           return ctx.badRequest("Invalid transfer direction");
         }
 
-        // Get user with current balances
-        const user = await strapi.entityService.findOne(
-          "plugin::users-permissions.user",
-          userId,
-          {
-            fields: [
-              "id",
-              "AccountBalance",
-              "cryptoWalletBalance",
-              "giftCardBalance",
-            ],
-          }
-        );
+        // User already fetched above with KYC check
 
         // Check sufficient balance
         const fromBalance = user[fromWallet] || 0;

@@ -247,6 +247,34 @@
       "required": false,
       "configurable": true,
       "private": true
+    },
+    "kycTier": {
+      "type": "integer",
+      "default": 1,
+      "required": true,
+      "configurable": false
+    },
+    "kycVerified": {
+      "type": "boolean",
+      "default": false,
+      "required": true,
+      "configurable": false
+    },
+    "kycVerifiedAt": {
+      "type": "datetime",
+      "required": false,
+      "configurable": false
+    },
+    "phoneVerified": {
+      "type": "boolean",
+      "default": false,
+      "required": false,
+      "configurable": false
+    },
+    "phoneVerifiedAt": {
+      "type": "datetime",
+      "required": false,
+      "configurable": false
     }
   }
 }

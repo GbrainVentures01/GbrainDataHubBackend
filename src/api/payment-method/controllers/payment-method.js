@@ -17,9 +17,9 @@ module.exports = createCoreController('api::payment-method.payment-method', ({ s
       return ctx.unauthorized('You must be logged in');
     }
 
-    // Check if user KYC is verified
-    if (!user.kycVerified) {
-      return ctx.forbidden('You must complete KYC verification before adding a payment method');
+    // Check if user KYC tier 1 or higher (email verified)
+    if (!user.kycTier || user.kycTier < 1) {
+      return ctx.forbidden('You must verify your email and reach KYC Tier 1 before adding a payment method');
     }
 
     const { accountNumber, accountName, bank, isPrimary } = ctx.request.body.data;

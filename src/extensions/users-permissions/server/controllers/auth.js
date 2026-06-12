@@ -21,6 +21,9 @@ const createReservedAccount = require("../../../../utils/monnify/createReservedA
 const {
   sendSecurityAlertNotification,
 } = require("../../../../utils/notification-triggers");
+const {
+  assignTier1OnRegistration,
+} = require("../../../../utils/kyc-tiers");
 
 const { sanitize } = utils;
 const { ApplicationError, ValidationError } = utils.errors;
@@ -1901,10 +1904,14 @@ module.exports = {
         });
       }
 
-      // Update user as confirmed
+      // Update user as confirmed and assign Tier 1 KYC
+      const kycData = assignTier1OnRegistration();
       await strapi.query("plugin::users-permissions.user").update({
         where: { id: user.id },
-        data: { confirmed: true },
+        data: {
+          confirmed: true,
+          ...kycData,
+        },
       });
 
       const sanitizedUser = await sanitizeUser(user, ctx);
