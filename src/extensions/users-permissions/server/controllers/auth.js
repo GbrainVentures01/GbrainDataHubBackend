@@ -35,6 +35,18 @@ const sanitizeUser = (user, ctx) => {
   return sanitize.contentAPI.output(user, userSchema, { auth });
 };
 
+/**
+ * Enrich sanitized user with hasTransactionPin computed field
+ * Since PIN is now consolidated to single 'pin' field,
+ * hasTransactionPin is determined by whether pin field exists
+ */
+const enrichUserWithPinStatus = (sanitizedUser, originalUser) => {
+  return {
+    ...sanitizedUser,
+    hasTransactionPin: !!originalUser.pin, // true if pin exists, false otherwise
+  };
+};
+
 // Helper function to extract device and location information
 const getSecurityInfo = (ctx) => {
   const ipAddress =
@@ -241,11 +253,12 @@ module.exports = {
         ctx.unauthorized("Invalid identifier or password");
         throw new ValidationError("Invalid identifier or password");
       } else {
+        const sanitizedUser = await sanitizeUser(user, ctx);
         ctx.send({
           jwt: getService("jwt").issue({
             id: user.id,
           }),
-          user: await sanitizeUser(user, ctx),
+          user: enrichUserWithPinStatus(sanitizedUser, user),
         });
         // get monnify access token
         // myAccessToken = getToken();
@@ -271,9 +284,10 @@ module.exports = {
         throw new ApplicationError(error.message);
       }
 
+      const sanitizedUser = await sanitizeUser(user, ctx);
       ctx.send({
         jwt: getService("jwt").issue({ id: user.id }),
-        user: await sanitizeUser(user, ctx),
+        user: enrichUserWithPinStatus(sanitizedUser, user),
       });
     }
   },
@@ -677,7 +691,7 @@ module.exports = {
 
       return ctx.send({
         jwt,
-        user: sanitizedUser,
+        user: enrichUserWithPinStatus(sanitizedUser, user),
       });
     } catch (err) {
       console.log(err);
@@ -713,9 +727,10 @@ module.exports = {
     );
 
     if (returnUser) {
+      const sanitizedUser = await sanitizeUser(user, ctx);
       ctx.send({
         jwt: jwtService.issue({ id: user.id }),
-        user: await sanitizeUser(user, ctx),
+        user: enrichUserWithPinStatus(sanitizedUser, user),
       });
     } else {
       const settings = await strapi
@@ -882,7 +897,7 @@ module.exports = {
 
       ctx.send({
         jwt,
-        user: sanitizedUser,
+        user: enrichUserWithPinStatus(sanitizedUser, user),
         message: "Login successful",
       });
     } catch (error) {
